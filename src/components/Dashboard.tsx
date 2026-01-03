@@ -293,14 +293,16 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
           </section>
         </main>
 
-        {/* Boton flotante para añadir entrada */}
-        <button
-          className="bw-fab"
-          onClick={openAddModal}
-          aria-label="Añadir entrada"
-        >
-          +
-        </button>
+                <div className="bw-fab-wrapper">
+                  <button
+                    className="bw-fab"
+                    onClick={openAddModal}
+                    aria-label="Añadir entrada"
+                  >
+                    <span className="bw-fab-plus">+</span>
+                    <span className="bw-fab-label">Añadir</span>
+                  </button>
+                </div>
       </div>
 
       <AddEntryModal

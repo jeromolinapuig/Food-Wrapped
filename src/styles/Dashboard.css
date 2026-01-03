@@ -256,22 +256,41 @@
   background: var(--bw-accent-soft);
 }
 
-/* Boton flotante */
+.bw-fab-wrapper {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+}
+
 .bw-fab {
-  position: absolute;
-  bottom: 16px;
-  right: 50%;
-  transform: translateX(50%);
-  width: 56px;
-  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  font-size: 28px;
-  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
   background: var(--bw-accent);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  transition: background 0.25s ease, color 0.25s ease;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.bw-fab:active {
+  transform: translateY(1px);
+}
+
+.bw-fab-plus {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bw-fab-label {
+  font-size: 15px;
 }
 
 /* Modal basico */
@@ -296,8 +315,8 @@
   width: 100%;
   max-width: 430px;
   margin: 0;
-  max-height: 85vh;
-  height: auto;
+  height: 80vh;
+  max-height: 80vh;
   background: var(--bw-surface);
   border-radius: 24px 24px 0 0;
   padding: 16px;
@@ -308,6 +327,7 @@
   flex-direction: column;
   box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: hidden;
   animation: bw-sheet-in 260ms ease;
 }
 
@@ -320,7 +340,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--bw-surface);
+  z-index: 2;
 }
 
 .bw-modal-title {
@@ -334,12 +358,26 @@
   color: var(--bw-text-muted);
 }
 
-.bw-modal-body {
+.bw-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0;
+  height: 100%;
+}
+
+.bw-modal-fields {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
-  gap: 12px;
+  gap: 24px;
+  padding: 4px 0 72px; /* deja hueco para acciones sticky */
+  scrollbar-width: none;
+}
+
+.bw-modal-fields::-webkit-scrollbar {
+  display: none;
 }
 
 .bw-field {
@@ -355,6 +393,76 @@
   color: var(--bw-text);
 }
 
+.bw-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bw-surface);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bw-toggle-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bw-toggle-icon {
+  font-size: 22px;
+}
+
+.bw-toggle-title {
+  font-weight: 700;
+  color: var(--bw-text);
+  font-size: 14px;
+}
+
+.bw-toggle-subtitle {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+}
+
+.bw-meat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.bw-meat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--bw-surface);
+  color: var(--bw-text);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.bw-meat-card.is-active {
+  border-color: var(--bw-accent);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
+}
+
+.bw-meat-card:active {
+  transform: translateY(1px);
+}
+
+.bw-meat-emoji {
+  font-size: 24px;
+}
+
+.bw-meat-label {
+  font-weight: 700;
+  font-size: 14px;
+}
 .bw-suggestions {
   width: 100%;
   box-sizing: border-box;
@@ -384,7 +492,12 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  background: var(--bw-surface);
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 
 @keyframes bw-sheet-in {

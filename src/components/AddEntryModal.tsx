@@ -3,19 +3,13 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import {
   Button,
-  Checkbox,
   CssBaseline,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
+  Switch,
   TextField,
   ThemeProvider,
   createTheme,
+  Rating,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
-
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 
 type RestaurantOption = {
@@ -104,6 +98,21 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
             styleOverrides: {
               root: {
                 color: colors.textMuted,
+                backgroundColor: colors.surface,
+                padding: '0 6px',
+                borderRadius: 8,
+              },
+            },
+          },
+          MuiInputLabel: {
+            styleOverrides: {
+              outlined: {
+                '&.MuiInputLabel-shrink': {
+                  transform: 'translate(14px, -8px) scale(0.75)',
+                  backgroundColor: colors.surface,
+                  padding: '0 6px',
+                  borderRadius: 8,
+                },
               },
             },
           },
@@ -241,7 +250,12 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
     }
 
     if (!priceInput.trim()) {
-      setFormError('Indica el precio total.');
+      setFormError('Indica el precio por persona.');
+      return;
+    }
+
+    if (isBurger && !burgerInput.trim()) {
+      setFormError('Escribe el nombre de la hamburguesa.');
       return;
     }
 
@@ -339,13 +353,20 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
         err instanceof Error
           ? err.message
           : typeof err === 'string'
-          ? err
-          : 'Error al guardar la entrada.';
+            ? err
+            : 'Error al guardar la entrada.';
       setFormError(message);
     } finally {
       setFormLoading(false);
     }
   };
+
+  const isSubmitDisabled =
+    formLoading ||
+    !datetimeInput ||
+    !restaurantInput.trim() ||
+    !priceInput.trim() ||
+    (isBurger && !burgerInput.trim());
 
   return (
     <ThemeProvider theme={muiTheme}>
@@ -368,143 +389,156 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
             </Button>
           </div>
 
-          <form className="bw-modal-body" onSubmit={handleAddEntry}>
-            <div className="bw-field">
-              <TextField
-                id="bw-datetime"
-                label="Fecha y hora"
-                type="datetime-local"
-                value={datetimeInput}
-                onChange={(e) => setDatetimeInput(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </div>
+          <form className="bw-modal-form" onSubmit={handleAddEntry}>
+            <div className="bw-modal-fields">
+              <div className="bw-field">
+                <TextField
+                  id="bw-datetime"
+                  label="Fecha y hora"
+                  type="datetime-local"
+                  value={datetimeInput}
+                  onChange={(e) => setDatetimeInput(e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </div>
 
-            <div className="bw-field">
-              <TextField
-                id="bw-restaurant"
-                label="Restaurante"
-                value={restaurantInput}
-                onChange={(e) => handleRestaurantChange(e.target.value)}
-                placeholder="Jenkins, Goiko, McDonalds..."
-                autoComplete="off"
-                fullWidth
-              />
-              {restaurantSuggestions.length > 0 && (
-                <ul className="bw-suggestions">
-                  {restaurantSuggestions.map((r) => (
-                    <li key={r.id} onClick={() => selectRestaurant(r)}>
-                      {r.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+              <div className="bw-field">
+                <TextField
+                  id="bw-restaurant"
+                  label="Restaurante"
+                  value={restaurantInput}
+                  onChange={(e) => handleRestaurantChange(e.target.value)}
+                  placeholder="Jenkins, Goiko, McDonalds..."
+                  autoComplete="off"
+                  fullWidth
+                />
+                {restaurantSuggestions.length > 0 && (
+                  <ul className="bw-suggestions">
+                    {restaurantSuggestions.map((r) => (
+                      <li key={r.id} onClick={() => selectRestaurant(r)}>
+                        {r.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <FormControlLabel
-              control={
-                <Checkbox
+              <div className="bw-toggle-card">
+                <div className="bw-toggle-info">
+                  <span className="bw-toggle-icon">🍔</span>
+                  <div>
+                    <div className="bw-toggle-title">¿Es una hamburguesa?</div>
+                    <div className="bw-toggle-subtitle">Activa para elegir el tipo</div>
+                  </div>
+                </div>
+                <Switch
                   checked={isBurger}
                   onChange={(e) => setIsBurger(e.target.checked)}
+                  color="primary"
+                  inputProps={{ 'aria-label': 'Es hamburguesa' }}
                 />
-              }
-              label="Es hamburguesa"
-              className="bw-checkbox-row"
-            />
+              </div>
 
-            {isBurger && (
-              <>
-                <div className="bw-field">
-                  <FormControl fullWidth>
-                    <InputLabel id="bw-meat-type-label">Tipo de carne</InputLabel>
-                    <Select
-                      labelId="bw-meat-type-label"
-                      id="bw-meat-type"
-                      value={burgerType}
-                      label="Tipo de carne"
-                      onChange={(e: SelectChangeEvent<MeatType>) =>
-                        setBurgerType(e.target.value as MeatType)
-                      }
-                    >
-                      <MenuItem value="beef">Ternera</MenuItem>
-                      <MenuItem value="chicken">Pollo</MenuItem>
-                      <MenuItem value="vegan">Vegana</MenuItem>
-                      <MenuItem value="other">Otra</MenuItem>
-                    </Select>
-                  </FormControl>
-                </div>
-
-                <div className="bw-field">
-                  <TextField
-                    id="bw-burger-name"
-                    label="Hamburguesa"
-                    value={burgerInput}
-                    onChange={(e) => handleBurgerChange(e.target.value)}
-                    placeholder="Emmy, Big Mac..."
-                    autoComplete="off"
-                    disabled={!selectedRestaurant}
-                    fullWidth
-                  />
-                  {selectedRestaurant && burgerSuggestions.length > 0 && (
-                    <ul className="bw-suggestions">
-                      {burgerSuggestions.map((b) => (
-                        <li key={b.id} onClick={() => selectBurger(b)}>
-                          {b.name}
-                        </li>
+              {isBurger && (
+                <>
+                  <div className="bw-field">
+                    <span className="bw-label">Tipo de hamburguesa</span>
+                    <div className="bw-meat-grid">
+                      {[
+                        { value: 'beef', label: 'Ternera', emoji: '🥩' },
+                        { value: 'chicken', label: 'Pollo', emoji: '🍗' },
+                        { value: 'vegan', label: 'Vegana', emoji: '🌱' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`bw-meat-card ${burgerType === opt.value ? 'is-active' : ''
+                            }`}
+                          onClick={() => setBurgerType(opt.value as MeatType)}
+                        >
+                          <span className="bw-meat-emoji">{opt.emoji}</span>
+                          <span className="bw-meat-label">{opt.label}</span>
+                        </button>
                       ))}
-                    </ul>
-                  )}
-                  {!selectedRestaurant && (
-                    <p className="bw-helper">Selecciona primero un restaurante.</p>
-                  )}
-                </div>
-              </>
-            )}
+                    </div>
+                  </div>
 
-            <div className="bw-field">
-              <TextField
-                id="bw-price"
-                label="Precio total (€)"
-                type="number"
-                inputProps={{ step: 0.01, min: 0 }}
-                value={priceInput}
-                onChange={(e) => setPriceInput(e.target.value)}
-                fullWidth
-              />
+                  <div className="bw-field">
+                    <TextField
+                      id="bw-burger-name"
+                      label="Hamburguesa"
+                      value={burgerInput}
+                      onChange={(e) => handleBurgerChange(e.target.value)}
+                      placeholder="Emmy, Big Mac..."
+                      autoComplete="off"
+                      fullWidth
+                    />
+                    {selectedRestaurant && burgerSuggestions.length > 0 && (
+                      <ul className="bw-suggestions">
+                        {burgerSuggestions.map((b) => (
+                          <li key={b.id} onClick={() => selectBurger(b)}>
+                            {b.name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {!selectedRestaurant && (
+                      <p className="bw-helper">
+                        Escribe el nombre. Si eliges un restaurante verás sugerencias.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="bw-field">
+                <span className="bw-label" style={{ marginBottom: 6 }}>
+                  Puntuación
+                </span>
+                <Rating
+                  name="entry-rating"
+                  value={Number(ratingInput)}
+                  precision={0.5}
+                  onChange={(_e, newValue) => {
+                    if (newValue) setRatingInput(String(newValue));
+                  }}
+                  sx={{
+                    color: colors.accent,
+                    '& .MuiRating-iconEmpty': {
+                      color: colors.textMuted,
+                    },
+                    fontSize: 32,
+                    alignSelf: 'center',
+                  }}
+                />
+              </div>
+
+              <div className="bw-field">
+                <TextField
+                  id="bw-price"
+                  label="Precio por persona (€)"
+                  type="number"
+                  inputProps={{ step: 0.01, min: 0 }}
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  fullWidth
+                />
+              </div>
+
+              {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
             </div>
 
-            <div className="bw-field">
-              <FormControl fullWidth>
-                <InputLabel id="bw-rating-label">Puntuación (1-5)</InputLabel>
-                <Select
-                  labelId="bw-rating-label"
-                  id="bw-rating"
-                  value={ratingInput}
-                  label="Puntuación (1-5)"
-                  onChange={(e: SelectChangeEvent<string>) => setRatingInput(e.target.value)}
-                >
-                  <MenuItem value="1">1</MenuItem>
-                  <MenuItem value="2">2</MenuItem>
-                  <MenuItem value="3">3</MenuItem>
-                  <MenuItem value="4">4</MenuItem>
-                  <MenuItem value="5">5</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-
-          {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
-
-          <div className="bw-modal-actions">
-            <Button
-              type="button"
-              variant="outlined"
-              onClick={requestClose}
-              disabled={formLoading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" disabled={formLoading}>
+            <div className="bw-modal-actions">
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={requestClose}
+                disabled={formLoading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" variant="contained" disabled={isSubmitDisabled}>
                 {formLoading ? 'Guardando...' : 'Guardar'}
               </Button>
             </div>

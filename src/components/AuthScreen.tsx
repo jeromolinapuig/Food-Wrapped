@@ -2,105 +2,114 @@ import { type FormEvent, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export function AuthScreen() {
-    const [mode, setMode] = useState<'login' | 'signup'>('login');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-        try {
-            if (mode === 'signup') {
-                const { error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                });
-                if (error) throw error;
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-                if (error) throw error;
-            }
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Algo ha ido mal';
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Algo ha ido mal';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <div
-            style={{
-                maxWidth: 340,
-                margin: '40px auto',
-                padding: 16,
-                borderRadius: 16,
-                border: '1px solid #eee',
-                fontFamily: 'system-ui, sans-serif',
-            }}
-        >
-            <h1 style={{ marginBottom: 4 }}>Burger Wrapped</h1>
-            <p style={{ marginTop: 0 }}>
-                {mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}
+  return (
+    <div className="auth-page">
+      <div className="auth-blob auth-blob-1" />
+      <div className="auth-blob auth-blob-2" />
+
+      <div className="auth-card">
+        <div className="auth-brand">
+          <div className="auth-logo">🍔</div>
+          <div>
+            <p className="auth-eyebrow">Burger Wrapped</p>
+            <h1 className="auth-title">Tu año en hamburguesas</h1>
+            <p className="auth-subtitle">
+              Guarda tus sitios, notas y precios en un solo lugar.
             </p>
-
-            <form
-                onSubmit={handleSubmit}
-                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-            >
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email"
-                    required
-                />
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Contraseña"
-                    required
-                />
-
-                {error && (
-                    <p style={{ color: 'red', fontSize: 12, margin: 0 }}>{error}</p>
-                )}
-
-                <button type="submit" disabled={loading} style={{ marginTop: 8 }}>
-                    {loading
-                        ? 'Cargando...'
-                        : mode === 'login'
-                            ? 'Entrar'
-                            : 'Registrarme'}
-                </button>
-            </form>
-
-            <button
-                type="button"
-                onClick={() =>
-                    setMode((prev) => (prev === 'login' ? 'signup' : 'login'))
-                }
-                style={{
-                    marginTop: 12,
-                    fontSize: 12,
-                    background: 'none',
-                    border: 'none',
-                    textDecoration: 'underline',
-                    cursor: 'pointer',
-                }}
-            >
-                {mode === 'login'
-                    ? '¿No tienes cuenta? Regístrate'
-                    : '¿Ya tienes cuenta? Inicia sesión'}
-            </button>
+          </div>
         </div>
-    );
+
+        <div className="auth-toggle">
+          <button
+            type="button"
+            className={mode === 'login' ? 'is-active' : ''}
+            onClick={() => setMode('login')}
+          >
+            Entrar
+          </button>
+          <button
+            type="button"
+            className={mode === 'signup' ? 'is-active' : ''}
+            onClick={() => setMode('signup')}
+          >
+            Crear cuenta
+          </button>
+        </div>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="auth-field">
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              required
+            />
+          </label>
+
+          <label className="auth-field">
+            <span>Contraseña</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </label>
+
+          {error && <p className="auth-error">{error}</p>}
+
+          <button className="auth-submit" type="submit" disabled={loading}>
+            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}
+          </button>
+        </form>
+
+        <p className="auth-secondary">
+          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
+          <button
+            type="button"
+            className="auth-link"
+            onClick={() => setMode((prev) => (prev === 'login' ? 'signup' : 'login'))}
+          >
+            {mode === 'login' ? 'Registrate' : 'Inicia sesion'}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
 }
