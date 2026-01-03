@@ -183,28 +183,36 @@
 .bw-history-card {
   background: var(--bw-surface);
   border-radius: 16px;
-  padding: 12px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  transition: background 0.25s ease, color 0.25s ease;
+  gap: 12px;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
 }
 
-.bw-history-header {
+.bw-history-top {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.bw-history-restaurant {
+.bw-history-info {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
+  gap: 10px;
+  align-items: flex-start;
 }
 
 .bw-history-meat-icon {
-  font-size: 16px;
+  font-size: 22px;
+}
+
+.bw-history-restaurant {
+  font-weight: 700;
+  margin: 0;
+  font-size: 15px;
 }
 
 .bw-history-burger-name {
@@ -215,25 +223,43 @@
 .bw-history-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 12px;
   color: var(--bw-text-muted);
 }
 
-.bw-history-rating {
-  font-size: 14px;
+.bw-history-meta-icon {
+  font-size: 12px;
+}
+
+.bw-history-rating-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bw-history-star {
+  font-size: 18px;
+}
+
+.bw-history-star.is-filled {
   color: var(--bw-accent);
-  white-space: nowrap;
+}
+
+.bw-history-star.is-empty {
+  color: var(--bw-text-muted);
 }
 
 .bw-history-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .bw-history-price {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 18px;
 }
 
 .bw-history-actions {

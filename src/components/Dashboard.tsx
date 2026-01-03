@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx
+﻿// src/components/Dashboard.tsx
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
@@ -143,7 +143,10 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   }, [entries]);
 
   const renderStars = (rating: number) =>
-    '*****-----'.slice(5 - rating, 10 - rating); // simple visual stars
+    Array.from({ length: 5 }, (_v, i) => ({
+      filled: rating >= i + 1 || rating > i + 0.5,
+      half: rating >= i + 0.5 && rating < i + 1,
+    }));
 
   const handleEntrySaved = async () => {
     await loadEntries();
@@ -174,7 +177,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         <main className="bw-main">
           <section className="bw-stats-grid">
             <article className="bw-stat-card">
-              <div className="bw-stat-icon">€</div>
+              <div className="bw-stat-icon">💶</div>
               <div className="bw-stat-value">{stats.totalSpent.toFixed(2)}€</div>
               <div className="bw-stat-label">Total gastado</div>
             </article>
@@ -186,7 +189,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             </article>
 
             <article className="bw-stat-card">
-              <div className="bw-stat-icon">★</div>
+              <div className="bw-stat-icon">⭐</div>
               <div className="bw-stat-value">
                 {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
               </div>
@@ -194,7 +197,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             </article>
 
             <article className="bw-stat-card">
-              <div className="bw-stat-icon">Fav</div>
+              <div className="bw-stat-icon">🏆</div>
               <div className="bw-stat-value">
                 {stats.favoriteRestaurant || '-'}
               </div>
@@ -206,15 +209,15 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             <h2 className="bw-section-title">Tipos de hamburguesa</h2>
             <div className="bw-burger-types-row">
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">B</span>
+                <span className="bw-burger-type-emoji">🥩</span>
                 <span>{stats.burgerTypes.beef}</span>
               </div>
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">P</span>
+                <span className="bw-burger-type-emoji">🍗</span>
                 <span>{stats.burgerTypes.chicken}</span>
               </div>
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">V</span>
+                <span className="bw-burger-type-emoji">🌱</span>
                 <span>{stats.burgerTypes.vegan}</span>
               </div>
             </div>
@@ -245,24 +248,41 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                   });
 
                   return (
-                    <article key={entry.id} className="bw-history-card">
-                      <div className="bw-history-header">
-                        <div>
-                          <div className="bw-history-restaurant">
-                            <span className="bw-history-meat-icon">R</span>
-                            <span>{restaurantName}</span>
+                                                            <article key={entry.id} className="bw-history-card">
+                      <div className="bw-history-top">
+                        <div className="bw-history-info">
+                          <div className="bw-history-meat-icon">
+                            {entry.burger?.meat_type === 'beef'
+                              ? '🥩'
+                              : entry.burger?.meat_type === 'chicken'
+                              ? '🍗'
+                              : entry.burger?.meat_type === 'vegan'
+                              ? '🌱'
+                              : '🍽️'}
                           </div>
-                          {burgerName && (
-                            <div className="bw-history-burger-name">{burgerName}</div>
-                          )}
-                          <div className="bw-history-meta">
-                            <span>Hora</span>
-                            <span>{formatted}</span>
+                          <div>
+                            <div className="bw-history-restaurant">{restaurantName}</div>
+                            {burgerName && (
+                              <div className="bw-history-burger-name">{burgerName}</div>
+                            )}
+                            <div className="bw-history-meta">
+                              <span className="bw-history-meta-icon">🕒</span>
+                              <span>{formatted}</span>
+                            </div>
                           </div>
                         </div>
                         {entry.rating != null && (
-                          <div className="bw-history-rating">
-                            {renderStars(entry.rating)}
+                          <div className="bw-history-rating-stars">
+                            {renderStars(entry.rating).map((star, idx) => (
+                              <span
+                                key={idx}
+                                className={`bw-history-star ${
+                                  star.filled ? 'is-filled' : 'is-empty'
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -272,17 +292,14 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                           € {entry.price != null ? entry.price.toFixed(2) : '-'}
                         </div>
                         <div className="bw-history-actions">
-                          <button
-                            className="bw-icon-button"
-                            title="Editar entrada"
-                          >
-                            Edit
+                          <button className="bw-icon-button" title="Editar entrada">
+                            ✏️
                           </button>
                           <button
                             className="bw-icon-button bw-icon-danger"
                             title="Eliminar entrada"
                           >
-                            Del
+                            🗑️
                           </button>
                         </div>
                       </div>
@@ -315,3 +332,6 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
     </div>
   );
 }
+
+
+
