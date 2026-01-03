@@ -29,9 +29,30 @@ type AddEntryModalProps = {
   onSaved: () => Promise<void> | void;
   session: Session;
   theme: 'light' | 'dark';
+  mode: 'create' | 'edit';
+  entry?: {
+    id: string;
+    datetime: string;
+    rating: number | null;
+    price: number | null;
+    is_burger: boolean;
+    restaurantId?: string | null;
+    restaurantName?: string | null;
+    burgerId?: string | null;
+    burgerName?: string | null;
+    meatType?: MeatType | null;
+  };
 };
 
-export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEntryModalProps) {
+export function AddEntryModal({
+  open,
+  onClose,
+  onSaved,
+  session,
+  theme,
+  mode,
+  entry,
+}: AddEntryModalProps) {
   const [datetimeInput, setDatetimeInput] = useState('');
   const [restaurantInput, setRestaurantInput] = useState('');
   const [restaurantSuggestions, setRestaurantSuggestions] = useState<RestaurantOption[]>([]);
@@ -140,23 +161,47 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
   useEffect(() => {
     if (!open) return;
     setIsClosing(false);
-    const now = new Date();
-    const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16); // yyyy-MM-ddTHH:mm
-    setDatetimeInput(iso);
-    setRestaurantInput('');
-    setRestaurantSuggestions([]);
-    setSelectedRestaurant(null);
-    setIsBurger(true);
-    setBurgerType('beef');
-    setBurgerInput('');
-    setBurgerSuggestions([]);
-    setSelectedBurger(null);
-    setPriceInput('');
-    setRatingInput('5');
+    if (mode === 'edit' && entry) {
+      const date = new Date(entry.datetime);
+      const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16); // yyyy-MM-ddTHH:mm
+      setDatetimeInput(iso);
+      setRestaurantInput(entry.restaurantName ?? '');
+      setRestaurantSuggestions([]);
+      setSelectedRestaurant(
+        entry.restaurantId ? { id: entry.restaurantId, name: entry.restaurantName ?? '' } : null
+      );
+      setIsBurger(entry.is_burger);
+      setBurgerType(entry.meatType ?? 'beef');
+      setBurgerInput(entry.burgerName ?? '');
+      setBurgerSuggestions([]);
+      setSelectedBurger(
+        entry.burgerId
+          ? { id: entry.burgerId, name: entry.burgerName ?? null, meat_type: entry.meatType ?? null }
+          : null
+      );
+      setPriceInput(entry.price != null ? String(entry.price) : '');
+      setRatingInput(entry.rating != null ? String(entry.rating) : '5');
+    } else {
+      const now = new Date();
+      const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16); // yyyy-MM-ddTHH:mm
+      setDatetimeInput(iso);
+      setRestaurantInput('');
+      setRestaurantSuggestions([]);
+      setSelectedRestaurant(null);
+      setIsBurger(true);
+      setBurgerType('beef');
+      setBurgerInput('');
+      setBurgerSuggestions([]);
+      setSelectedBurger(null);
+      setPriceInput('');
+      setRatingInput('5');
+    }
     setFormError(null);
-  }, [open]);
+  }, [open, mode, entry]);
 
   const requestClose = () => {
     if (formLoading) return;
@@ -259,6 +304,8 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
       return;
     }
 
+    const entryId = mode === 'edit' && entry ? entry.id : null;
+
     const price = Number(priceInput.replace(',', '.'));
     if (Number.isNaN(price) || price < 0) {
       setFormError('El precio no es válido.');
@@ -275,7 +322,7 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
 
     try {
       // 1) Asegurar restaurante
-      let restaurantId = selectedRestaurant?.id ?? null;
+      let restaurantId = selectedRestaurant?.id ?? (mode === 'edit' ? entry?.restaurantId ?? null : null);
 
       if (!restaurantId) {
         const { data, error } = await supabase
@@ -324,25 +371,48 @@ export function AddEntryModal({ open, onClose, onSaved, session, theme }: AddEnt
             name: data.name,
             meat_type: data.meat_type,
           });
+        } else if (mode === 'edit') {
+          burgerId = entry?.burgerId ?? null;
         }
+      } else {
+        burgerId = null;
       }
 
-      // 3) Crear la entry
+      // 3) Crear/actualizar la entry
       const iso = new Date(datetimeInput).toISOString();
 
-      const { error: insertError } = await supabase.from('entries').insert({
-        user_id: session.user.id,
-        restaurant_id: restaurantId,
-        burger_id: burgerId,
-        datetime: iso,
-        is_burger: isBurger,
-        rating,
-        price,
-        photo_url: null,
-      });
+      if (mode === 'edit' && entryId) {
+        const { error: updateError } = await supabase
+          .from('entries')
+          .update({
+            restaurant_id: restaurantId,
+            burger_id: burgerId,
+            datetime: iso,
+            is_burger: isBurger,
+            rating,
+            price,
+            photo_url: null,
+          })
+          .eq('id', entryId);
 
-      if (insertError) {
-        throw insertError;
+        if (updateError) {
+          throw updateError;
+        }
+      } else {
+        const { error: insertError } = await supabase.from('entries').insert({
+          user_id: session.user.id,
+          restaurant_id: restaurantId,
+          burger_id: burgerId,
+          datetime: iso,
+          is_burger: isBurger,
+          rating,
+          price,
+          photo_url: null,
+        });
+
+        if (insertError) {
+          throw insertError;
+        }
       }
 
       await onSaved();

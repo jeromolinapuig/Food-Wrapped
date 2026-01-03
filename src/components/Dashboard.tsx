@@ -26,6 +26,8 @@ type DbEntryRow = {
   rating: number | null;
   price: number | null;
   is_burger: boolean;
+  restaurant_id: string | null;
+  burger_id: string | null;
   restaurant: { name: string } | null;
   burger: { name: string | null; meat_type: MeatType | null } | null;
 };
@@ -34,10 +36,18 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mutating, setMutating] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const openAddModal = () => setIsAddModalOpen(true);
-  const closeAddModal = () => setIsAddModalOpen(false);
+  const [editingEntry, setEditingEntry] = useState<DbEntryRow | null>(null);
+  const openAddModal = () => {
+    setEditingEntry(null);
+    setIsAddModalOpen(true);
+  };
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setEditingEntry(null);
+  };
 
   // --- Cargar entradas del año 2026 ---
   const loadEntries = async () => {
@@ -56,6 +66,8 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         rating,
         price,
         is_burger,
+        restaurant_id,
+        burger_id,
         restaurant:restaurants ( name ),
         burger:burgers ( name, meat_type )
       `
@@ -146,6 +158,27 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
 
   const handleEntrySaved = async () => {
     await loadEntries();
+    setEditingEntry(null);
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta entrada?')) return;
+    setMutating(true);
+    try {
+      const { error: deleteError } = await supabase.from('entries').delete().eq('id', id);
+      if (deleteError) throw deleteError;
+      await loadEntries();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo eliminar la entrada.');
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const handleEditEntry = (entry: DbEntryRow) => {
+    setEditingEntry(entry);
+    setIsAddModalOpen(true);
   };
 
   return (
@@ -245,6 +278,8 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                       }
                       rating={entry.rating}
                       price={entry.price}
+                      onEdit={() => handleEditEntry(entry)}
+                      onDelete={() => handleDeleteEntry(entry.id)}
                     />
                   );
                 })}
@@ -270,6 +305,23 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         onSaved={handleEntrySaved}
         session={session}
         theme={theme}
+        mode={editingEntry ? 'edit' : 'create'}
+        entry={
+          editingEntry
+            ? {
+                id: editingEntry.id,
+                datetime: editingEntry.datetime,
+                rating: editingEntry.rating,
+                price: editingEntry.price,
+                is_burger: editingEntry.is_burger,
+                restaurantId: editingEntry.restaurant_id,
+                restaurantName: editingEntry.restaurant?.name ?? null,
+                burgerId: editingEntry.burger_id,
+                burgerName: editingEntry.burger?.name ?? null,
+                meatType: editingEntry.burger?.meat_type ?? null,
+              }
+            : undefined
+        }
       />
     </div>
   );

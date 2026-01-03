@@ -58,13 +58,19 @@ export function EntryCard({
       <div className="bw-history-footer">
         <div className="bw-history-price">€ {price != null ? price.toFixed(2) : '-'}</div>
         <div className="bw-history-actions">
-          <button className="bw-icon-button" title="Editar entrada" onClick={onEdit}>
+          <button
+            className="bw-icon-button"
+            title="Editar entrada"
+            onClick={onEdit}
+            disabled={!onEdit}
+          >
             ✏️
           </button>
           <button
             className="bw-icon-button bw-icon-danger"
             title="Eliminar entrada"
             onClick={onDelete}
+            disabled={!onDelete}
           >
             🗑️
           </button>
