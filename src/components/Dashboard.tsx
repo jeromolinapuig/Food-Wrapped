@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { AddEntryModal } from './AddEntryModal';
+import { EntryCard } from './EntryCard';
+import { StatCard } from './StatCard';
 
 type DashboardProps = {
   session: Session;
@@ -142,12 +144,6 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
     };
   }, [entries]);
 
-  const renderStars = (rating: number) =>
-    Array.from({ length: 5 }, (_v, i) => ({
-      filled: rating >= i + 1 || rating > i + 0.5,
-      half: rating >= i + 0.5 && rating < i + 1,
-    }));
-
   const handleEntrySaved = async () => {
     await loadEntries();
   };
@@ -176,33 +172,18 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
 
         <main className="bw-main">
           <section className="bw-stats-grid">
-            <article className="bw-stat-card">
-              <div className="bw-stat-icon">💶</div>
-              <div className="bw-stat-value">{stats.totalSpent.toFixed(2)}€</div>
-              <div className="bw-stat-label">Total gastado</div>
-            </article>
-
-            <article className="bw-stat-card">
-              <div className="bw-stat-icon">HB</div>
-              <div className="bw-stat-value">{stats.totalBurgers}</div>
-              <div className="bw-stat-label">Hamburguesas</div>
-            </article>
-
-            <article className="bw-stat-card">
-              <div className="bw-stat-icon">⭐</div>
-              <div className="bw-stat-value">
-                {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-              </div>
-              <div className="bw-stat-label">Nota media</div>
-            </article>
-
-            <article className="bw-stat-card">
-              <div className="bw-stat-icon">🏆</div>
-              <div className="bw-stat-value">
-                {stats.favoriteRestaurant || '-'}
-              </div>
-              <div className="bw-stat-label">Favorito</div>
-            </article>
+            <StatCard
+              icon="💶"
+              value={`${stats.totalSpent.toFixed(2)}€`}
+              label="Total gastado"
+            />
+            <StatCard icon="🍔" value={`${stats.totalBurgers}`} label="Hamburguesas" />
+            <StatCard
+              icon="⭐"
+              value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+              label="Nota media"
+            />
+            <StatCard icon="🏆" value={stats.favoriteRestaurant || '-'} label="Favorito" />
           </section>
 
           <section className="bw-card bw-burger-types">
@@ -248,78 +229,39 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                   });
 
                   return (
-                                                            <article key={entry.id} className="bw-history-card">
-                      <div className="bw-history-top">
-                        <div className="bw-history-info">
-                          <div className="bw-history-meat-icon">
-                            {entry.burger?.meat_type === 'beef'
-                              ? '🥩'
-                              : entry.burger?.meat_type === 'chicken'
-                              ? '🍗'
-                              : entry.burger?.meat_type === 'vegan'
-                              ? '🌱'
-                              : '🍽️'}
-                          </div>
-                          <div>
-                            <div className="bw-history-restaurant">{restaurantName}</div>
-                            {burgerName && (
-                              <div className="bw-history-burger-name">{burgerName}</div>
-                            )}
-                            <div className="bw-history-meta">
-                              <span className="bw-history-meta-icon">🕒</span>
-                              <span>{formatted}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {entry.rating != null && (
-                          <div className="bw-history-rating-stars">
-                            {renderStars(entry.rating).map((star, idx) => (
-                              <span
-                                key={idx}
-                                className={`bw-history-star ${
-                                  star.filled ? 'is-filled' : 'is-empty'
-                                }`}
-                              >
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="bw-history-footer">
-                        <div className="bw-history-price">
-                          € {entry.price != null ? entry.price.toFixed(2) : '-'}
-                        </div>
-                        <div className="bw-history-actions">
-                          <button className="bw-icon-button" title="Editar entrada">
-                            ✏️
-                          </button>
-                          <button
-                            className="bw-icon-button bw-icon-danger"
-                            title="Eliminar entrada"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    </article>
+                    <EntryCard
+                      key={entry.id}
+                      restaurantName={restaurantName}
+                      burgerName={burgerName}
+                      datetimeText={formatted}
+                      meatEmoji={
+                        entry.burger?.meat_type === 'beef'
+                          ? '🥩'
+                          : entry.burger?.meat_type === 'chicken'
+                          ? '🍗'
+                          : entry.burger?.meat_type === 'vegan'
+                          ? '🌱'
+                          : '🍽️'
+                      }
+                      rating={entry.rating}
+                      price={entry.price}
+                    />
                   );
                 })}
             </div>
           </section>
         </main>
 
-                <div className="bw-fab-wrapper">
-                  <button
-                    className="bw-fab"
-                    onClick={openAddModal}
-                    aria-label="Añadir entrada"
-                  >
-                    <span className="bw-fab-plus">+</span>
-                    <span className="bw-fab-label">Añadir</span>
-                  </button>
-                </div>
+        <div className="bw-fab-wrapper">
+          <button
+            className="bw-fab"
+            onClick={openAddModal}
+            aria-label="Añadir entrada"
+          >
+            <span className="bw-fab-plus">+</span>
+            <span className="bw-fab-label">Añadir</span>
+          </button>
+        </div>
       </div>
 
       <AddEntryModal

@@ -246,6 +246,12 @@
   color: var(--bw-accent);
 }
 
+.bw-history-star.is-half {
+  background: linear-gradient(90deg, var(--bw-accent) 50%, var(--bw-text-muted) 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .bw-history-star.is-empty {
   color: var(--bw-text-muted);
 }
