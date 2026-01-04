@@ -34,6 +34,7 @@ type DbEntryRow = {
 };
 
 export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
+  const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,7 +200,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Burger Wrapped</h1>
             <p className="bw-subtitle">
-              Tu año 2026 en hamburguesas - Conectado como {session.user.email}
+              Tu año 2026 en hamburguesas - {username ?? session.user.email}
             </p>
           </div>
 

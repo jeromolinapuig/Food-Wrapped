@@ -7,6 +7,7 @@ export function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +18,18 @@ export function AuthScreen() {
     setLoading(true);
 
     try {
+      if (mode === 'signup' && !username.trim()) {
+        throw new Error('El nombre de usuario es obligatorio.');
+      }
       if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              username: username.trim(),
+            },
+          },
         });
         if (error) throw error;
       } else {
@@ -72,6 +81,19 @@ export function AuthScreen() {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          {mode === 'signup' && (
+            <label className="auth-field">
+              <span>Nombre de usuario</span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="ej. burgerlover"
+                required={mode === 'signup'}
+              />
+            </label>
+          )}
+
           <label className="auth-field">
             <span>Email</span>
             <input
