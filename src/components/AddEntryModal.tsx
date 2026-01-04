@@ -341,6 +341,14 @@ export function AddEntryModal({
     setFormLoading(true);
 
     try {
+      const trimmedRestaurant = restaurantInput.trim();
+      const editingSameRestaurant =
+        mode === 'edit' &&
+        entry?.restaurantName &&
+        trimmedRestaurant.localeCompare(entry.restaurantName.trim(), undefined, {
+          sensitivity: 'base',
+        }) === 0;
+
       let photoUrl: string | null = photoPreview ?? null;
 
       // 0) Subir foto si hay file nuevo
@@ -358,13 +366,13 @@ export function AddEntryModal({
       }
 
       // 1) Asegurar restaurante
-      let restaurantId = selectedRestaurant?.id ?? (mode === 'edit' ? entry?.restaurantId ?? null : null);
+      let restaurantId = selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
 
       if (!restaurantId) {
         const { data, error } = await supabase
           .from('restaurants')
           .insert({
-            name: restaurantInput.trim(),
+            name: trimmedRestaurant,
             is_chain: false,
             created_by: session.user.id,
           })
@@ -377,6 +385,9 @@ export function AddEntryModal({
 
         restaurantId = data.id;
         setSelectedRestaurant({ id: data.id, name: data.name });
+      }
+      if (!restaurantId) {
+        throw new Error('No se pudo determinar el restaurante.');
       }
 
       // 2) Asegurar hamburguesa (si corresponde)

@@ -8,6 +8,7 @@ type EntryCardProps = {
   onEdit?: () => void;
   onDelete?: () => void;
   photoUrl?: string | null;
+  onPhotoClick?: () => void;
 };
 
 const renderStars = (rating: number) =>
@@ -26,25 +27,14 @@ export function EntryCard({
   onEdit,
   onDelete,
   photoUrl,
+  onPhotoClick,
 }: EntryCardProps) {
   return (
     <article className="bw-history-card">
-      <div className="bw-history-top">
-        <div className="bw-history-info">
-          {photoUrl && (
-            <div className="bw-history-photo">
-              <img src={photoUrl} alt={burgerName ?? restaurantName} />
-            </div>
-          )}
+      <div className="bw-history-header">
+        <div className="bw-history-title">
           <div className="bw-history-meat-icon">{meatEmoji}</div>
-          <div>
-            <div className="bw-history-restaurant">{restaurantName}</div>
-            {burgerName && <div className="bw-history-burger-name">{burgerName}</div>}
-            <div className="bw-history-meta">
-              <span className="bw-history-meta-icon">🕒</span>
-              <span>{datetimeText}</span>
-            </div>
-          </div>
+          <div className="bw-history-restaurant">{restaurantName}</div>
         </div>
         {rating != null && (
           <div className="bw-history-rating-stars">
@@ -60,6 +50,24 @@ export function EntryCard({
             ))}
           </div>
         )}
+      </div>
+
+      {photoUrl && (
+        <button
+          type="button"
+          className="bw-history-photo-large"
+          onClick={onPhotoClick}
+          aria-label="Ver foto"
+        >
+          <img src={photoUrl} alt={burgerName ?? restaurantName} />
+        </button>
+      )}
+
+      {burgerName && <div className="bw-history-burger-name">{burgerName}</div>}
+
+      <div className="bw-history-meta">
+        <span className="bw-history-meta-icon">📅</span>
+        <span>{datetimeText}</span>
       </div>
 
       <div className="bw-history-footer">

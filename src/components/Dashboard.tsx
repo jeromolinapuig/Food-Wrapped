@@ -41,6 +41,8 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DbEntryRow | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<DbEntryRow | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const openAddModal = () => {
     setEditingEntry(null);
     setIsAddModalOpen(true);
@@ -163,13 +165,17 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
     setEditingEntry(null);
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    if (!window.confirm('¿Eliminar esta entrada?')) return;
+  const handleDeleteEntry = async () => {
+    if (!deleteEntry) return;
     setMutating(true);
     try {
-      const { error: deleteError } = await supabase.from('entries').delete().eq('id', id);
+      const { error: deleteError } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', deleteEntry.id);
       if (deleteError) throw deleteError;
       await loadEntries();
+      setDeleteEntry(null);
     } catch (err) {
       console.error(err);
       alert('No se pudo eliminar la entrada.');
@@ -282,7 +288,8 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                       price={entry.price}
                       photoUrl={entry.photo_url}
                       onEdit={() => handleEditEntry(entry)}
-                      onDelete={() => handleDeleteEntry(entry.id)}
+                      onDelete={() => setDeleteEntry(entry)}
+                      onPhotoClick={entry.photo_url ? () => setPhotoPreviewUrl(entry.photo_url!) : undefined}
                     />
                   );
                 })}
@@ -322,10 +329,66 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                 burgerId: editingEntry.burger_id,
                 burgerName: editingEntry.burger?.name ?? null,
                 meatType: editingEntry.burger?.meat_type ?? null,
+                photoUrl: editingEntry.photo_url,
               }
             : undefined
         }
       />
+
+      {photoPreviewUrl && (
+        <div
+          className="bw-photo-viewer-backdrop"
+          onClick={() => setPhotoPreviewUrl(null)}
+        >
+          <div className="bw-photo-viewer" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="bw-photo-viewer-close"
+              onClick={() => setPhotoPreviewUrl(null)}
+              aria-label="Cerrar imagen"
+            >
+              ✕
+            </button>
+            <img src={photoPreviewUrl} alt="Foto de la entrada" />
+          </div>
+        </div>
+      )}
+
+      {deleteEntry && (
+        <div className="bw-confirm-backdrop" onClick={() => (!mutating ? setDeleteEntry(null) : null)}>
+          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="bw-confirm-title">Eliminar entrada</h3>
+            <p className="bw-confirm-text">
+              ¿Seguro que deseas eliminar la entrada del{' '}
+              {new Date(deleteEntry.datetime).toLocaleString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+              {' '}en {deleteEntry.restaurant?.name ?? 'restaurante desconocido'}?
+            </p>
+            <div className="bw-confirm-actions">
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => setDeleteEntry(null)}
+                disabled={mutating}
+              >
+                Cancelar
+              </button>
+              <button
+                className="bw-btn bw-btn-danger"
+                type="button"
+                onClick={handleDeleteEntry}
+                disabled={mutating}
+              >
+                {mutating ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
