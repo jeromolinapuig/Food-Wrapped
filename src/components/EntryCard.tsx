@@ -7,6 +7,7 @@ type EntryCardProps = {
   price: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
+  photoUrl?: string | null;
 };
 
 const renderStars = (rating: number) =>
@@ -24,11 +25,17 @@ export function EntryCard({
   price,
   onEdit,
   onDelete,
+  photoUrl,
 }: EntryCardProps) {
   return (
     <article className="bw-history-card">
       <div className="bw-history-top">
         <div className="bw-history-info">
+          {photoUrl && (
+            <div className="bw-history-photo">
+              <img src={photoUrl} alt={burgerName ?? restaurantName} />
+            </div>
+          )}
           <div className="bw-history-meat-icon">{meatEmoji}</div>
           <div>
             <div className="bw-history-restaurant">{restaurantName}</div>

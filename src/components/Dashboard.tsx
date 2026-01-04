@@ -28,6 +28,7 @@ type DbEntryRow = {
   is_burger: boolean;
   restaurant_id: string | null;
   burger_id: string | null;
+  photo_url: string | null;
   restaurant: { name: string } | null;
   burger: { name: string | null; meat_type: MeatType | null } | null;
 };
@@ -68,6 +69,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         is_burger,
         restaurant_id,
         burger_id,
+        photo_url,
         restaurant:restaurants ( name ),
         burger:burgers ( name, meat_type )
       `
@@ -278,6 +280,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                       }
                       rating={entry.rating}
                       price={entry.price}
+                      photoUrl={entry.photo_url}
                       onEdit={() => handleEditEntry(entry)}
                       onDelete={() => handleDeleteEntry(entry.id)}
                     />

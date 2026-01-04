@@ -41,6 +41,7 @@ type AddEntryModalProps = {
     burgerId?: string | null;
     burgerName?: string | null;
     meatType?: MeatType | null;
+    photoUrl?: string | null;
   };
 };
 
@@ -69,6 +70,8 @@ export function AddEntryModal({
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const paletteMap = {
     light: {
@@ -183,6 +186,8 @@ export function AddEntryModal({
       );
       setPriceInput(entry.price != null ? String(entry.price) : '');
       setRatingInput(entry.rating != null ? String(entry.rating) : '5');
+      setPhotoFile(null);
+      setPhotoPreview(entry.photoUrl ?? null);
     } else {
       const now = new Date();
       const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -199,6 +204,8 @@ export function AddEntryModal({
       setSelectedBurger(null);
       setPriceInput('');
       setRatingInput('5');
+      setPhotoFile(null);
+      setPhotoPreview(null);
     }
     setFormError(null);
   }, [open, mode, entry]);
@@ -247,6 +254,19 @@ export function AddEntryModal({
     setBurgerInput('');
     setBurgerSuggestions([]);
   };
+
+  const handlePhotoChange = (file?: File | null) => {
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+    setPhotoFile(file);
+    const url = URL.createObjectURL(file);
+    setPhotoPreview(url);
+  };
+
+  const removePhoto = () => handlePhotoChange(null);
 
   const handleBurgerChange = async (value: string) => {
     setBurgerInput(value);
@@ -321,6 +341,22 @@ export function AddEntryModal({
     setFormLoading(true);
 
     try {
+      let photoUrl: string | null = photoPreview ?? null;
+
+      // 0) Subir foto si hay file nuevo
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
+        const { error: uploadError } = await supabase.storage
+          .from('food-photos')
+          .upload(filePath, photoFile, { cacheControl: '3600', upsert: false });
+        if (uploadError) {
+          throw uploadError;
+        }
+        const { data: publicUrlData } = supabase.storage.from('food-photos').getPublicUrl(filePath);
+        photoUrl = publicUrlData?.publicUrl ?? null;
+      }
+
       // 1) Asegurar restaurante
       let restaurantId = selectedRestaurant?.id ?? (mode === 'edit' ? entry?.restaurantId ?? null : null);
 
@@ -391,7 +427,7 @@ export function AddEntryModal({
             is_burger: isBurger,
             rating,
             price,
-            photo_url: null,
+            photo_url: photoUrl,
           })
           .eq('id', entryId);
 
@@ -407,7 +443,7 @@ export function AddEntryModal({
           is_burger: isBurger,
           rating,
           price,
-          photo_url: null,
+          photo_url: photoUrl,
         });
 
         if (insertError) {
@@ -461,6 +497,41 @@ export function AddEntryModal({
 
           <form className="bw-modal-form" onSubmit={handleAddEntry}>
             <div className="bw-modal-fields">
+              <div className="bw-field">
+                <span className="bw-label">Foto (opcional)</span>
+                <div className="bw-photo-card">
+                  {photoPreview ? (
+                    <>
+                      <img src={photoPreview} alt="Foto de la entrada" className="bw-photo-preview" />
+                      <div className="bw-photo-actions">
+                        <Button variant="outlined" size="small" onClick={removePhoto}>
+                          Quitar
+                        </Button>
+                        <Button variant="contained" component="label" size="small">
+                          Cambiar
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                          />
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <Button variant="outlined" component="label" size="small">
+                      Añadir foto
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                      />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div className="bw-field">
                 <TextField
                   id="bw-datetime"
