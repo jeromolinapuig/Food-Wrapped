@@ -1,10 +1,13 @@
 import { type FormEvent, useState } from 'react';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { supabase } from '../lib/supabaseClient';
 
 export function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,13 +45,12 @@ export function AuthScreen() {
 
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="auth-logo">🍔</div>
+          <div className="auth-logo">
+            <img src="/logo.png" alt="Burger Wrapped" />
+          </div>
           <div>
-            <p className="auth-eyebrow">Burger Wrapped</p>
-            <h1 className="auth-title">Tu año en hamburguesas</h1>
-            <p className="auth-subtitle">
-              Guarda tus sitios, notas y precios en un solo lugar.
-            </p>
+            <h1 className="auth-title">Burger Wrapped</h1>
+            <h5 className="auth-subtitle">Guarda tus sitios, notas y precios en un solo lugar.</h5>
           </div>
         </div>
 
@@ -83,13 +85,23 @@ export function AuthScreen() {
 
           <label className="auth-field">
             <span>Contraseña</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+            <div className="auth-password">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className="auth-eye"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+              </button>
+            </div>
           </label>
 
           {error && <p className="auth-error">{error}</p>}
