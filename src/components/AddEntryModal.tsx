@@ -95,6 +95,9 @@ export function AddEntryModal({
   const muiTheme = useMemo(
     () =>
       createTheme({
+        shape: {
+          borderRadius: 24,
+        },
         palette: {
           mode: theme === 'dark' ? 'dark' : 'light',
           primary: { main: colors.accent },
@@ -108,10 +111,18 @@ export function AddEntryModal({
           },
         },
         components: {
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                borderRadius: 24,
+              },
+            },
+          },
           MuiOutlinedInput: {
             styleOverrides: {
               root: {
                 backgroundColor: colors.surface,
+                borderRadius: 24,
               },
               notchedOutline: {
                 borderColor: colors.textMuted,

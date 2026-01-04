@@ -193,7 +193,9 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
     <div className="bw-app-root">
       <div className="bw-shell">
         <header className="bw-header">
-          <div className="bw-header-icon">BW</div>
+          <div className="bw-header-icon">
+            <img src="/logo.png" alt="Burger Wrapped" />
+          </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Burger Wrapped</h1>
             <p className="bw-subtitle">
