@@ -1,73 +1,33 @@
-# React + TypeScript + Vite
+# Burger Wrapped
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Mini app para llevar el control de tus comidas (especialmente hamburguesas) durante 2026. Permite crear, editar y borrar entradas con foto, restaurante, burger, tipo de carne, valoración (incluye medias estrellas) y precio. Incluye login/registro con tema claro/oscuro y un diseño estilo hoja inferior para añadir entradas.
 
-Currently, two official plugins are available:
+## Requisitos
+- Node 18+ recomendado.
+- Variables de entorno Supabase en `.env.local`:
+  ```
+  VITE_SUPABASE_URL=...
+  VITE_SUPABASE_ANON_KEY=...
+  ```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Scripts
+- `npm install` — instala dependencias (incluye MUI e iconos).
+- `npm run dev` — arranca Vite en modo desarrollo.
+- `npm run build` — compila el proyecto.
+- `npm run preview` — sirve el build estático.
 
-## React Compiler
+## Uso rápido
+1) Copia `.env.local` con tus claves de Supabase.
+2) `npm install` y `npm run dev`.
+3) Abre `http://localhost:5173`.
+4) Regístrate (usuario, email, contraseña) y añade entradas desde el botón flotante “Añadir”.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Funcionalidades clave
+- **Hoja de nueva entrada**: fecha/hora, restaurante (con creación rápida), hamburguesa con tipo (ternera/pollo/vegana), precio, rating con medias estrellas y foto opcional subida a `food-photos`.
+- **Historial**: cards con foto expandible a pantalla completa, emojis según tipo de carne, rating, precio y acciones de editar/borrar (confirmación con modal).
+- **Tema claro/oscuro**: toggle en el header; aplica a modal y dashboard.
+- **Login/Registro**: campo de usuario obligatorio, mostrar/ocultar contraseña con iconos MUI y logo sin fondo.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Notas
+- El logo se lee desde `public/logo.png` y se usa como favicon y en el header/auth.
+- El bucket de fotos esperado es `food-photos`; asegúrate de tener las políticas RLS para escritura/lectura pública adecuada.
