@@ -349,6 +349,7 @@
   font-size: 14px;
   color: var(--bw-text);
   transition: background 0.25s ease, color 0.25s ease;
+  display: flex;
 }
 
 .bw-icon-danger {
