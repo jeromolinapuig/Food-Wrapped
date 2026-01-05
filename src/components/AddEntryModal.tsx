@@ -12,6 +12,7 @@ import {
 import { addEntrySchema } from '../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
 import { createAppTheme } from '../theme';
+import { compressImage } from '../utils/image';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 
 type RestaurantOption = {
@@ -72,6 +73,7 @@ export function AddEntryModal({
   const [ratingInput, setRatingInput] = useState('5');
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [photoCompressing, setPhotoCompressing] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -167,15 +169,26 @@ export function AddEntryModal({
     setBurgerSuggestions([]);
   };
 
-  const handlePhotoChange = (file?: File | null) => {
+  const handlePhotoChange = async (file?: File | null) => {
     if (!file) {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
       setPhotoFile(null);
       setPhotoPreview(null);
       return;
     }
-    setPhotoFile(file);
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
+    setPhotoCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+      const url = URL.createObjectURL(compressed);
+      setPhotoFile(compressed);
+      setPhotoPreview(url);
+    } catch (err) {
+      console.error(err);
+      setFormError('No se pudo procesar la imagen.');
+    } finally {
+      setPhotoCompressing(false);
+    }
   };
 
   const removePhoto = () => handlePhotoChange(null);
@@ -414,10 +427,20 @@ export function AddEntryModal({
                     <>
                       <img src={photoPreview} alt="Foto de la entrada" className="bw-photo-preview" />
                       <div className="bw-photo-actions">
-                        <Button variant="outlined" size="small" onClick={removePhoto}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={removePhoto}
+                          disabled={photoCompressing || formLoading}
+                        >
                           Quitar
                         </Button>
-                        <Button variant="contained" component="label" size="small">
+                        <Button
+                          variant="contained"
+                          component="label"
+                          size="small"
+                          disabled={photoCompressing || formLoading}
+                        >
                           Cambiar
                           <input
                             type="file"
@@ -429,7 +452,12 @@ export function AddEntryModal({
                       </div>
                     </>
                   ) : (
-                    <Button variant="outlined" component="label" size="small">
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      size="small"
+                      disabled={photoCompressing || formLoading}
+                    >
                       Añadir foto
                       <input
                         type="file"
