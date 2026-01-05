@@ -7,9 +7,11 @@ import {
   Switch,
   TextField,
   ThemeProvider,
-  createTheme,
   Rating,
 } from '@mui/material';
+import { addEntrySchema } from '../schemas/addEntrySchema';
+import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
+import { createAppTheme } from '../theme';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 
 type RestaurantOption = {
@@ -54,6 +56,7 @@ export function AddEntryModal({
   mode,
   entry,
 }: AddEntryModalProps) {
+  const maxDateTime = useMemo(() => formatLocalDateTime(new Date()), []);
   const [datetimeInput, setDatetimeInput] = useState('');
   const [restaurantInput, setRestaurantInput] = useState('');
   const [restaurantSuggestions, setRestaurantSuggestions] = useState<RestaurantOption[]>([]);
@@ -73,103 +76,7 @@ export function AddEntryModal({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const paletteMap = {
-    light: {
-      bg: '#f3f3f7',
-      surface: '#ffffff',
-      text: '#111111',
-      textMuted: '#666666',
-      accent: '#ff3b8d',
-    },
-    dark: {
-      bg: '#050509',
-      surface: '#181824',
-      text: '#f5f5ff',
-      textMuted: '#a0a0b5',
-      accent: '#ff3b8d',
-    },
-  } as const;
-
-  const colors = paletteMap[theme] ?? paletteMap.light;
-
-  const muiTheme = useMemo(
-    () =>
-      createTheme({
-        shape: {
-          borderRadius: 24,
-        },
-        palette: {
-          mode: theme === 'dark' ? 'dark' : 'light',
-          primary: { main: colors.accent },
-          background: {
-            default: colors.bg,
-            paper: colors.surface,
-          },
-          text: {
-            primary: colors.text,
-            secondary: colors.textMuted,
-          },
-        },
-        components: {
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 24,
-              },
-            },
-          },
-          MuiOutlinedInput: {
-            styleOverrides: {
-              root: {
-                backgroundColor: colors.surface,
-                borderRadius: 24,
-              },
-              notchedOutline: {
-                borderColor: colors.textMuted,
-              },
-            },
-          },
-          MuiFormLabel: {
-            styleOverrides: {
-              root: {
-                color: colors.textMuted,
-                backgroundColor: colors.surface,
-                padding: '0 6px',
-                borderRadius: 8,
-              },
-            },
-          },
-          MuiInputLabel: {
-            styleOverrides: {
-              outlined: {
-                '&.MuiInputLabel-shrink': {
-                  transform: 'translate(14px, -8px) scale(0.75)',
-                  backgroundColor: colors.surface,
-                  padding: '0 6px',
-                  borderRadius: 8,
-                },
-              },
-            },
-          },
-          MuiPaper: {
-            styleOverrides: {
-              root: {
-                backgroundColor: colors.surface,
-                color: colors.text,
-              },
-            },
-          },
-          MuiCheckbox: {
-            styleOverrides: {
-              root: {
-                color: colors.textMuted,
-              },
-            },
-          },
-        },
-      }),
-    [colors.accent, colors.bg, colors.surface, colors.text, colors.textMuted, theme]
-  );
+  const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
 
   // Reset form when opening
   useEffect(() => {
@@ -177,9 +84,7 @@ export function AddEntryModal({
     setIsClosing(false);
     if (mode === 'edit' && entry) {
       const date = new Date(entry.datetime);
-      const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16); // yyyy-MM-ddTHH:mm
+      const iso = formatLocalDateTime(date); // yyyy-MM-ddTHH:mm
       setDatetimeInput(iso);
       setRestaurantInput(entry.restaurantName ?? '');
       setRestaurantSuggestions([]);
@@ -201,9 +106,7 @@ export function AddEntryModal({
       setPhotoPreview(entry.photoUrl ?? null);
     } else {
       const now = new Date();
-      const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16); // yyyy-MM-ddTHH:mm
+      const iso = formatLocalDateTime(now); // yyyy-MM-ddTHH:mm
       setDatetimeInput(iso);
       setRestaurantInput('');
       setRestaurantSuggestions([]);
@@ -226,8 +129,6 @@ export function AddEntryModal({
     setIsClosing(true);
     setTimeout(() => onClose(), 260);
   };
-
-  if (!open) return null;
 
   const handleBackdrop = () => {
     requestClose();
@@ -315,39 +216,24 @@ export function AddEntryModal({
     e.preventDefault();
     setFormError(null);
 
-    if (!datetimeInput) {
-      setFormError('Selecciona fecha y hora.');
+    const validation = addEntrySchema.safeParse({
+      datetime: datetimeInput,
+      restaurant: restaurantInput,
+      price: priceInput,
+      rating: ratingInput,
+      isBurger,
+      burger: burgerInput,
+    });
+
+    if (!validation.success) {
+      setFormError(validation.error.issues[0]?.message ?? 'Revisa los datos.');
       return;
     }
 
-    if (!restaurantInput.trim()) {
-      setFormError('Escribe o selecciona un restaurante.');
-      return;
-    }
-
-    if (!priceInput.trim()) {
-      setFormError('Indica el precio por persona.');
-      return;
-    }
-
-    if (isBurger && !burgerInput.trim()) {
-      setFormError('Escribe el nombre de la hamburguesa.');
-      return;
-    }
-
+    const parsed = validation.data;
     const entryId = mode === 'edit' && entry ? entry.id : null;
-
-    const price = Number(priceInput.replace(',', '.'));
-    if (Number.isNaN(price) || price < 0) {
-      setFormError('El precio no es válido.');
-      return;
-    }
-
-    const rating = Number(ratingInput);
-    if (rating < 1 || rating > 5) {
-      setFormError('La puntuación debe estar entre 1 y 5.');
-      return;
-    }
+    const price = Number(parsed.price.replace(',', '.'));
+    const rating = Number(parsed.rating);
 
     setFormLoading(true);
 
@@ -496,6 +382,8 @@ export function AddEntryModal({
     !priceInput.trim() ||
     (isBurger && !burgerInput.trim());
 
+  if (!open) return null;
+
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
@@ -556,15 +444,16 @@ export function AddEntryModal({
 
               <div className="bw-field">
                 <TextField
-                  id="bw-datetime"
-                  label="Fecha y hora"
-                  type="datetime-local"
-                  value={datetimeInput}
-                  onChange={(e) => setDatetimeInput(e.target.value)}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </div>
+                id="bw-datetime"
+                label="Fecha y hora"
+                type="datetime-local"
+                value={datetimeInput}
+                onChange={(e) => setDatetimeInput(e.target.value)}
+                fullWidth
+                inputProps={{ min: MIN_DATETIME_STRING, max: maxDateTime }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </div>
 
               <div className="bw-field">
                 <TextField
