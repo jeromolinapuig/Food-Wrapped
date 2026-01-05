@@ -1,8 +1,18 @@
+import type { ReactNode } from 'react';
+import {
+  CalendarToday,
+  Delete,
+  Edit,
+  Star,
+  StarBorder,
+  StarHalf,
+} from '@mui/icons-material';
+
 type EntryCardProps = {
   restaurantName: string;
   burgerName?: string;
   datetimeText: string;
-  meatEmoji: string;
+  meatIcon: ReactNode;
   rating: number | null;
   price: number | null;
   additionalNotes?: string | null;
@@ -22,7 +32,7 @@ export function EntryCard({
   restaurantName,
   burgerName,
   datetimeText,
-  meatEmoji,
+  meatIcon,
   rating,
   price,
   additionalNotes,
@@ -35,7 +45,7 @@ export function EntryCard({
     <article className="bw-history-card">
       <div className="bw-history-header">
         <div className="bw-history-title">
-          <div className="bw-history-meat-icon">{meatEmoji}</div>
+          <div className="bw-history-meat-icon">{meatIcon}</div>
           <div className="bw-history-restaurant">{restaurantName}</div>
         </div>
         {rating != null && (
@@ -47,7 +57,7 @@ export function EntryCard({
                   star.filled ? 'is-filled' : star.half ? 'is-half' : 'is-empty'
                 }`}
               >
-                ★
+                {star.filled ? <Star fontSize="small" /> : star.half ? <StarHalf fontSize="small" /> : <StarBorder fontSize="small" />}
               </span>
             ))}
           </div>
@@ -74,7 +84,9 @@ export function EntryCard({
       ) : null}
 
       <div className="bw-history-meta">
-        <span className="bw-history-meta-icon">📅</span>
+        <span className="bw-history-meta-icon">
+          <CalendarToday fontSize="small" />
+        </span>
         <span>{datetimeText}</span>
       </div>
 
@@ -87,7 +99,7 @@ export function EntryCard({
             onClick={onEdit}
             disabled={!onEdit}
           >
-            ✏️
+            <Edit fontSize="small" />
           </button>
           <button
             className="bw-icon-button bw-icon-danger"
@@ -95,7 +107,7 @@ export function EntryCard({
             onClick={onDelete}
             disabled={!onDelete}
           >
-            🗑️
+            <Delete fontSize="small" />
           </button>
         </div>
       </div>

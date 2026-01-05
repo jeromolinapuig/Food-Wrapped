@@ -140,7 +140,16 @@
 }
 
 .bw-burger-type-emoji {
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-burger-type-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
 }
 
 .bw-input,
@@ -242,7 +251,18 @@
 }
 
 .bw-history-meat-icon {
-  font-size: 18px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-history-meat-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
 }
 
 .bw-history-restaurant {
@@ -266,13 +286,7 @@
 }
 
 .bw-history-star.is-half {
-  background: linear-gradient(
-    90deg,
-    var(--bw-accent) 50%,
-    var(--bw-text-muted) 50%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--bw-accent);
 }
 
 .bw-history-star.is-empty {
@@ -585,7 +599,16 @@
 }
 
 .bw-meat-emoji {
-  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-meat-icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
 }
 
 .bw-meat-label {

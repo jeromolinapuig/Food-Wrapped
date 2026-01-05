@@ -1,6 +1,15 @@
 ﻿// src/components/Dashboard.tsx
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import {
+  Close,
+  DarkMode,
+  EmojiEvents,
+  Euro,
+  LightMode,
+  LunchDining,
+  Star,
+} from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import { AddEntryModal } from './AddEntryModal';
 import { EntryCard } from './EntryCard';
@@ -228,39 +237,45 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             onClick={onToggleTheme}
             aria-label="Cambiar tema"
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === 'light' ? <DarkMode /> : <LightMode />}
           </button>
         </header>
 
         <main className="bw-main">
           <section className="bw-stats-grid">
             <StatCard
-              icon="💶"
+              icon={<Euro fontSize="small" />}
               value={`${stats.totalSpent.toFixed(2)}€`}
               label="Total gastado"
             />
-            <StatCard icon="🍔" value={`${stats.totalBurgers}`} label="Hamburguesas" />
+            <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
             <StatCard
-              icon="⭐"
+              icon={<Star fontSize="small" />}
               value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
               label="Nota media"
             />
-            <StatCard icon="🏆" value={stats.favoriteRestaurant || '-'} label="Favorito" />
+            <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
           </section>
 
           <section className="bw-card bw-burger-types">
             <h2 className="bw-section-title">Tipos de hamburguesa</h2>
             <div className="bw-burger-types-row">
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">🥩</span>
+                <span className="bw-burger-type-emoji">
+                  <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                </span>
                 <span>{stats.burgerTypes.beef}</span>
               </div>
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">🍗</span>
+                <span className="bw-burger-type-emoji">
+                  <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                </span>
                 <span>{stats.burgerTypes.chicken}</span>
               </div>
               <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">🌱</span>
+                <span className="bw-burger-type-emoji">
+                  <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                </span>
                 <span>{stats.burgerTypes.vegan}</span>
               </div>
             </div>
@@ -296,14 +311,14 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                       restaurantName={restaurantName}
                       burgerName={burgerName}
                       datetimeText={formatted}
-                      meatEmoji={
+                      meatIcon={
                         entry.burger?.meat_type === 'beef'
-                          ? '🥩'
+                          ? <img src="/meat.png" alt="Carne" className="bw-history-meat-img" />
                           : entry.burger?.meat_type === 'chicken'
-                          ? '🍗'
-                          : entry.burger?.meat_type === 'vegan'
-                          ? '🌱'
-                          : '🍽️'
+                            ? <img src="/chicken-leg.png" alt="Pollo" className="bw-history-meat-img" />
+                            : entry.burger?.meat_type === 'vegan'
+                              ? <img src="/plant.png" alt="Vegana" className="bw-history-meat-img" />
+                              : null
                       }
                       rating={entry.rating}
                       price={entry.price}
@@ -370,7 +385,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
               onClick={() => setPhotoPreviewUrl(null)}
               aria-label="Cerrar imagen"
             >
-              ✕
+              <Close />
             </button>
             <img src={photoPreviewUrl} alt="Foto de la entrada" />
           </div>

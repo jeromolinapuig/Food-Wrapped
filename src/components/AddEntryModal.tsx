@@ -9,6 +9,7 @@ import {
   ThemeProvider,
   Rating,
 } from '@mui/material';
+import { LunchDining } from '@mui/icons-material';
 import { addEntrySchema } from '../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
 import { createAppTheme } from '../theme';
@@ -515,7 +516,9 @@ export function AddEntryModal({
 
               <div className="bw-toggle-card">
                 <div className="bw-toggle-info">
-                  <span className="bw-toggle-icon">🍔</span>
+                  <span className="bw-toggle-icon">
+                    <LunchDining fontSize="small" />
+                  </span>
                   <div>
                     <div className="bw-toggle-title">¿Es una hamburguesa?</div>
                     <div className="bw-toggle-subtitle">Activa para elegir el tipo</div>
@@ -535,9 +538,21 @@ export function AddEntryModal({
                     <span className="bw-label">Tipo de hamburguesa</span>
                     <div className="bw-meat-grid">
                       {[
-                        { value: 'beef', label: 'Ternera', emoji: '🥩' },
-                        { value: 'chicken', label: 'Pollo', emoji: '🍗' },
-                        { value: 'vegan', label: 'Vegana', emoji: '🌱' },
+                        {
+                          value: 'beef',
+                          label: 'Ternera',
+                          icon: <img src="/meat.png" alt="Carne" className="bw-meat-icon-img" />,
+                        },
+                        {
+                          value: 'chicken',
+                          label: 'Pollo',
+                          icon: <img src="/chicken-leg.png" alt="Pollo" className="bw-meat-icon-img" />,
+                        },
+                        {
+                          value: 'vegan',
+                          label: 'Vegana',
+                          icon: <img src="/plant.png" alt="Vegana" className="bw-meat-icon-img" />,
+                        },
                       ].map((opt) => (
                         <button
                           key={opt.value}
@@ -546,7 +561,7 @@ export function AddEntryModal({
                             }`}
                           onClick={() => setBurgerType(opt.value as MeatType)}
                         >
-                          <span className="bw-meat-emoji">{opt.emoji}</span>
+                          <span className="bw-meat-emoji">{opt.icon}</span>
                           <span className="bw-meat-label">{opt.label}</span>
                         </button>
                       ))}
