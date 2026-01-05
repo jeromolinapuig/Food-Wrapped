@@ -3,10 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   Close,
-  DarkMode,
   EmojiEvents,
   Euro,
-  LightMode,
   LunchDining,
   Star,
 } from '@mui/icons-material';
@@ -14,11 +12,13 @@ import { supabase } from '../lib/supabaseClient';
 import { AddEntryModal } from './AddEntryModal';
 import { EntryCard } from './EntryCard';
 import { StatCard } from './StatCard';
+import { TopMenu } from './TopMenu';
 
 type DashboardProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
 };
 
 type BurgerTypeStats = {
@@ -43,7 +43,7 @@ type DbEntryRow = {
   burger: { name: string | null; meat_type: MeatType | null } | null;
 };
 
-export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
+export function Dashboard({ session, theme, onToggleTheme, onNavigate }: DashboardProps) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
       )
       .gte('datetime', from)
       .lt('datetime', to)
+      .eq('user_id', session.user.id)
       .order('datetime', { ascending: false });
 
     if (error) {
@@ -231,14 +232,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="bw-icon-button"
-            onClick={onToggleTheme}
-            aria-label="Cambiar tema"
-          >
-            {theme === 'light' ? <DarkMode /> : <LightMode />}
-          </button>
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
         </header>
 
         <main className="bw-main">
@@ -332,6 +326,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                 })}
             </div>
           </section>
+
         </main>
 
         <div className="bw-fab-wrapper">
