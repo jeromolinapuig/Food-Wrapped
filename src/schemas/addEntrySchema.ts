@@ -12,28 +12,34 @@ export const addEntrySchema = z
       .refine((val) => {
         const n = Number(val.replace(',', '.'));
         return !Number.isNaN(n) && n >= 0;
-      }, 'El precio no es válido.'),
+      }, 'El precio no es valido.'),
     rating: z
       .string()
       .trim()
       .refine((val) => {
         const n = Number(val);
         return !Number.isNaN(n) && n >= 1 && n <= 5;
-      }, 'La puntuación debe estar entre 1 y 5.'),
+      }, 'La puntuacion debe estar entre 1 y 5.'),
     isBurger: z.boolean(),
     burger: z.string().trim(),
+    additionalNotes: z
+      .string()
+      .trim()
+      .max(500, 'Maximo 500 caracteres.')
+      .optional()
+      .or(z.literal('')),
   })
   .superRefine((val, ctx) => {
     const dt = new Date(val.datetime);
     const now = new Date();
 
     if (Number.isNaN(dt.getTime())) {
-      ctx.addIssue({ code: 'custom', message: 'Fecha inválida.' });
+      ctx.addIssue({ code: 'custom', message: 'Fecha invalida.' });
     } else {
       if (dt < MIN_DATE) {
         ctx.addIssue({
           code: 'custom',
-          message: 'La fecha mínima es el 1 de enero de 2026.',
+          message: 'La fecha minima es el 1 de enero de 2026.',
         });
       }
       if (dt > now) {

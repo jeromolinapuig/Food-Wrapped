@@ -26,6 +26,7 @@ type DbEntryRow = {
   rating: number | null;
   price: number | null;
   is_burger: boolean;
+  additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
   photo_url: string | null;
@@ -70,6 +71,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         rating,
         price,
         is_burger,
+        additional_notes,
         restaurant_id,
         burger_id,
         photo_url,
@@ -96,6 +98,22 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
       await loadEntries();
     };
     fetchData();
+
+    // Suscripción a cambios en la tabla de entries para refrescar el feed en tiempo real
+    const channel = supabase
+      .channel('entries-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'entries' },
+        () => {
+          loadEntries();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [session.user.id]);
 
   // --- Stats calculadas ---
@@ -289,6 +307,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                       }
                       rating={entry.rating}
                       price={entry.price}
+                      additionalNotes={entry.additional_notes}
                       photoUrl={entry.photo_url}
                       onEdit={() => handleEditEntry(entry)}
                       onDelete={() => setDeleteEntry(entry)}
@@ -327,6 +346,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
                 rating: editingEntry.rating,
                 price: editingEntry.price,
                 is_burger: editingEntry.is_burger,
+                additionalNotes: editingEntry.additional_notes,
                 restaurantId: editingEntry.restaurant_id,
                 restaurantName: editingEntry.restaurant?.name ?? null,
                 burgerId: editingEntry.burger_id,
