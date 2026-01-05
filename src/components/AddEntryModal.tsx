@@ -39,6 +39,7 @@ type AddEntryModalProps = {
     rating: number | null;
     price: number | null;
     is_burger: boolean;
+    additionalNotes?: string | null;
     restaurantId?: string | null;
     restaurantName?: string | null;
     burgerId?: string | null;
@@ -71,6 +72,7 @@ export function AddEntryModal({
 
   const [priceInput, setPriceInput] = useState('');
   const [ratingInput, setRatingInput] = useState('5');
+  const [additionalNotes, setAdditionalNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [photoCompressing, setPhotoCompressing] = useState(false);
@@ -104,6 +106,7 @@ export function AddEntryModal({
       );
       setPriceInput(entry.price != null ? String(entry.price) : '');
       setRatingInput(entry.rating != null ? String(entry.rating) : '5');
+      setAdditionalNotes(entry.additionalNotes ?? '');
       setPhotoFile(null);
       setPhotoPreview(entry.photoUrl ?? null);
     } else {
@@ -120,6 +123,7 @@ export function AddEntryModal({
       setSelectedBurger(null);
       setPriceInput('');
       setRatingInput('5');
+      setAdditionalNotes('');
       setPhotoFile(null);
       setPhotoPreview(null);
     }
@@ -236,6 +240,7 @@ export function AddEntryModal({
       rating: ratingInput,
       isBurger,
       burger: burgerInput,
+      additionalNotes,
     });
 
     if (!validation.success) {
@@ -247,6 +252,8 @@ export function AddEntryModal({
     const entryId = mode === 'edit' && entry ? entry.id : null;
     const price = Number(parsed.price.replace(',', '.'));
     const rating = Number(parsed.rating);
+    const notes = parsed.additionalNotes?.trim() ?? '';
+    const additionalNotesValue = notes ? notes : null;
 
     setFormLoading(true);
 
@@ -349,6 +356,7 @@ export function AddEntryModal({
             rating,
             price,
             photo_url: photoUrl,
+            additional_notes: additionalNotesValue,
           })
           .eq('id', entryId);
 
@@ -365,6 +373,7 @@ export function AddEntryModal({
           rating,
           price,
           photo_url: photoUrl,
+          additional_notes: additionalNotesValue,
         });
 
         if (insertError) {
@@ -601,13 +610,26 @@ export function AddEntryModal({
                   type="number"
                   inputProps={{ step: 0.01, min: 0 }}
                   value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
-                  fullWidth
-                />
-              </div>
+              onChange={(e) => setPriceInput(e.target.value)}
+              fullWidth
+            />
+          </div>
 
-              {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
-            </div>
+          <div className="bw-field">
+            <TextField
+              id="bw-notes"
+              label="Comentarios adicionales"
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+              placeholder="Salsa especial, punto de la carne, con quién fuiste..."
+              fullWidth
+              multiline
+              minRows={3}
+            />
+          </div>
+
+          {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
+        </div>
 
             <div className="bw-modal-actions">
               <Button

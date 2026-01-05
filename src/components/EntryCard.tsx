@@ -5,6 +5,7 @@ type EntryCardProps = {
   meatEmoji: string;
   rating: number | null;
   price: number | null;
+  additionalNotes?: string | null;
   onEdit?: () => void;
   onDelete?: () => void;
   photoUrl?: string | null;
@@ -24,6 +25,7 @@ export function EntryCard({
   meatEmoji,
   rating,
   price,
+  additionalNotes,
   onEdit,
   onDelete,
   photoUrl,
@@ -64,6 +66,12 @@ export function EntryCard({
       )}
 
       {burgerName && <div className="bw-history-burger-name">{burgerName}</div>}
+
+      {additionalNotes ? (
+        <p style={{ fontSize: 13, lineHeight: 1.4, marginTop: 6, whiteSpace: 'pre-line' }}>
+          {additionalNotes}
+        </p>
+      ) : null}
 
       <div className="bw-history-meta">
         <span className="bw-history-meta-icon">📅</span>
