@@ -626,6 +626,34 @@
   justify-content: flex-end;
 }
 
+.bw-install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: var(--bw-card-bg);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.bw-install-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.bw-install-text {
+  font-size: 13px;
+  color: var(--bw-text-muted);
+}
+
+.bw-install-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .bw-photo-viewer-backdrop {
   position: fixed;
   inset: 0;

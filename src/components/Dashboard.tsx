@@ -54,6 +54,8 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
   const [editingEntry, setEditingEntry] = useState<DbEntryRow | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<DbEntryRow | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
   const openAddModal = () => {
     setEditingEntry(null);
     setIsAddModalOpen(true);
@@ -125,6 +127,24 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
       supabase.removeChannel(channel);
     };
   }, [session.user.id]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPromptEvent(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPromptEvent) return;
+    const promptEvent = installPromptEvent as { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
+    await promptEvent.prompt?.();
+    setShowInstallBanner(false);
+    setInstallPromptEvent(null);
+  };
 
   // --- Stats calculadas ---
   const stats = useMemo(() => {
@@ -234,6 +254,23 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
 
           <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
         </header>
+
+        {showInstallBanner && (
+          <div className="bw-install-banner">
+            <div>
+              <div className="bw-install-title">Instala la app</div>
+              <div className="bw-install-text">Añádela a tu pantalla de inicio para abrirla rápido.</div>
+            </div>
+            <div className="bw-install-actions">
+              <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
+                Más tarde
+              </button>
+              <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
+                Instalar
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="bw-main">
           <section className="bw-stats-grid">
@@ -351,19 +388,19 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
         entry={
           editingEntry
             ? {
-                id: editingEntry.id,
-                datetime: editingEntry.datetime,
-                rating: editingEntry.rating,
-                price: editingEntry.price,
-                is_burger: editingEntry.is_burger,
-                additionalNotes: editingEntry.additional_notes,
-                restaurantId: editingEntry.restaurant_id,
-                restaurantName: editingEntry.restaurant?.name ?? null,
-                burgerId: editingEntry.burger_id,
-                burgerName: editingEntry.burger?.name ?? null,
-                meatType: editingEntry.burger?.meat_type ?? null,
-                photoUrl: editingEntry.photo_url,
-              }
+              id: editingEntry.id,
+              datetime: editingEntry.datetime,
+              rating: editingEntry.rating,
+              price: editingEntry.price,
+              is_burger: editingEntry.is_burger,
+              additionalNotes: editingEntry.additional_notes,
+              restaurantId: editingEntry.restaurant_id,
+              restaurantName: editingEntry.restaurant?.name ?? null,
+              burgerId: editingEntry.burger_id,
+              burgerName: editingEntry.burger?.name ?? null,
+              meatType: editingEntry.burger?.meat_type ?? null,
+              photoUrl: editingEntry.photo_url,
+            }
             : undefined
         }
       />
