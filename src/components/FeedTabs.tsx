@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Close } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 
-type FeedTab = 'friends' | 'following' | 'global';
+type FeedTab = 'following' | 'global';
 
 type FeedTabsProps = {
   currentUserId: string;
@@ -51,7 +51,7 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
   return <div className="bw-avatar-placeholder">{initial}</div>;
 };
 
-export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: FeedTabsProps) {
+export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: Readonly<FeedTabsProps>) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,12 +66,6 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: FeedT
       setError(null);
 
       let userIdsForQuery: string[] | null = null;
-
-      if (activeTab === 'friends') {
-        setEntries([]);
-        setLoading(false);
-        return;
-      }
 
       if (activeTab === 'following') {
         const { data: followsData, error: followsError } = await supabase
@@ -181,7 +175,6 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: FeedT
   }, [activeTab, currentUserId, refreshKey]);
 
   const renderPlaceholderText = () => {
-    if (activeTab === 'friends') return 'Próximamente feed de amigos.';
     if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
     return 'No hay comidas todavía en este feed.';
   };
@@ -189,14 +182,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: FeedT
   return (
     <section className="bw-feed">
       <div className="bw-feed-header">
-        <div className="bw-feed-tabs" style={{ margin: '0 auto' }}>
-          <button
-            type="button"
-            className={`bw-feed-tab ${activeTab === 'friends' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('friends')}
-          >
-            Amigos
-          </button>
+        <div className="bw-feed-tabs bw-feed-tabs-duo" style={{ margin: '0 auto' }}>
           <button
             type="button"
             className={`bw-feed-tab ${activeTab === 'following' ? 'is-active' : ''}`}

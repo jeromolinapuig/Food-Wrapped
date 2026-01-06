@@ -387,6 +387,11 @@
   background: var(--bw-card-bg);
   padding: 4px;
   border-radius: 24px;
+  width: 100%;
+}
+.bw-feed-tabs-duo .bw-feed-tab {
+  flex: 1;
+  text-align: center;
 }
 
 .bw-feed-tab {
