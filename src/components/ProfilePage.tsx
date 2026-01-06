@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Cropper, { type Area } from 'react-easy-crop';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { TopMenu } from './TopMenu';
+import { cropImageFile } from '../utils/cropImage';
 
 type ProfileData = {
   username: string | null;
@@ -62,6 +64,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const BIO_LIMIT = 250;
+  const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
+  const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCropArea, setAvatarCropArea] = useState<Area | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -142,11 +149,13 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
   const handleFileChange = (file: File | null) => {
     if (!file) {
       setAvatarPreview(profile?.avatar_url ?? null);
+      setAvatarCropSrc(null);
+      setAvatarCropFile(null);
       return;
     }
-    const previewUrl = URL.createObjectURL(file);
-    setAvatarPreview(previewUrl);
-    void uploadAvatar(file);
+    const src = URL.createObjectURL(file);
+    setAvatarCropSrc(src);
+    setAvatarCropFile(file);
   };
 
   const handleSave = async () => {
@@ -194,6 +203,33 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAvatarCropConfirm = async () => {
+    if (!avatarCropFile || !avatarCropArea) return;
+    try {
+      const croppedFile = await cropImageFile(avatarCropFile, avatarCropArea);
+      const localPreview = URL.createObjectURL(croppedFile);
+      setAvatarPreview(localPreview);
+      await uploadAvatar(croppedFile);
+    } finally {
+      if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc);
+      setAvatarCropSrc(null);
+      setAvatarCropFile(null);
+      setAvatarCropArea(null);
+      setAvatarZoom(1);
+      setAvatarCrop({ x: 0, y: 0 });
+    }
+  };
+
+  const handleAvatarCropCancel = () => {
+    if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc);
+    setAvatarCropSrc(null);
+    setAvatarCropFile(null);
+    setAvatarCropArea(null);
+    setAvatarZoom(1);
+    setAvatarCrop({ x: 0, y: 0 });
+    setAvatarPreview(profile?.avatar_url ?? null);
   };
 
   return (
@@ -295,6 +331,33 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
       {saving && (
         <div className="bw-loader-overlay">
           <div className="bw-loader-spinner" aria-label="Guardando..."></div>
+        </div>
+      )}
+
+      {avatarCropSrc && (
+        <div className="bw-photo-viewer-backdrop" onClick={handleAvatarCropCancel}>
+          <div className="bw-cropper" onClick={(e) => e.stopPropagation()}>
+            <div className="bw-cropper-stage">
+              <Cropper
+                image={avatarCropSrc}
+                crop={avatarCrop}
+                zoom={avatarZoom}
+                aspect={1}
+                cropShape="round"
+                onCropChange={setAvatarCrop}
+                onZoomChange={setAvatarZoom}
+                onCropComplete={(_area, areaPixels) => setAvatarCropArea(areaPixels)}
+              />
+            </div>
+            <div className="bw-cropper-actions">
+              <button className="bw-btn bw-btn-ghost" type="button" onClick={handleAvatarCropCancel}>
+                Cancelar
+              </button>
+              <button className="bw-btn bw-btn-primary" type="button" onClick={handleAvatarCropConfirm}>
+                Recortar y guardar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -14,6 +14,9 @@ import { addEntrySchema } from '../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
 import { createAppTheme } from '../theme';
 import { compressImage } from '../utils/image';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+import { cropImageFile } from '../utils/cropImage';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 
 type RestaurantOption = {
@@ -80,6 +83,11 @@ export function AddEntryModal({
   const [isClosing, setIsClosing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoCropSrc, setPhotoCropSrc] = useState<string | null>(null);
+  const [photoCropFile, setPhotoCropFile] = useState<File | null>(null);
+  const [photoCrop, setPhotoCrop] = useState({ x: 0, y: 0 });
+  const [photoZoom, setPhotoZoom] = useState(1);
+  const [photoCropArea, setPhotoCropArea] = useState<Area | null>(null);
 
   const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
 
@@ -107,12 +115,17 @@ export function AddEntryModal({
       );
       setPriceInput(entry.price != null ? String(entry.price) : '');
       setRatingInput(entry.rating != null ? String(entry.rating) : '5');
-      setAdditionalNotes(entry.additionalNotes ?? '');
-      setPhotoFile(null);
-      setPhotoPreview(entry.photoUrl ?? null);
-    } else {
-      const now = new Date();
-      const iso = formatLocalDateTime(now); // yyyy-MM-ddTHH:mm
+    setAdditionalNotes(entry.additionalNotes ?? '');
+    setPhotoFile(null);
+    setPhotoPreview(entry.photoUrl ?? null);
+    setPhotoCropSrc(null);
+    setPhotoCropFile(null);
+    setPhotoCropArea(null);
+    setPhotoZoom(1);
+    setPhotoCrop({ x: 0, y: 0 });
+  } else {
+    const now = new Date();
+    const iso = formatLocalDateTime(now); // yyyy-MM-ddTHH:mm
       setDatetimeInput(iso);
       setRestaurantInput('');
       setRestaurantSuggestions([]);
@@ -123,12 +136,17 @@ export function AddEntryModal({
       setBurgerSuggestions([]);
       setSelectedBurger(null);
       setPriceInput('');
-      setRatingInput('5');
-      setAdditionalNotes('');
-      setPhotoFile(null);
-      setPhotoPreview(null);
-    }
-    setFormError(null);
+    setRatingInput('5');
+    setAdditionalNotes('');
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoCropSrc(null);
+    setPhotoCropFile(null);
+    setPhotoCropArea(null);
+    setPhotoZoom(1);
+    setPhotoCrop({ x: 0, y: 0 });
+  }
+  setFormError(null);
   }, [open, mode, entry]);
 
   const requestClose = () => {
@@ -179,11 +197,24 @@ export function AddEntryModal({
       if (photoPreview) URL.revokeObjectURL(photoPreview);
       setPhotoFile(null);
       setPhotoPreview(null);
+      setPhotoCropSrc(null);
+      setPhotoCropFile(null);
+      setPhotoCropArea(null);
       return;
     }
+    const src = URL.createObjectURL(file);
+    setPhotoCropSrc(src);
+    setPhotoCropFile(file);
+  };
+
+  const removePhoto = () => handlePhotoChange(null);
+
+  const handlePhotoCropConfirm = async () => {
+    if (!photoCropFile || !photoCropArea) return;
     setPhotoCompressing(true);
     try {
-      const compressed = await compressImage(file);
+      const croppedFile = await cropImageFile(photoCropFile, photoCropArea);
+      const compressed = await compressImage(croppedFile);
       if (photoPreview) URL.revokeObjectURL(photoPreview);
       const url = URL.createObjectURL(compressed);
       setPhotoFile(compressed);
@@ -192,11 +223,24 @@ export function AddEntryModal({
       console.error(err);
       setFormError('No se pudo procesar la imagen.');
     } finally {
+      if (photoCropSrc) URL.revokeObjectURL(photoCropSrc);
+      setPhotoCropSrc(null);
+      setPhotoCropFile(null);
+      setPhotoCropArea(null);
+      setPhotoZoom(1);
+      setPhotoCrop({ x: 0, y: 0 });
       setPhotoCompressing(false);
     }
   };
 
-  const removePhoto = () => handlePhotoChange(null);
+  const handlePhotoCropCancel = () => {
+    if (photoCropSrc) URL.revokeObjectURL(photoCropSrc);
+    setPhotoCropSrc(null);
+    setPhotoCropFile(null);
+    setPhotoCropArea(null);
+    setPhotoZoom(1);
+    setPhotoCrop({ x: 0, y: 0 });
+  };
 
   const handleBurgerChange = async (value: string) => {
     setBurgerInput(value);
@@ -662,6 +706,32 @@ export function AddEntryModal({
           </form>
         </div>
       </div>
+
+      {photoCropSrc && (
+        <div className="bw-photo-viewer-backdrop" onClick={handlePhotoCropCancel}>
+          <div className="bw-cropper" onClick={(e) => e.stopPropagation()}>
+            <div className="bw-cropper-stage">
+              <Cropper
+                image={photoCropSrc}
+                crop={photoCrop}
+                zoom={photoZoom}
+                aspect={4 / 3}
+                onCropChange={setPhotoCrop}
+                onZoomChange={setPhotoZoom}
+                onCropComplete={(_area, areaPixels) => setPhotoCropArea(areaPixels)}
+              />
+            </div>
+            <div className="bw-cropper-actions">
+              <Button variant="outlined" onClick={handlePhotoCropCancel} disabled={photoCompressing}>
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handlePhotoCropConfirm} disabled={photoCompressing}>
+                Recortar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </ThemeProvider>
   );
 }
