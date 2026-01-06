@@ -315,6 +315,19 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
         userId={profileModalUserId}
         session={session}
         onClose={() => setProfileModalUserId(null)}
+        onFollowChange={(targetId, isNowFollowing) => {
+          setFollowingIds((prev) => {
+            const copy = { ...prev };
+            if (isNowFollowing) {
+              copy[targetId] = copy[targetId] ?? -1;
+            } else {
+              delete copy[targetId];
+            }
+            return copy;
+          });
+          // refresh feed to reflect following changes
+          setRefreshFeedKey((prev) => prev + 1);
+        }}
       />
       {confirmAction && (
         <div className="bw-modal-backdrop" onClick={handleCancelModal}>

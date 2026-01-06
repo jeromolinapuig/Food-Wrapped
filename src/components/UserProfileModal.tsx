@@ -8,6 +8,7 @@ type UserProfileModalProps = {
   userId: string | null;
   session: Session;
   onClose: () => void;
+  onFollowChange?: (userId: string, isFollowing: boolean) => void;
 };
 
 type PublicProfile = {
@@ -18,7 +19,7 @@ type PublicProfile = {
   bio: string | null;
 };
 
-export function UserProfileModal({ open, userId, session, onClose }: Readonly<UserProfileModalProps>) {
+export function UserProfileModal({ open, userId, session, onClose, onFollowChange }: Readonly<UserProfileModalProps>) {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +109,7 @@ export function UserProfileModal({ open, userId, session, onClose }: Readonly<Us
       } else {
         setIsFollowing(false);
         setFollowId(null);
+        onFollowChange?.(userId, false);
       }
       setSaving(false);
       return;
@@ -124,6 +126,7 @@ export function UserProfileModal({ open, userId, session, onClose }: Readonly<Us
     } else {
       setIsFollowing(true);
       setFollowId((data as { id: number }).id);
+      onFollowChange?.(userId, true);
     }
     setSaving(false);
   };
