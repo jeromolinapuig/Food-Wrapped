@@ -527,9 +527,10 @@
 }
 
 .bw-menu {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  right: auto;
   background: var(--bw-surface);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
@@ -538,7 +539,15 @@
   display: flex;
   flex-direction: column;
   z-index: 99;
-  min-width: 180px;
+  width: calc(100% - 24px);
+  max-width: 430px;
+  min-width: 200px;
+  transform: translate(-50%, -20px);
+  animation: bw-menu-slide 220ms cubic-bezier(0.25, 1.1, 0.4, 1) forwards;
+}
+
+.bw-menu.is-closing {
+  animation: bw-menu-slide-out 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 .bw-menu-item {
@@ -677,6 +686,66 @@
 .bw-install-actions .bw-btn {
   width: 100%;
   justify-content: center;
+}
+
+@keyframes bw-menu-slide {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -24px);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes bw-menu-slide-out {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+}
+
+/* Skeletons */
+.bw-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 37%, rgba(255, 255, 255, 0.04) 63%);
+  background-size: 400% 100%;
+  animation: bw-skeleton-loading 1.2s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bw-skeleton-line {
+  height: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  margin-bottom: 8px;
+}
+
+.bw-skeleton-line:last-child {
+  margin-bottom: 0;
+}
+
+.bw-skeleton-short {
+  width: 60%;
+}
+
+@keyframes bw-skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes bw-install-drop {

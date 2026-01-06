@@ -1,5 +1,5 @@
 ﻿// src/components/Dashboard.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   Close,
@@ -54,6 +54,7 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
   const [editingEntry, setEditingEntry] = useState<DbEntryRow | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<DbEntryRow | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const closePhotoBtnRef = useRef<HTMLButtonElement | null>(null);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const openAddModal = () => {
@@ -137,6 +138,31 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  useEffect(() => {
+    if (!photoPreviewUrl) return;
+
+    const focusButton = () => {
+      closePhotoBtnRef.current?.focus();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        focusButton();
+      }
+      if (e.key === 'Escape') {
+        setPhotoPreviewUrl(null);
+      }
+    };
+
+    const timeoutId = window.setTimeout(focusButton, 20);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(timeoutId);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [photoPreviewUrl]);
 
   const handleInstallClick = async () => {
     if (installPromptEvent) {
@@ -279,18 +305,30 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
 
         <main className="bw-main">
           <section className="bw-stats-grid">
-            <StatCard
-              icon={<Euro fontSize="small" />}
-              value={`${stats.totalSpent.toFixed(2)}€`}
-              label="Total gastado"
-            />
-            <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
-            <StatCard
-              icon={<Star fontSize="small" />}
-              value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-              label="Nota media"
-            />
-            <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
+            {loading ? (
+              Array.from({ length: 4 }).map((_ , idx) => (
+                <div className="bw-stat-card bw-skeleton" key={idx}>
+                  <div className="bw-skeleton-line bw-skeleton-short" />
+                  <div className="bw-skeleton-line" />
+                  <div className="bw-skeleton-line bw-skeleton-short" />
+                </div>
+              ))
+            ) : (
+              <>
+                <StatCard
+                  icon={<Euro fontSize="small" />}
+                  value={`${stats.totalSpent.toFixed(2)}€`}
+                  label="Total gastado"
+                />
+                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                <StatCard
+                  icon={<Star fontSize="small" />}
+                  value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+                  label="Nota media"
+                />
+                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
+              </>
+            )}
           </section>
 
           <section className="bw-card bw-burger-types">
@@ -321,7 +359,15 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
             <h2 className="bw-section-title">HISTORIAL ({entries.length})</h2>
 
             <div className="bw-history-list">
-              {loading && <p>Cargando...</p>}
+              {loading && (
+                Array.from({ length: 3 }).map((_ , idx) => (
+                  <div className="bw-history-card bw-skeleton" key={idx}>
+                    <div className="bw-skeleton-line bw-skeleton-short" />
+                    <div className="bw-skeleton-line" />
+                    <div className="bw-skeleton-line bw-skeleton-short" />
+                  </div>
+                ))
+              )}
               {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
               {!loading && !entries.length && !error && (
                 <p style={{ fontSize: 13, opacity: 0.8 }}>
@@ -419,6 +465,7 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
             <button
               type="button"
               className="bw-photo-viewer-close"
+              ref={closePhotoBtnRef}
               onClick={() => setPhotoPreviewUrl(null)}
               aria-label="Cerrar imagen"
             >
