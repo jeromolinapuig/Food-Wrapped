@@ -603,6 +603,10 @@
   font-size: 13px;
 }
 
+.bw-profile-username {
+  color: #ffffff;
+}
+
 .bw-profile-bio {
   margin: 4px 0 0;
   font-size: 14px;
@@ -1123,6 +1127,36 @@
 .bw-btn-primary {
   background: var(--bw-accent);
   color: white;
+}
+
+.bw-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+.bw-loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.bw-loader-spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 6px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--bw-accent);
+  animation: bw-spin 0.8s linear infinite;
+}
+
+@keyframes bw-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .bw-btn-danger {

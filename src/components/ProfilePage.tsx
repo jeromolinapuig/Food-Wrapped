@@ -17,6 +17,40 @@ type ProfilePageProps = {
   onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
 };
 
+const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Promise<File> => {
+  if (!file.type.startsWith('image/')) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => {
+          if (b) resolve(b);
+          else reject(new Error('No se pudo generar la imagen comprimida.'));
+        },
+        'image/jpeg',
+        quality
+      );
+    });
+
+    const name = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+    return new File([blob], name, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+};
+
 export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: ProfilePageProps) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -28,6 +62,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const BIO_LIMIT = 250;
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -55,6 +90,12 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
   }, [session.user.id]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
+  const hasChanges = useMemo(() => {
+    const usernameChanged = (usernameInput.trim() || '') !== (profile?.username ?? '');
+    const bioChanged = (bioInput.trim() || '') !== (profile?.bio ?? '');
+    const avatarChanged = Boolean(avatarFile);
+    return usernameChanged || bioChanged || avatarChanged;
+  }, [avatarFile, bioInput, profile?.bio, profile?.username, usernameInput]);
 
   const handleFileChange = (file: File | null) => {
     setAvatarFile(file);
@@ -72,11 +113,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
       return;
     }
 
-    setSaving(true);
-    setError(null);
+      setSaving(true);
+      setError(null);
 
-    try {
-      // Check username uniqueness
+      try {
+        // Check username uniqueness
       const { data: existing, error: userError } = await supabase
         .from('profiles')
         .select('id')
@@ -94,11 +135,12 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
       let avatarUrl = profile?.avatar_url ?? null;
 
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
+        const compressed = await compressImage(avatarFile);
+        const fileExt = compressed.name.split('.').pop();
         const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, avatarFile, { upsert: true });
+          .upload(filePath, compressed, { upsert: true });
         if (uploadError) throw uploadError;
         const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
         avatarUrl = publicData.publicUrl;
@@ -138,9 +180,6 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Mi perfil</h1>
-            <p className="bw-subtitle">
-              {username ?? session.user.email}
-            </p>
           </div>
 
           <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
@@ -166,10 +205,9 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
                 )}
               </div>
               <div>
-                <h3 className="bw-profile-name">
-                  {profile?.username ?? username ?? 'Mi perfil'}
-                </h3>
-                <p className="bw-profile-username">@{profile?.username ?? username ?? 'usuario'}</p>
+                <h1 className="bw-profile-username" style={{ margin: 0, fontSize: 22 }}>
+                  @{profile?.username ?? username ?? 'usuario'}
+                </h1>
                 <p className="bw-profile-email">{session.user.email}</p>
               </div>
             </div>
@@ -198,7 +236,12 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
                   onChange={(e) => setBioInput(e.target.value)}
                   placeholder="Cuenta algo sobre ti..."
                   rows={4}
+                  style={{ resize: 'none' }}
+                  maxLength={BIO_LIMIT}
                 />
+                <div className="bw-helper" style={{ textAlign: 'right', marginTop: 4 }}>
+                  {bioInput.length}/{BIO_LIMIT}
+                </div>
               </div>
 
               <input
@@ -214,7 +257,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
                   type="button"
                   className="bw-btn bw-btn-primary"
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || !hasChanges}
                 >
                   {saving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
@@ -223,6 +266,12 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
           </section>
         </main>
       </div>
+
+      {saving && (
+        <div className="bw-loader-overlay">
+          <div className="bw-loader-spinner" aria-label="Guardando..."></div>
+        </div>
+      )}
     </div>
   );
 }
