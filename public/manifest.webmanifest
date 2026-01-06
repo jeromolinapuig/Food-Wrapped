@@ -3,8 +3,8 @@
   "short_name": "BurgerWrapped",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ff3b8d",
-  "theme_color": "#ff3b8d",
+  "background_color": "#050509",
+  "theme_color": "#050509",
   "description": "Registra tus comidas y hamburguesas.",
   "icons": [
     {

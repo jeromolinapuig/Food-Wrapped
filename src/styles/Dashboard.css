@@ -31,6 +31,12 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bw-card-bg);
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .bw-header-icon {
