@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-type FeedTab = 'me' | 'friends' | 'following' | 'global';
+type FeedTab = 'friends' | 'following' | 'global';
 
 type FeedTabsProps = {
   currentUserId: string;
+  refreshKey?: number;
 };
 
 type FeedEntry = {
@@ -32,7 +33,6 @@ type SupabaseEntryRow = {
   photo_url: string | null;
   restaurants: { name: string | null } | null;
   burgers: { name: string | null } | null;
-  profiles: { username: string | null; display_name: string | null; avatar_url: string | null } | null;
 };
 
 const renderStarString = (rating: number) => {
@@ -49,7 +49,7 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
   return <div className="bw-avatar-placeholder">{initial}</div>;
 };
 
-export function FeedTabs({ currentUserId }: FeedTabsProps) {
+export function FeedTabs({ currentUserId, refreshKey = 0 }: FeedTabsProps) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,10 +62,33 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
       setLoading(true);
       setError(null);
 
-      if (activeTab === 'friends' || activeTab === 'following') {
+      let userIdsForQuery: string[] | null = null;
+
+      if (activeTab === 'friends') {
         setEntries([]);
         setLoading(false);
         return;
+      }
+
+      if (activeTab === 'following') {
+        const { data: followsData, error: followsError } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', currentUserId);
+
+        if (followsError) {
+          setError(followsError.message);
+          setEntries([]);
+          setLoading(false);
+          return;
+        }
+
+        userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
+        if (!userIdsForQuery.length) {
+          setEntries([]);
+          setLoading(false);
+          return;
+        }
       }
 
       let query = supabase
@@ -81,8 +104,7 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
           visibility,
           photo_url,
           restaurants ( name ),
-          burgers ( name ),
-          profiles ( username, display_name, avatar_url )
+          burgers ( name )
         `
         )
         .order('datetime', { ascending: false })
@@ -90,8 +112,8 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
 
       if (activeTab === 'global') {
         query = query.eq('visibility', 'public');
-      } else if (activeTab === 'me') {
-        query = query.eq('user_id', currentUserId);
+      } else if (activeTab === 'following' && userIdsForQuery) {
+        query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
       }
 
       const { data, error } = await query;
@@ -105,14 +127,35 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
         return;
       }
 
-      const mapped: FeedEntry[] = (data ?? []).map((row) => {
-        const entry = row as unknown as SupabaseEntryRow;
+      const rows = (data ?? []) as unknown as SupabaseEntryRow[];
+      const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean)));
+
+      let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+      if (userIds.length) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+        profileMap = Object.fromEntries(
+          (profilesData ?? []).map((p) => [
+            (p as { id: string }).id,
+            {
+              username: (p as { username: string | null }).username,
+              display_name: (p as { display_name: string | null }).display_name,
+              avatar_url: (p as { avatar_url: string | null }).avatar_url,
+            },
+          ])
+        );
+      }
+
+      const mapped: FeedEntry[] = rows.map((entry) => {
+        const profile = profileMap[entry.user_id];
         return {
           id: entry.id,
           userId: entry.user_id,
-          username: entry.profiles?.username ?? 'usuario',
-          displayName: entry.profiles?.display_name ?? null,
-          avatarUrl: entry.profiles?.avatar_url ?? null,
+          username: profile?.username ?? 'usuario',
+          displayName: profile?.display_name ?? null,
+          avatarUrl: profile?.avatar_url ?? null,
           datetime: entry.datetime,
           price: entry.price ?? 0,
           rating: entry.rating ?? 0,
@@ -132,26 +175,18 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, currentUserId]);
+  }, [activeTab, currentUserId, refreshKey]);
 
   const renderPlaceholderText = () => {
     if (activeTab === 'friends') return 'Próximamente feed de amigos.';
-    if (activeTab === 'following') return 'Próximamente feed de siguiendo.';
+    if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
     return 'No hay comidas todavía en este feed.';
   };
 
   return (
     <section className="bw-feed">
       <div className="bw-feed-header">
-        <h2 className="bw-section-title">Feed</h2>
-        <div className="bw-feed-tabs">
-          <button
-            type="button"
-            className={`bw-feed-tab ${activeTab === 'me' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('me')}
-          >
-            Tú
-          </button>
+        <div className="bw-feed-tabs" style={{ margin: '0 auto' }}>
           <button
             type="button"
             className={`bw-feed-tab ${activeTab === 'friends' ? 'is-active' : ''}`}
@@ -177,56 +212,76 @@ export function FeedTabs({ currentUserId }: FeedTabsProps) {
       </div>
 
       <div className="bw-history-list">
-        {loading && <p style={{ fontSize: 13 }}>Cargando feed...</p>}
+        {loading && (
+          <>
+            <div className="bw-history-card bw-skeleton">
+              <div className="bw-skeleton-line bw-skeleton-short" />
+              <div className="bw-skeleton-line" />
+              <div className="bw-skeleton-line" />
+            </div>
+            <div className="bw-history-card bw-skeleton">
+              <div className="bw-skeleton-line bw-skeleton-short" />
+              <div className="bw-skeleton-line" />
+              <div className="bw-skeleton-line" />
+            </div>
+          </>
+        )}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
         {!loading && !entries.length && <p style={{ fontSize: 13, opacity: 0.8 }}>{renderPlaceholderText()}</p>}
 
-        {entries.map((entry) => {
-          const date = new Date(entry.datetime);
-          const formattedDate = date.toLocaleString();
-          const name = entry.displayName || entry.username;
-          const stars = renderStarString(entry.rating);
+        {!loading &&
+          entries.map((entry) => {
+            const date = new Date(entry.datetime);
+            const formattedDate = date.toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            const isSelf = entry.userId === currentUserId;
+            const name = isSelf ? 'Tú' : entry.displayName || entry.username;
+            const stars = renderStarString(entry.rating);
 
-          return (
-            <article className="bw-history-card bw-feed-entry" key={entry.id}>
-              <div className="bw-feed-entry-header">
-                <div className="bw-feed-user">
-                  <div className="bw-avatar">
-                    <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
+            return (
+              <article className="bw-history-card bw-feed-entry" key={entry.id}>
+                <div className="bw-feed-entry-header">
+                  <div className="bw-feed-user">
+                    <div className="bw-avatar">
+                      <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
+                    </div>
+                    <div>
+                      <div className="bw-feed-user-name">{name}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="bw-feed-user-name">{name}</div>
-                    <div className="bw-feed-user-handle">@{entry.username}</div>
+                  <div className="bw-feed-datetime">{formattedDate}</div>
+                </div>
+
+                <div className="bw-feed-body">
+                  <div className="bw-feed-restaurant">
+                    <div className="bw-history-restaurant">{entry.restaurantName ?? 'Restaurante'}</div>
+                    {entry.burgerName && <div className="bw-feed-burger">{entry.burgerName}</div>}
+                  </div>
+
+                  {entry.photoUrl && (
+                    <div className="bw-feed-photo">
+                      <img src={entry.photoUrl} alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'} />
+                    </div>
+                  )}
+
+                  <div className="bw-feed-footer">
+                    <div className="bw-feed-rating">
+                      <span className="bw-feed-stars">{stars}</span>
+                      <span className="bw-feed-rating-number">
+                        {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
+                      </span>
+                    </div>
+                    <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
                   </div>
                 </div>
-                <div className="bw-feed-datetime">{formattedDate}</div>
-              </div>
-
-              <div className="bw-feed-body">
-                <div className="bw-feed-restaurant">
-                  <div className="bw-history-restaurant">{entry.restaurantName ?? 'Restaurante'}</div>
-                  {entry.burgerName && <div className="bw-feed-burger">{entry.burgerName}</div>}
-                </div>
-
-                {entry.photoUrl && (
-                  <div className="bw-feed-photo">
-                    <img src={entry.photoUrl} alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'} />
-                  </div>
-                )}
-
-                <div className="bw-feed-footer">
-                  <div className="bw-feed-rating">
-                    <span className="bw-feed-stars">{stars}</span>
-                    <span className="bw-feed-rating-number">
-                      {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
-                    </span>
-                  </div>
-                  <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
+              </article>
+            );
+          })}
       </div>
     </section>
   );

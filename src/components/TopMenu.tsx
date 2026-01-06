@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DarkMode, Home, LightMode, Menu, Person } from '@mui/icons-material';
+import { DarkMode, DynamicFeed, Home, LightMode, Menu, Person } from '@mui/icons-material';
 
 type MenuPage = 'dashboard' | 'feed' | 'profile';
 
@@ -9,7 +9,7 @@ type TopMenuProps = {
   onNavigate: (page: MenuPage) => void;
 };
 
-export function TopMenu({ theme, onToggleTheme, onNavigate }: TopMenuProps) {
+export function TopMenu({ theme, onToggleTheme, onNavigate }: Readonly<TopMenuProps>) {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const triggerRef = useRef<HTMLDivElement | null>(null);
@@ -104,9 +104,10 @@ export function TopMenu({ theme, onToggleTheme, onNavigate }: TopMenuProps) {
             <span className="bw-menu-icon"><Home fontSize="small" /></span>
             Inicio
           </button>
-          {/* <button className="bw-menu-item" type="button" onClick={() => handle('feed')}>
+          <button className="bw-menu-item" type="button" onClick={() => handle('feed')}>
+            <span className="bw-menu-icon"><DynamicFeed fontSize="small" /></span>
             Feed
-          </button> */}
+          </button>
           <button className="bw-menu-item" type="button" onClick={() => handle('profile')}>
             <span className="bw-menu-icon"><Person fontSize="small" /></span>
             Mi perfil

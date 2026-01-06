@@ -1,6 +1,9 @@
+import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { TopMenu } from './TopMenu';
 import { FeedTabs } from './FeedTabs';
+import { supabase } from '../lib/supabaseClient';
+import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
 
 type FeedPageProps = {
   session: Session;
@@ -9,8 +12,164 @@ type FeedPageProps = {
   onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
 };
 
-export function FeedPage({ session, theme, onToggleTheme, onNavigate }: FeedPageProps) {
-  const username = (session.user.user_metadata as { username?: string } | null)?.username;
+type SearchUser = {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+};
+
+export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly<FeedPageProps>) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ user: SearchUser; action: 'request' | 'cancel' } | null>(null);
+  const [followingIds, setFollowingIds] = useState<Record<string, number>>({});
+  const [followersIds, setFollowersIds] = useState<Record<string, number>>({});
+  const [refreshFeedKey, setRefreshFeedKey] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
+
+  useEffect(() => {
+    const loadFollows = async () => {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('id, follower_id, following_id')
+        .or(`follower_id.eq.${session.user.id},following_id.eq.${session.user.id}`);
+      if (error) {
+        console.error('Error loading follows', error);
+        return;
+      }
+      const newFollowing: Record<string, number> = {};
+      const newFollowers: Record<string, number> = {};
+      const followRows = (data ?? []) as { id: number; follower_id: string; following_id: string }[];
+      followRows.forEach((row) => {
+        const followerId = row.follower_id;
+        const followingId = row.following_id;
+        const id = row.id;
+        if (followerId === session.user.id) {
+          newFollowing[followingId] = id;
+        }
+        if (followingId === session.user.id) {
+          newFollowers[followerId] = id;
+        }
+      });
+      setFollowingIds(newFollowing);
+      setFollowersIds(newFollowers);
+    };
+    loadFollows();
+  }, [session.user.id]);
+
+  useEffect(() => {
+    const doSearch = async () => {
+      if (trimmedTerm.length < 2) {
+        setSearchResults([]);
+        setSearchError(null);
+        return;
+      }
+      setSearchLoading(true);
+      setSearchError(null);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, bio')
+        .ilike('username', `%${trimmedTerm}%`)
+        .neq('id', session.user.id)
+        .limit(10);
+
+      if (error) {
+        setSearchError(error.message);
+        setSearchResults([]);
+      } else {
+        setSearchResults((data ?? []) as SearchUser[]);
+      }
+      setSearchLoading(false);
+    };
+
+    const t = window.setTimeout(doSearch, 250);
+    return () => window.clearTimeout(t);
+  }, [trimmedTerm, session.user.id]);
+
+  const handleFollow = async (user: SearchUser) => {
+    const currentUserId = session.user.id;
+    const targetUserId = user.id;
+    if (followingIds[targetUserId]) return;
+
+    // optimistic set with temp id
+    setFollowingIds((prev) => ({ ...prev, [targetUserId]: -1 }));
+
+    const { data, error } = await supabase
+      .from('follows')
+      .insert({
+        follower_id: currentUserId,
+        following_id: targetUserId,
+      })
+      .select('id, follower_id, following_id')
+      .single();
+
+    if (error || !data) {
+      console.error('Error following user', error);
+      setFollowingIds((prev) => {
+        const copy = { ...prev };
+        delete copy[targetUserId];
+        return copy;
+      });
+      return;
+    }
+
+    setFollowingIds((prev) => ({ ...prev, [targetUserId]: data.id }));
+    setRefreshFeedKey((prev) => prev + 1);
+
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmAction) return;
+    const { user, action } = confirmAction;
+
+    if (action === 'request') {
+      await handleFollow(user);
+      setConfirmAction(null);
+      return;
+    }
+
+    // cancel (unfollow)
+    const currentUserId = session.user.id;
+    const targetUserId = user.id;
+    const followId = followingIds[targetUserId];
+    if (!followId) {
+      setConfirmAction(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .match({
+        id: followId,
+        follower_id: currentUserId,
+        following_id: targetUserId,
+      });
+
+    if (error) {
+      console.error('Error unfollowing user', error);
+      setConfirmAction(null);
+      return;
+    }
+
+    setFollowingIds((prev) => {
+      const copy = { ...prev };
+      delete copy[targetUserId];
+      return copy;
+    });
+    // if they still follow me, surface as incoming
+    setRefreshFeedKey((prev) => prev + 1);
+    setConfirmAction(null);
+  };
+
+  const handleCancelModal = () => setConfirmAction(null);
+  const showBackButton = searchFocused || Boolean(searchTerm);
 
   return (
     <div className="bw-app-root">
@@ -21,18 +180,147 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: FeedPage
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Feed</h1>
-            <p className="bw-subtitle">
-              Hola {username ?? session.user.email}
-            </p>
           </div>
 
           <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
         </header>
 
         <main className="bw-main">
-          <FeedTabs currentUserId={session.user.id} />
+          <div className="bw-feed-search-row">
+            {showBackButton && (
+              <button
+                type="button"
+                className="bw-feed-search-back"
+                onClick={() => setSearchTerm('')}
+                aria-label="Limpiar búsqueda"
+                disabled={!searchTerm}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+                </svg>
+              </button>
+            )}
+            <div className={`bw-feed-search ${showBackButton ? 'has-back' : ''}`}>
+              <span className="bw-feed-search-icon">
+                <Search fontSize="small" />
+              </span>
+              <input
+                type="search"
+                className="bw-input bw-feed-search-input"
+                placeholder="Buscar usuarios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="bw-feed-search-clear"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <Clear fontSize="small" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {trimmedTerm.length >= 2 && (
+            <div className="bw-user-results">
+              {searchLoading && <p className="bw-helper">Buscando...</p>}
+              {searchError && <p style={{ color: 'red', fontSize: 12 }}>{searchError}</p>}
+              {!searchLoading && !searchError && !searchResults.length && (
+                <p className="bw-helper">No se encontraron usuarios.</p>
+              )}
+              {searchResults.map((user) => {
+                const outgoingId = followingIds[user.id];
+                const incomingId = followersIds[user.id];
+                const isMutual = Boolean(outgoingId && incomingId);
+                const isOutgoing = Boolean(outgoingId);
+                const isIncoming = Boolean(incomingId);
+                return (
+                  <div className="bw-user-card" key={user.id}>
+                    <div className="bw-user-info">
+                      <div className="bw-avatar bw-avatar-sm">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.username ?? ''} className="bw-avatar-image" />
+                        ) : (
+                          <div className="bw-avatar-placeholder">
+                            {(user.username ?? '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="bw-user-name">@{user.username ?? 'usuario'}</div>
+                        {isMutual ? (
+                          <div className="bw-user-meta">Os seguís mutuamente</div>
+                        ) : isIncoming ? (
+                          <div className="bw-user-meta">Te sigue</div>
+                        ) : null}
+                        {user.bio && <div className="bw-user-bio">{user.bio}</div>}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
+                      onClick={() => {
+                        if (isMutual || isOutgoing) {
+                          setConfirmAction({ user, action: 'cancel' });
+                        } else {
+                          handleFollow(user);
+                        }
+                      }}
+                      title={
+                        isMutual
+                          ? 'Ya se siguen mutuamente'
+                          : isOutgoing
+                            ? 'Dejar de seguir'
+                            : isIncoming
+                              ? 'Seguir de vuelta'
+                              : 'Seguir'
+                      }
+                    >
+                      {isMutual ? (
+                        <SyncAlt fontSize="small" />
+                      ) : isOutgoing ? (
+                        <CheckCircleOutline fontSize="small" />
+                      ) : (
+                        <GroupAdd fontSize="small" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className={trimmedTerm.length >= 2 ? 'bw-feed-hidden' : ''}>
+            <FeedTabs currentUserId={session.user.id} refreshKey={refreshFeedKey} />
+          </div>
         </main>
       </div>
+      {confirmAction && (
+        <div className="bw-modal-backdrop" onClick={handleCancelModal}>
+          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="bw-confirm-title">
+              {confirmAction.action === 'request'
+                ? `¿Estás seguro que quieres seguir a @${confirmAction.user.username ?? 'usuario'}?`
+                : `¿Estás seguro que quieres dejar de seguir a @${confirmAction.user.username ?? 'usuario'}?`}
+            </h3>
+            <div className="bw-confirm-actions">
+              <button className="bw-btn bw-btn-ghost" onClick={handleCancelModal}>
+                No
+              </button>
+              <button className="bw-btn bw-btn-primary" onClick={handleConfirm}>
+                Sí
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notificaciones desactivadas temporalmente */}
     </div>
   );
 }
