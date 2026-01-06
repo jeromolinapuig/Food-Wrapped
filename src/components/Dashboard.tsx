@@ -132,16 +132,17 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallPromptEvent(e);
-      setShowInstallBanner(true);
+      setTimeout(() => setShowInstallBanner(true), 2000);
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPromptEvent) return;
-    const promptEvent = installPromptEvent as { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
-    await promptEvent.prompt?.();
+    if (installPromptEvent) {
+      const promptEvent = installPromptEvent as { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
+      await promptEvent.prompt?.();
+    }
     setShowInstallBanner(false);
     setInstallPromptEvent(null);
   };
@@ -256,18 +257,22 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
         </header>
 
         {showInstallBanner && (
-          <div className="bw-install-banner">
-            <div>
-              <div className="bw-install-title">Instala la app</div>
-              <div className="bw-install-text">Añádela a tu pantalla de inicio para abrirla rápido.</div>
-            </div>
-            <div className="bw-install-actions">
-              <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
-                Más tarde
-              </button>
-              <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
-                Instalar
-              </button>
+          <div className="bw-install-modal">
+            <div className="bw-install-modal-card">
+              <div className="bw-install-modal-body">
+                <div>
+                  <div className="bw-install-title">Instala la app</div>
+                  <div className="bw-install-text">Añádela a tu pantalla de inicio para abrirla rápido.</div>
+                </div>
+                <div className="bw-install-actions">
+                  <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
+                    Más tarde
+                  </button>
+                  <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
+                    Instalar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

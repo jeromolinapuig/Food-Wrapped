@@ -626,17 +626,35 @@
   justify-content: flex-end;
 }
 
-.bw-install-banner {
+.bw-install-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
+  justify-content: center;
+  padding: 10px 12px 0;
+  z-index: 120;
+  pointer-events: none;
+  animation: bw-install-drop 420ms cubic-bezier(0.22, 1.35, 0.32, 1);
+}
+
+.bw-install-modal-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bw-surface);
   border-radius: 16px;
-  background: var(--bw-card-bg);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.bw-install-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 14px;
 }
 
 .bw-install-title {
@@ -650,8 +668,30 @@
 }
 
 .bw-install-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  margin-top: 4px;
+}
+
+.bw-install-actions .bw-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@keyframes bw-install-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.98);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .bw-photo-viewer-backdrop {
