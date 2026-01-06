@@ -4,6 +4,7 @@ import { TopMenu } from './TopMenu';
 import { FeedTabs } from './FeedTabs';
 import { supabase } from '../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
+import { UserProfileModal } from './UserProfileModal';
 
 type FeedPageProps = {
   session: Session;
@@ -30,6 +31,7 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
   const [followersIds, setFollowersIds] = useState<Record<string, number>>({});
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
@@ -241,7 +243,11 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
                 const isIncoming = Boolean(incomingId);
                 return (
                   <div className="bw-user-card" key={user.id}>
-                    <div className="bw-user-info">
+                    <button
+                      type="button"
+                      className="bw-user-info bw-user-info-btn"
+                      onClick={() => setProfileModalUserId(user.id)}
+                    >
                       <div className="bw-avatar bw-avatar-sm">
                         {user.avatar_url ? (
                           <img src={user.avatar_url} alt={user.username ?? ''} className="bw-avatar-image" />
@@ -260,7 +266,7 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
                         ) : null}
                         {user.bio && <div className="bw-user-bio">{user.bio}</div>}
                       </div>
-                    </div>
+                    </button>
                     <button
                       type="button"
                       className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
@@ -296,10 +302,20 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
           )}
 
           <div className={trimmedTerm.length >= 2 ? 'bw-feed-hidden' : ''}>
-            <FeedTabs currentUserId={session.user.id} refreshKey={refreshFeedKey} />
+            <FeedTabs
+              currentUserId={session.user.id}
+              refreshKey={refreshFeedKey}
+              onOpenProfile={(userId) => setProfileModalUserId(userId)}
+            />
           </div>
         </main>
       </div>
+      <UserProfileModal
+        open={Boolean(profileModalUserId)}
+        userId={profileModalUserId}
+        session={session}
+        onClose={() => setProfileModalUserId(null)}
+      />
       {confirmAction && (
         <div className="bw-modal-backdrop" onClick={handleCancelModal}>
           <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>

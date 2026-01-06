@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Close } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 
 type FeedTab = 'friends' | 'following' | 'global';
@@ -6,6 +7,7 @@ type FeedTab = 'friends' | 'following' | 'global';
 type FeedTabsProps = {
   currentUserId: string;
   refreshKey?: number;
+  onOpenProfile?: (userId: string) => void;
 };
 
 type FeedEntry = {
@@ -49,11 +51,12 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
   return <div className="bw-avatar-placeholder">{initial}</div>;
 };
 
-export function FeedTabs({ currentUserId, refreshKey = 0 }: FeedTabsProps) {
+export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: FeedTabsProps) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -246,14 +249,29 @@ export function FeedTabs({ currentUserId, refreshKey = 0 }: FeedTabsProps) {
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
                 <div className="bw-feed-entry-header">
-                  <div className="bw-feed-user">
-                    <div className="bw-avatar">
-                      <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
+                  {isSelf ? (
+                    <div className="bw-feed-user">
+                      <div className="bw-avatar">
+                        <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
+                      </div>
+                      <div>
+                        <div className="bw-feed-user-name">{name}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="bw-feed-user-name">{name}</div>
-                    </div>
-                  </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="bw-feed-user as-button"
+                      onClick={() => onOpenProfile?.(entry.userId)}
+                    >
+                      <div className="bw-avatar">
+                        <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
+                      </div>
+                      <div>
+                        <div className="bw-feed-user-name">{name}</div>
+                      </div>
+                    </button>
+                  )}
                   <div className="bw-feed-datetime">{formattedDate}</div>
                 </div>
 
@@ -264,9 +282,13 @@ export function FeedTabs({ currentUserId, refreshKey = 0 }: FeedTabsProps) {
                   </div>
 
                   {entry.photoUrl && (
-                    <div className="bw-feed-photo">
+                    <button
+                      type="button"
+                      className="bw-feed-photo"
+                      onClick={() => setPhotoPreviewUrl(entry.photoUrl)}
+                    >
                       <img src={entry.photoUrl} alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'} />
-                    </div>
+                    </button>
                   )}
 
                   <div className="bw-feed-footer">
@@ -283,6 +305,22 @@ export function FeedTabs({ currentUserId, refreshKey = 0 }: FeedTabsProps) {
             );
           })}
       </div>
+
+      {photoPreviewUrl && (
+        <div className="bw-photo-viewer-backdrop" onClick={() => setPhotoPreviewUrl(null)}>
+          <div className="bw-photo-viewer" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="bw-photo-viewer-close"
+              onClick={() => setPhotoPreviewUrl(null)}
+              aria-label="Cerrar imagen"
+            >
+              <Close />
+            </button>
+            <img src={photoPreviewUrl} alt="Foto de la entrada" />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
