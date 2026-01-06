@@ -51,7 +51,7 @@ const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Pro
   }
 };
 
-export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: ProfilePageProps) {
+export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Readonly<ProfilePageProps>) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,6 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
   const [saving, setSaving] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [bioInput, setBioInput] = useState('');
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const BIO_LIMIT = 250;
@@ -87,24 +86,67 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
     };
 
     loadProfile();
-  }, [session.user.id]);
+  }, [session.user.id, username]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const hasChanges = useMemo(() => {
     const usernameChanged = (usernameInput.trim() || '') !== (profile?.username ?? '');
     const bioChanged = (bioInput.trim() || '') !== (profile?.bio ?? '');
-    const avatarChanged = Boolean(avatarFile);
-    return usernameChanged || bioChanged || avatarChanged;
-  }, [avatarFile, bioInput, profile?.bio, profile?.username, usernameInput]);
+    return usernameChanged || bioChanged;
+  }, [bioInput, profile?.bio, profile?.username, usernameInput]);
+
+  const getStoragePathFromUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    const marker = '/storage/v1/object/public/avatars/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.slice(idx + marker.length);
+  };
+
+  const uploadAvatar = async (file: File) => {
+    setError(null);
+    const previousUrl = profile?.avatar_url ?? null;
+    try {
+      const compressed = await compressImage(file);
+      const fileExt = compressed.name.split('.').pop();
+      const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, compressed, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const newUrl = publicData.publicUrl;
+
+      if (previousUrl) {
+        const prevPath = getStoragePathFromUrl(previousUrl);
+        if (prevPath) {
+          await supabase.storage.from('avatars').remove([prevPath]);
+        }
+      }
+
+      const { data, error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newUrl })
+        .eq('id', session.user.id)
+        .select()
+        .single();
+      if (updateError) throw updateError;
+
+      setProfile(data as ProfileData);
+      setAvatarPreview(newUrl);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo actualizar la foto.';
+      setError(msg);
+      setAvatarPreview(previousUrl);
+    }
+  };
 
   const handleFileChange = (file: File | null) => {
-    setAvatarFile(file);
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-    } else {
+    if (!file) {
       setAvatarPreview(profile?.avatar_url ?? null);
+      return;
     }
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+    void uploadAvatar(file);
   };
 
   const handleSave = async () => {
@@ -132,27 +174,12 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
         return;
       }
 
-      let avatarUrl = profile?.avatar_url ?? null;
-
-      if (avatarFile) {
-        const compressed = await compressImage(avatarFile);
-        const fileExt = compressed.name.split('.').pop();
-        const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, compressed, { upsert: true });
-        if (uploadError) throw uploadError;
-        const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        avatarUrl = publicData.publicUrl;
-      }
-
       const { data, error: updateError } = await supabase
         .from('profiles')
         .update({
           username: usernameInput.trim(),
           display_name: usernameInput.trim(),
           bio: bioInput.trim(),
-          avatar_url: avatarUrl,
         })
         .eq('id', session.user.id)
         .select()
@@ -161,8 +188,6 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Profi
       if (updateError) throw updateError;
 
       setProfile(data as ProfileData);
-      setAvatarFile(null);
-      setAvatarPreview(data?.avatar_url ?? null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo guardar el perfil.';
       setError(msg);

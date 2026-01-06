@@ -1,5 +1,4 @@
-﻿// src/components/Dashboard.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   Close,

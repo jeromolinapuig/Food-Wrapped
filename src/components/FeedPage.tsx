@@ -335,8 +335,6 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
           </div>
         </div>
       )}
-
-      {/* Notificaciones desactivadas temporalmente */}
     </div>
   );
 }
