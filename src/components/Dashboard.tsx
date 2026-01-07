@@ -6,6 +6,9 @@ import { AddEntryModal } from './AddEntryModal';
 import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
 import { TopMenu } from './TopMenu';
+import '../styles/layout.css';
+import '../styles/shared.css';
+import '../styles/dashboard.css';
 
 type DashboardProps = {
   session: Session;

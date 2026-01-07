@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import '../styles/shared.css';
+import '../styles/profile.css';
+import '../styles/user-profile-modal.css';
 
 type UserProfileModalProps = {
   open: boolean;
@@ -180,7 +183,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
                     className="bw-link-button bw-link-inline"
                     onClick={handleViewPosts}
                   >
-                    Ver sus posts
+                    Ver sus estadísticas
                   </button>
                 </div>
               </div>

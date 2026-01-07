@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DarkMode, DynamicFeed, Home, LightMode, Menu, Person } from '@mui/icons-material';
+import '../styles/shared.css';
+import '../styles/top-menu.css';
 
 type MenuPage = 'dashboard' | 'feed' | 'profile';
 

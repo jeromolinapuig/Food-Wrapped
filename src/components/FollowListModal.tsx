@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import '../styles/shared.css';
+import '../styles/follow-list.css';
+import '../styles/user-profile-modal.css';
 
 export type FollowListMode = 'followers' | 'following';
 
@@ -299,7 +302,7 @@ export function FollowListModal({
                           onClick={() => onViewPosts({ id: item.id, username: item.username, displayName: item.displayName })}
                           style={{ marginTop: 4 }}
                         >
-                          Ver sus posts
+                          Ver sus estadísticas
                         </button>
                       )}
                     </div>

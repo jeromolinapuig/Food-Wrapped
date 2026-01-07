@@ -1,0 +1,123 @@
+/* Entry cards */
+
+.bw-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bw-history-card {
+  background: var(--bw-surface);
+  border-radius: 24px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.bw-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.bw-history-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bw-history-meat-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-history-meat-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.bw-history-restaurant {
+  font-weight: 700;
+  margin: 0;
+  font-size: 16px;
+  color: var(--bw-text);
+}
+
+.bw-history-rating-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bw-history-star {
+  font-size: 18px;
+}
+
+.bw-history-star.is-filled {
+  color: var(--bw-accent);
+}
+
+.bw-history-star.is-half {
+  color: var(--bw-accent);
+}
+
+.bw-history-star.is-empty {
+  color: var(--bw-text-muted);
+}
+
+.bw-history-photo-large {
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bw-history-photo-large img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.bw-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--bw-text-muted);
+}
+
+.bw-history-meta-icon {
+  font-size: 13px;
+}
+
+.bw-history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.bw-history-price {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.bw-history-actions {
+  display: flex;
+  gap: 8px;
+}

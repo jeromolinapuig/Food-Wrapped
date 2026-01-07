@@ -1,0 +1,138 @@
+/* Feed page */
+
+.bw-feed-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.bw-feed-search {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  transition: width 0.25s ease;
+}
+
+.bw-feed-search.has-back {
+  width: calc(100% - 56px);
+}
+
+.bw-feed-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bw-feed-focus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bw-feed-focus-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bw-feed-focus-right {
+  display: flex;
+  align-items: center;
+}
+
+.bw-feed-focus-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bw-feed-focus-label {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+}
+
+.bw-feed-focus-name {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--bw-text);
+}
+
+.bw-feed-focus-display {
+  font-size: 13px;
+  color: var(--bw-text-muted);
+}
+
+.bw-feed-search-back {
+  border: none;
+  background: var(--bw-card-bg);
+  color: var(--bw-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+.bw-feed-search-back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bw-feed-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bw-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bw-feed-search-input {
+  padding-left: 36px;
+  padding-right: 36px;
+}
+
+.bw-feed-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bw-feed-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--bw-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bw-feed-search-clear:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.bw-user-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}

@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabaseClient';
 import { TopMenu } from './TopMenu';
 import { FollowListModal, type FollowListMode } from './FollowListModal';
 import { cropImageFile } from '../utils/cropImage';
+import '../styles/layout.css';
+import '../styles/shared.css';
+import '../styles/profile.css';
 
 type ProfileData = {
   username: string | null;

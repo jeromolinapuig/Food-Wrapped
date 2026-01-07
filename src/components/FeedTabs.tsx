@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import '../styles/shared.css';
+import '../styles/feed-tabs.css';
+import '../styles/entry-card.css';
 
 type FeedTab = 'following' | 'global';
 
@@ -314,18 +317,20 @@ export function FeedTabs({
 
       {!hideHeader && isUserFeed && (
         <div className="bw-feed-filter bw-feed-filter-inline">
-          <select
-            id="bw-user-feed-month"
-            className="bw-select bw-select-compact"
-            value={effectiveMonthFilter}
-            onChange={(e) => setEffectiveMonthFilter(e.target.value as 'all' | string)}
-          >
-            {monthOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="bw-select-wrap">
+            <select
+              id="bw-user-feed-month"
+              className="bw-select bw-select-compact"
+              value={effectiveMonthFilter}
+              onChange={(e) => setEffectiveMonthFilter(e.target.value as 'all' | string)}
+            >
+              {monthOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 

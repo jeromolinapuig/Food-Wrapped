@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import '../styles/shared.css';
+import '../styles/add-entry-modal.css';
 import {
   Button,
   CssBaseline,

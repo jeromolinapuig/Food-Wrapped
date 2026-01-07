@@ -5,6 +5,10 @@ import { FeedTabs } from './FeedTabs';
 import { supabase } from '../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
 import { UserProfileModal } from './UserProfileModal';
+import '../styles/layout.css';
+import '../styles/shared.css';
+import '../styles/feed-page.css';
+import '../styles/follow-list.css';
 
 type FeedPageProps = {
   session: Session;
