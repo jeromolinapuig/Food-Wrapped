@@ -77,6 +77,7 @@ export function AddEntryModal({
   const [priceInput, setPriceInput] = useState('');
   const [ratingInput, setRatingInput] = useState('5');
   const [additionalNotes, setAdditionalNotes] = useState('');
+  const NOTES_LIMIT = 250;
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [photoCompressing, setPhotoCompressing] = useState(false);
@@ -297,7 +298,7 @@ export function AddEntryModal({
     const entryId = mode === 'edit' && entry ? entry.id : null;
     const price = Number(parsed.price.replace(',', '.'));
     const rating = Number(parsed.rating);
-    const notes = parsed.additionalNotes?.trim() ?? '';
+    const notes = (parsed.additionalNotes?.trim() ?? '').slice(0, NOTES_LIMIT);
     const additionalNotesValue = notes ? notes : null;
 
     setFormLoading(true);
@@ -684,7 +685,11 @@ export function AddEntryModal({
               fullWidth
               multiline
               minRows={3}
+              inputProps={{ maxLength: NOTES_LIMIT }}
             />
+            <div className="bw-helper" style={{ textAlign: 'right', marginTop: 4 }}>
+              {additionalNotes.length}/{NOTES_LIMIT}
+            </div>
           </div>
 
           {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}

@@ -608,6 +608,8 @@
   color: var(--bw-text-muted);
   line-height: 1.4;
   white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .bw-feed-search {
