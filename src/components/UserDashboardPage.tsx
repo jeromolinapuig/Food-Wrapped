@@ -6,7 +6,7 @@ import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
 import '../styles/layout.css';
 import '../styles/shared.css';
-import '../styles/dashboard.css';
+import '../styles/Dashboard.css';
 import '../styles/user-dashboard-page.css';
 import { TopMenu } from './TopMenu';
 

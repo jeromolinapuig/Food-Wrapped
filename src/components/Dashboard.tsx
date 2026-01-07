@@ -8,7 +8,7 @@ import { StatCard } from './StatCard';
 import { TopMenu } from './TopMenu';
 import '../styles/layout.css';
 import '../styles/shared.css';
-import '../styles/dashboard.css';
+import '../styles/Dashboard.css';
 
 type DashboardProps = {
   session: Session;
