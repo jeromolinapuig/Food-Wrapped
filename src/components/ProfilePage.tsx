@@ -3,6 +3,7 @@ import Cropper, { type Area } from 'react-easy-crop';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { TopMenu } from './TopMenu';
+import { FollowListModal, type FollowListMode } from './FollowListModal';
 import { cropImageFile } from '../utils/cropImage';
 
 type ProfileData = {
@@ -69,6 +70,8 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
   const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
   const [avatarZoom, setAvatarZoom] = useState(1);
   const [avatarCropArea, setAvatarCropArea] = useState<Area | null>(null);
+  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+  const [followListMode, setFollowListMode] = useState<FollowListMode | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -94,6 +97,29 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
 
     loadProfile();
   }, [session.user.id, username]);
+
+  useEffect(() => {
+    const loadFollowCounts = async () => {
+      const [{ count: followersCount, error: followersError }, { count: followingCount, error: followingError }] = await Promise.all([
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', session.user.id),
+        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', session.user.id),
+      ]);
+
+      if (followersError) {
+        console.error('Error cargando seguidores', followersError);
+      } else if (typeof followersCount === 'number') {
+        setFollowCounts((prev) => ({ ...prev, followers: followersCount }));
+      }
+
+      if (followingError) {
+        console.error('Error cargando seguidos', followingError);
+      } else if (typeof followingCount === 'number') {
+        setFollowCounts((prev) => ({ ...prev, following: followingCount }));
+      }
+    };
+
+    loadFollowCounts();
+  }, [session.user.id]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const hasChanges = useMemo(() => {
@@ -232,6 +258,13 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
     setAvatarPreview(profile?.avatar_url ?? null);
   };
 
+  const handleFollowingDelta = (delta: number) => {
+    setFollowCounts((prev) => ({
+      ...prev,
+      following: Math.max(0, prev.following + delta),
+    }));
+  };
+
   return (
     <div className="bw-app-root">
       <div className="bw-shell">
@@ -270,6 +303,15 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
                   @{profile?.username ?? username ?? 'usuario'}
                 </h1>
                 <p className="bw-profile-email">{session.user.email}</p>
+                <div className="bw-follow-inline">
+                  <button type="button" className="bw-follow-link" onClick={() => setFollowListMode('following')}>
+                    {followCounts.following} Seguidos
+                  </button>
+                  <span className="bw-follow-separator">·</span>
+                  <button type="button" className="bw-follow-link" onClick={() => setFollowListMode('followers')}>
+                    {followCounts.followers} Seguidores
+                  </button>
+                </div>
               </div>
             </div>
             {loading && <p style={{ fontSize: 13 }}>Cargando perfil...</p>}
@@ -334,6 +376,14 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
         </div>
       )}
 
+      <FollowListModal
+        open={Boolean(followListMode)}
+        mode={followListMode}
+        currentUserId={session.user.id}
+        onClose={() => setFollowListMode(null)}
+        onFollowingDelta={handleFollowingDelta}
+      />
+
       {avatarCropSrc && (
         <div className="bw-photo-viewer-backdrop" onClick={handleAvatarCropCancel}>
           <div className="bw-cropper" onClick={(e) => e.stopPropagation()}>
@@ -363,3 +413,4 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
     </div>
   );
 }
+

@@ -583,6 +583,35 @@
   min-width: 0;
 }
 
+.bw-feed-focus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bw-feed-focus-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bw-feed-focus-label {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+}
+
+.bw-feed-focus-name {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--bw-text);
+}
+
+.bw-feed-focus-display {
+  font-size: 13px;
+  color: var(--bw-text-muted);
+}
+
 .bw-feed-search-back {
   border: none;
   background: var(--bw-card-bg);
@@ -717,6 +746,15 @@
   font-size: 12px;
   color: var(--bw-text-muted);
   font-weight: 700;
+}
+
+.bw-follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .bw-user-action {
@@ -895,6 +933,51 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.bw-profile-header-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bw-profile-header-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bw-profile-subline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.bw-follow-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.bw-follow-link {
+  border: none;
+  background: transparent;
+  color: var(--bw-accent);
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bw-follow-link:active {
+  transform: translateY(1px);
+}
+
+.bw-follow-separator {
+  color: var(--bw-text-muted);
 }
 
 .bw-avatar-lg {
@@ -1469,6 +1552,28 @@
   font-size: 14px;
   line-height: 1.2;
   transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.bw-link-button {
+  border: none;
+  background: transparent;
+  color: var(--bw-accent);
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bw-link-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bw-link-inline {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .bw-btn:active {

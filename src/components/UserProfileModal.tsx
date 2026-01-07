@@ -9,6 +9,7 @@ type UserProfileModalProps = {
   session: Session;
   onClose: () => void;
   onFollowChange?: (userId: string, isFollowing: boolean) => void;
+  onViewPosts?: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
 type PublicProfile = {
@@ -19,7 +20,7 @@ type PublicProfile = {
   bio: string | null;
 };
 
-export function UserProfileModal({ open, userId, session, onClose, onFollowChange }: Readonly<UserProfileModalProps>) {
+export function UserProfileModal({ open, userId, session, onClose, onFollowChange, onViewPosts }: Readonly<UserProfileModalProps>) {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +137,15 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
   const displayName = profile?.display_name || profile?.username || 'Usuario';
   const handleText = isFollowing && isIncoming ? 'Os seguís mutuamente' : isIncoming ? 'Te sigue' : '';
 
+  const handleViewPosts = () => {
+    if (!profile) return;
+    onViewPosts?.({
+      id: profile.id,
+      username: profile.username,
+      displayName: profile.display_name,
+    });
+  };
+
   return (
     <div className="bw-modal-backdrop" onClick={onClose}>
       <div className="bw-modal bw-user-profile-modal" onClick={(e) => e.stopPropagation()}>
@@ -159,11 +169,20 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
                   <div className="bw-avatar-placeholder">{(profile.username ?? '?').charAt(0).toUpperCase()}</div>
                 )}
               </div>
-              <div>
+              <div className="bw-profile-header-body">
                 <h1 className="bw-profile-username" style={{ margin: 0, fontSize: 22 }}>
                   @{profile.username ?? 'usuario'}
                 </h1>
-                {handleText && <p className="bw-profile-email" style={{ margin: 0 }}>{handleText}</p>}
+                <div className="bw-profile-subline">
+                  {handleText && <p className="bw-profile-email" style={{ margin: 0 }}>{handleText}</p>}
+                  <button
+                    type="button"
+                    className="bw-link-button bw-link-inline"
+                    onClick={handleViewPosts}
+                  >
+                    Ver sus posts
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -174,7 +193,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
               </div>
             </div>
 
-            <div className="bw-profile-actions" style={{ justifyContent: 'center' }}>
+            <div className="bw-profile-actions" style={{ justifyContent: 'center', gap: 6, flexDirection: 'column', alignItems: 'center' }}>
               <button
                 type="button"
                 className={`bw-btn bw-btn-primary ${isFollowing ? 'bw-btn-muted' : ''}`}

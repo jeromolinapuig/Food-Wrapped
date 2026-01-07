@@ -32,6 +32,7 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
+  const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
@@ -171,7 +172,17 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
   };
 
   const handleCancelModal = () => setConfirmAction(null);
+  const handleViewPosts = (user: { id: string; username: string | null; displayName: string | null }) => {
+    setFocusedFeedUser({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+    });
+    setProfileModalUserId(null);
+    setSearchTerm('');
+  };
   const showBackButton = searchFocused || Boolean(searchTerm);
+  const shouldHideFeed = trimmedTerm.length >= 2 && !focusedFeedUser;
 
   return (
     <div className="bw-app-root">
@@ -188,47 +199,65 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
         </header>
 
         <main className="bw-main">
-          <div className="bw-feed-search-row">
-            {showBackButton && (
+          {focusedFeedUser ? (
+            <div className="bw-feed-focus">
               <button
                 type="button"
-                className="bw-feed-search-back"
-                onClick={() => setSearchTerm('')}
-                aria-label="Limpiar búsqueda"
-                disabled={!searchTerm}
+                className="bw-back-button"
+                onClick={() => setFocusedFeedUser(null)}
+                aria-label="Volver al feed general"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
                 </svg>
               </button>
-            )}
-            <div className={`bw-feed-search ${showBackButton ? 'has-back' : ''}`}>
-              <span className="bw-feed-search-icon">
-                <Search fontSize="small" />
-              </span>
-              <input
-                type="search"
-                className="bw-input bw-feed-search-input"
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-              />
-              {searchTerm && (
+              <div className="bw-feed-focus-text">
+                <div className="bw-feed-focus-name">Posts de @{focusedFeedUser.username ?? 'usuario'}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="bw-feed-search-row">
+              {showBackButton && (
                 <button
                   type="button"
-                  className="bw-feed-search-clear"
+                  className="bw-feed-search-back"
                   onClick={() => setSearchTerm('')}
                   aria-label="Limpiar búsqueda"
+                  disabled={!searchTerm}
                 >
-                  <Clear fontSize="small" />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+                  </svg>
                 </button>
               )}
+              <div className={`bw-feed-search ${showBackButton ? 'has-back' : ''}`}>
+                <span className="bw-feed-search-icon">
+                  <Search fontSize="small" />
+                </span>
+                <input
+                  type="search"
+                  className="bw-input bw-feed-search-input"
+                  placeholder="Buscar usuarios..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    className="bw-feed-search-clear"
+                    onClick={() => setSearchTerm('')}
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <Clear fontSize="small" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {trimmedTerm.length >= 2 && (
+          {!focusedFeedUser && trimmedTerm.length >= 2 && (
             <div className="bw-user-results">
               {searchLoading && <p className="bw-helper">Buscando...</p>}
               {searchError && <p style={{ color: 'red', fontSize: 12 }}>{searchError}</p>}
@@ -301,11 +330,12 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
             </div>
           )}
 
-          <div className={trimmedTerm.length >= 2 ? 'bw-feed-hidden' : ''}>
+          <div className={shouldHideFeed ? 'bw-feed-hidden' : ''}>
             <FeedTabs
               currentUserId={session.user.id}
               refreshKey={refreshFeedKey}
               onOpenProfile={(userId) => setProfileModalUserId(userId)}
+              focusUserId={focusedFeedUser?.id ?? null}
             />
           </div>
         </main>
@@ -328,6 +358,7 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
           // refresh feed to reflect following changes
           setRefreshFeedKey((prev) => prev + 1);
         }}
+        onViewPosts={(user) => handleViewPosts(user)}
       />
       {confirmAction && (
         <div className="bw-modal-backdrop" onClick={handleCancelModal}>

@@ -8,6 +8,7 @@ type FeedTabsProps = {
   currentUserId: string;
   refreshKey?: number;
   onOpenProfile?: (userId: string) => void;
+  focusUserId?: string | null;
 };
 
 type FeedEntry = {
@@ -32,6 +33,7 @@ type SupabaseEntryRow = {
   price: number | null;
   rating: number | null;
   is_burger: boolean | null;
+  visibility?: string | null;
   photo_url: string | null;
   restaurants: { name: string | null } | null;
   burgers: { name: string | null } | null;
@@ -51,12 +53,13 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
   return <div className="bw-avatar-placeholder">{initial}</div>;
 };
 
-export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: Readonly<FeedTabsProps>) {
+export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUserId }: Readonly<FeedTabsProps>) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const isUserFeed = Boolean(focusUserId);
 
   useEffect(() => {
     let isCancelled = false;
@@ -67,7 +70,9 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: Reado
 
       let userIdsForQuery: string[] | null = null;
 
-      if (activeTab === 'following') {
+      if (focusUserId) {
+        userIdsForQuery = [focusUserId];
+      } else if (activeTab === 'following') {
         const { data: followsData, error: followsError } = await supabase
           .from('follows')
           .select('following_id')
@@ -107,7 +112,9 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: Reado
         .order('datetime', { ascending: false })
         .limit(50);
 
-      if (activeTab === 'global') {
+      if (focusUserId) {
+        query = query.eq('visibility', 'public').eq('user_id', focusUserId);
+      } else if (activeTab === 'global') {
         query = query.eq('visibility', 'public');
       } else if (activeTab === 'following' && userIdsForQuery) {
         query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
@@ -172,33 +179,36 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile }: Reado
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, currentUserId, refreshKey]);
+  }, [activeTab, currentUserId, refreshKey, focusUserId]);
 
   const renderPlaceholderText = () => {
+    if (isUserFeed) return 'Este usuario no tiene comidas públicas todavía.';
     if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
     return 'No hay comidas todavía en este feed.';
   };
 
   return (
     <section className="bw-feed">
-      <div className="bw-feed-header">
-        <div className="bw-feed-tabs bw-feed-tabs-duo" style={{ margin: '0 auto' }}>
-          <button
-            type="button"
-            className={`bw-feed-tab ${activeTab === 'following' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('following')}
-          >
-            Siguiendo
-          </button>
-          <button
-            type="button"
-            className={`bw-feed-tab ${activeTab === 'global' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('global')}
-          >
-            Global
-          </button>
+      {!isUserFeed && (
+        <div className="bw-feed-header">
+          <div className="bw-feed-tabs bw-feed-tabs-duo" style={{ margin: '0 auto' }}>
+            <button
+              type="button"
+              className={`bw-feed-tab ${activeTab === 'following' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('following')}
+            >
+              Siguiendo
+            </button>
+            <button
+              type="button"
+              className={`bw-feed-tab ${activeTab === 'global' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('global')}
+            >
+              Global
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bw-history-list">
         {loading && (
