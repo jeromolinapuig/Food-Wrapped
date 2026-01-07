@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "react-easy-crop": "^4.7.5",
+    "react-router-dom": "^6.28.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",

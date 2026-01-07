@@ -35,16 +35,47 @@ type UserDashboardPageProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
-  user: { id: string; username: string | null; displayName: string | null };
+  userId: string;
   onBack: () => void;
 };
 
-export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, user, onBack }: Readonly<UserDashboardPageProps>) {
+export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, userId, onBack }: Readonly<UserDashboardPageProps>) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
   const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [profile, setProfile] = useState<{ username: string | null; displayName: string | null } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, display_name')
+        .eq('id', userId)
+        .single();
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('Error loading profile', error);
+        setProfile({ username: null, displayName: null });
+        return;
+      }
+
+      setProfile({
+        username: (data as { username: string | null }).username,
+        displayName: (data as { display_name: string | null }).display_name,
+      });
+    };
+
+    loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -71,7 +102,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
         )
         .gte('datetime', from)
         .lt('datetime', to)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('datetime', { ascending: false });
 
       if (error) {
@@ -85,7 +116,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
     };
 
     loadEntries();
-  }, [user.id]);
+  }, [userId]);
 
   const stats = useMemo(() => {
     if (!entries.length) {
@@ -146,7 +177,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
     };
   }, [entries]);
 
-  const titleHandle = user.username ?? user.displayName ?? 'usuario';
+  const titleHandle = profile?.username ?? profile?.displayName ?? 'usuario';
 
   return (
     <div className="bw-app-root">
@@ -228,7 +259,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
               <div className="bw-section-right">
                 <FeedTabs
                   currentUserId={session.user.id}
-                  focusUserId={user.id}
+                  focusUserId={userId}
                   onCountChange={setPostsCount}
                   headerOnly
                   monthFilter={monthFilter}
@@ -238,7 +269,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
             </div>
             <FeedTabs
               currentUserId={session.user.id}
-              focusUserId={user.id}
+              focusUserId={userId}
               onCountChange={setPostsCount}
               hideHeader
               monthFilter={monthFilter}
