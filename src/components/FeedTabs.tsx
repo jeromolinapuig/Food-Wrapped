@@ -9,6 +9,9 @@ type FeedTabsProps = {
   refreshKey?: number;
   onOpenProfile?: (userId: string) => void;
   focusUserId?: string | null;
+  onCountChange?: (count: number) => void;
+  hideHeader?: boolean;
+  headerOnly?: boolean;
 };
 
 type FeedEntry = {
@@ -53,15 +56,83 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
   return <div className="bw-avatar-placeholder">{initial}</div>;
 };
 
-export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUserId }: Readonly<FeedTabsProps>) {
+export function FeedTabs({
+  currentUserId,
+  refreshKey = 0,
+  onOpenProfile,
+  focusUserId,
+  onCountChange,
+  hideHeader = false,
+  headerOnly = false,
+}: Readonly<FeedTabsProps>) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const isUserFeed = Boolean(focusUserId);
+  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
 
   useEffect(() => {
+    if (!focusUserId) return;
+    setMonthFilter('all');
+  }, [focusUserId]);
+
+  useEffect(() => {
+    if (!headerOnly) return;
+    if (monthFilter === 'all') return;
+    setMonthFilter('all');
+  }, [headerOnly, monthFilter]);
+
+  useEffect(() => {
+    if (!focusUserId) return;
+    let cancelled = false;
+
+    const loadMonths = async () => {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('datetime')
+        .eq('visibility', 'public')
+        .eq('user_id', focusUserId)
+        .order('datetime', { ascending: false })
+        .limit(500);
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('Error cargando meses', error);
+        setMonthOptions([{ value: 'all', label: 'Todo' }]);
+        return;
+      }
+
+      const seen = new Set<string>();
+      const options: { value: string; label: string }[] = [{ value: 'all', label: 'Todo' }];
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      (data ?? []).forEach((row) => {
+        const date = new Date((row as { datetime: string }).datetime);
+        if (Number.isNaN(date.getTime())) return;
+        const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (seen.has(value)) return;
+        seen.add(value);
+        const label = date.getFullYear() === currentYear
+          ? date.toLocaleString('es-ES', { month: 'long' })
+          : date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+        options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+      });
+      setMonthOptions(options);
+    };
+
+    loadMonths();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [focusUserId]);
+
+  useEffect(() => {
+    if (headerOnly) return;
     let isCancelled = false;
 
     const loadEntries = async () => {
@@ -81,6 +152,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
         if (followsError) {
           setError(followsError.message);
           setEntries([]);
+          onCountChange?.(0);
           setLoading(false);
           return;
         }
@@ -88,6 +160,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
         userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
         if (!userIdsForQuery.length) {
           setEntries([]);
+          onCountChange?.(0);
           setLoading(false);
           return;
         }
@@ -120,6 +193,17 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
         query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
       }
 
+      if (focusUserId && monthFilter !== 'all') {
+        const [yearStr, monthStr] = monthFilter.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        if (!Number.isNaN(year) && !Number.isNaN(month)) {
+          const start = new Date(year, month - 1, 1);
+          const end = new Date(year, month, 1);
+          query = query.gte('datetime', start.toISOString()).lt('datetime', end.toISOString());
+        }
+      }
+
       const { data, error } = await query;
 
       if (isCancelled) return;
@@ -127,6 +211,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
       if (error) {
         setError(error.message);
         setEntries([]);
+        onCountChange?.(0);
         setLoading(false);
         return;
       }
@@ -171,6 +256,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
       });
 
       setEntries(mapped);
+      onCountChange?.(mapped.length);
       setLoading(false);
     };
 
@@ -179,9 +265,10 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, currentUserId, refreshKey, focusUserId]);
+  }, [activeTab, currentUserId, refreshKey, focusUserId, monthFilter, onCountChange, headerOnly]);
 
   const renderPlaceholderText = () => {
+    if (isUserFeed && monthFilter !== 'all') return 'Este usuario no tiene comidas públicas en este mes.';
     if (isUserFeed) return 'Este usuario no tiene comidas públicas todavía.';
     if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
     return 'No hay comidas todavía en este feed.';
@@ -189,7 +276,7 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
 
   return (
     <section className="bw-feed">
-      {!isUserFeed && (
+      {!hideHeader && !isUserFeed && (
         <div className="bw-feed-header">
           <div className="bw-feed-tabs bw-feed-tabs-duo" style={{ margin: '0 auto' }}>
             <button
@@ -210,6 +297,24 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
         </div>
       )}
 
+      {!hideHeader && isUserFeed && (
+        <div className="bw-feed-filter bw-feed-filter-inline">
+          <select
+            id="bw-user-feed-month"
+            className="bw-select bw-select-compact"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value as 'all' | string)}
+          >
+            {monthOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {headerOnly && !hideHeader ? null : (
       <div className="bw-history-list">
         {loading && (
           <>
@@ -239,13 +344,14 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
               minute: '2-digit',
             });
             const isSelf = entry.userId === currentUserId;
+            const shouldDisableProfileClick = isSelf || isUserFeed;
             const name = isSelf ? 'Tú' : entry.displayName || entry.username;
             const stars = renderStarString(entry.rating);
 
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
                 <div className="bw-feed-entry-header">
-                  {isSelf ? (
+                  {shouldDisableProfileClick ? (
                     <div className="bw-feed-user">
                       <div className="bw-avatar">
                         <Avatar username={entry.username} avatarUrl={entry.avatarUrl} />
@@ -297,10 +403,11 @@ export function FeedTabs({ currentUserId, refreshKey = 0, onOpenProfile, focusUs
                     <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
                   </div>
                 </div>
-              </article>
-            );
-          })}
+          </article>
+        );
+      })}
       </div>
+      )}
 
       {photoPreviewUrl && (
         <div className="bw-photo-viewer-backdrop" onClick={() => setPhotoPreviewUrl(null)}>

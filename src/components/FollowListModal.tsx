@@ -22,9 +22,17 @@ type FollowListModalProps = {
   currentUserId: string;
   onClose: () => void;
   onFollowingDelta: (delta: number) => void;
+  onViewPosts?: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
-export function FollowListModal({ open, mode, currentUserId, onClose, onFollowingDelta }: Readonly<FollowListModalProps>) {
+export function FollowListModal({
+  open,
+  mode,
+  currentUserId,
+  onClose,
+  onFollowingDelta,
+  onViewPosts,
+}: Readonly<FollowListModalProps>) {
   const [items, setItems] = useState<FollowListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,6 +292,16 @@ export function FollowListModal({ open, mode, currentUserId, onClose, onFollowin
                       <div className="bw-user-name">@{item.username ?? 'usuario'}</div>
                       {metaText && <div className="bw-user-meta">{metaText}</div>}
                       {item.bio && <div className="bw-user-bio">{item.bio}</div>}
+                      {onViewPosts && (
+                        <button
+                          type="button"
+                          className="bw-link-button bw-link-inline"
+                          onClick={() => onViewPosts({ id: item.id, username: item.username, displayName: item.displayName })}
+                          style={{ marginTop: 4 }}
+                        >
+                          Ver sus posts
+                        </button>
+                      )}
                     </div>
                   </div>
                   <button

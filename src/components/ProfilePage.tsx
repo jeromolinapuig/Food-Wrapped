@@ -18,6 +18,7 @@ type ProfilePageProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  onOpenUserDashboard: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
 const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Promise<File> => {
@@ -54,7 +55,7 @@ const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Pro
   }
 };
 
-export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Readonly<ProfilePageProps>) {
+export function ProfilePage({ session, theme, onToggleTheme, onNavigate, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -265,6 +266,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
     }));
   };
 
+  const handleOpenUserFeed = (user: { id: string; username: string | null; displayName: string | null }) => {
+    setFollowListMode(null);
+    onOpenUserDashboard(user);
+  };
+
   return (
     <div className="bw-app-root">
       <div className="bw-shell">
@@ -382,6 +388,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate }: Reado
         currentUserId={session.user.id}
         onClose={() => setFollowListMode(null)}
         onFollowingDelta={handleFollowingDelta}
+        onViewPosts={handleOpenUserFeed}
       />
 
       {avatarCropSrc && (

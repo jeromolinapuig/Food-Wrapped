@@ -11,6 +11,15 @@ type FeedPageProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  focusedUser?: { id: string; username: string | null; displayName: string | null } | null;
+  onFocusedUserChange?: (user: { id: string; username: string | null; displayName: string | null } | null) => void;
+  returnPage?: 'dashboard' | 'feed' | 'profile';
+  openProfileUserId?: string | null;
+  onProfileModalConsumed?: () => void;
+  onOpenUserDashboard?: (
+    user: { id: string; username: string | null; displayName: string | null },
+    options?: { returnPage?: 'dashboard' | 'feed' | 'profile'; returnProfileUserId?: string | null }
+  ) => void;
 };
 
 type SearchUser = {
@@ -21,7 +30,18 @@ type SearchUser = {
   bio: string | null;
 };
 
-export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly<FeedPageProps>) {
+export function FeedPage({
+  session,
+  theme,
+  onToggleTheme,
+  onNavigate,
+  focusedUser,
+  onFocusedUserChange,
+  returnPage = 'feed',
+  openProfileUserId,
+  onProfileModalConsumed,
+  onOpenUserDashboard,
+}: Readonly<FeedPageProps>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -32,7 +52,9 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
-  const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
+  const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(
+    focusedUser ?? null
+  );
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
@@ -173,16 +195,26 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
 
   const handleCancelModal = () => setConfirmAction(null);
   const handleViewPosts = (user: { id: string; username: string | null; displayName: string | null }) => {
-    setFocusedFeedUser({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-    });
+    onOpenUserDashboard?.(user, { returnPage: 'feed', returnProfileUserId: user.id });
     setProfileModalUserId(null);
-    setSearchTerm('');
   };
   const showBackButton = searchFocused || Boolean(searchTerm);
   const shouldHideFeed = trimmedTerm.length >= 2 && !focusedFeedUser;
+
+  useEffect(() => {
+    if (!focusedUser) return;
+    if (focusedUser.id === focusedFeedUser?.id) return;
+    setFocusedFeedUser(focusedUser);
+    setProfileModalUserId(null);
+    setSearchTerm('');
+  }, [focusedUser, focusedFeedUser?.id]);
+
+  useEffect(() => {
+    if (!openProfileUserId) return;
+    if (openProfileUserId === profileModalUserId) return;
+    setProfileModalUserId(openProfileUserId);
+    onProfileModalConsumed?.();
+  }, [openProfileUserId, onProfileModalConsumed, profileModalUserId]);
 
   return (
     <div className="bw-app-root">
@@ -201,18 +233,30 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
         <main className="bw-main">
           {focusedFeedUser ? (
             <div className="bw-feed-focus">
-              <button
-                type="button"
-                className="bw-back-button"
-                onClick={() => setFocusedFeedUser(null)}
-                aria-label="Volver al feed general"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-                </svg>
-              </button>
-              <div className="bw-feed-focus-text">
-                <div className="bw-feed-focus-name">Posts de @{focusedFeedUser.username ?? 'usuario'}</div>
+              <div className="bw-feed-focus-left">
+                <button
+                  type="button"
+                  className="bw-back-button"
+                  onClick={() => {
+                    setFocusedFeedUser(null);
+                    onFocusedUserChange?.(null);
+                    if (returnPage === 'profile') {
+                      onNavigate('profile');
+                      return;
+                    }
+                  }}
+                  aria-label="Volver al feed general"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+                  </svg>
+                </button>
+                <div className="bw-feed-focus-text">
+                  <div className="bw-feed-focus-name">Posts de @{focusedFeedUser.username ?? 'usuario'}</div>
+                </div>
+              </div>
+              <div className="bw-feed-focus-right">
+                <FeedTabs currentUserId={session.user.id} focusUserId={focusedFeedUser.id} headerOnly />
               </div>
             </div>
           ) : (
@@ -336,6 +380,7 @@ export function FeedPage({ session, theme, onToggleTheme, onNavigate }: Readonly
               refreshKey={refreshFeedKey}
               onOpenProfile={(userId) => setProfileModalUserId(userId)}
               focusUserId={focusedFeedUser?.id ?? null}
+              hideHeader={Boolean(focusedFeedUser)}
             />
           </div>
         </main>

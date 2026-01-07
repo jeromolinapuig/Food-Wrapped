@@ -1,18 +1,10 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
-import { AddEntryModal } from './AddEntryModal';
 import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
 import { TopMenu } from './TopMenu';
-
-type DashboardProps = {
-  session: Session;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
-};
 
 type BurgerTypeStats = {
   beef: number;
@@ -28,115 +20,68 @@ type DbEntryRow = {
   rating: number | null;
   price: number | null;
   is_burger: boolean;
-  additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
-  photo_url: string | null;
   restaurant: { name: string } | null;
   burger: { name: string | null; meat_type: MeatType | null } | null;
 };
 
-export function Dashboard({ session, theme, onToggleTheme, onNavigate }: DashboardProps) {
-  const username = (session.user.user_metadata as { username?: string } | null)?.username;
+type UserDashboardPageProps = {
+  session: Session;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  user: { id: string; username: string | null; displayName: string | null };
+  onBack: () => void;
+};
+
+export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, user, onBack }: Readonly<UserDashboardPageProps>) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const openAddModal = () => {
-    setIsAddModalOpen(true);
-  };
-  const closeAddModal = () => {
-    setIsAddModalOpen(false);
-  };
+  useEffect(() => {
+    const loadEntries = async () => {
+      setLoading(true);
+      setError(null);
 
-  // --- Cargar entradas del año 2026 ---
-  const loadEntries = async () => {
-    setLoading(true);
-    setError(null);
+      const from = '2026-01-01';
+      const to = '2027-01-01';
 
-    const from = '2026-01-01';
-    const to = '2027-01-01';
-
-    const { data, error } = await supabase
-      .from('entries')
-      .select(
+      const { data, error } = await supabase
+        .from('entries')
+        .select(
+          `
+          id,
+          datetime,
+          rating,
+          price,
+          is_burger,
+          restaurant_id,
+          burger_id,
+          restaurant:restaurants ( name ),
+          burger:burgers ( name, meat_type )
         `
-        id,
-        datetime,
-        rating,
-        price,
-        is_burger,
-        additional_notes,
-        restaurant_id,
-        burger_id,
-        photo_url,
-        restaurant:restaurants ( name ),
-        burger:burgers ( name, meat_type )
-      `
-      )
-      .gte('datetime', from)
-      .lt('datetime', to)
-      .eq('user_id', session.user.id)
-      .order('datetime', { ascending: false });
+        )
+        .gte('datetime', from)
+        .lt('datetime', to)
+        .eq('user_id', user.id)
+        .order('datetime', { ascending: false });
 
-    if (error) {
-      setError(error.message);
-      setEntries([]);
-    } else {
-      setEntries((data ?? []) as unknown as DbEntryRow[]);
-    }
+      if (error) {
+        setError(error.message);
+        setEntries([]);
+      } else {
+        setEntries((data ?? []) as unknown as DbEntryRow[]);
+      }
 
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await loadEntries();
+      setLoading(false);
     };
-    fetchData();
 
-    // Suscripción a cambios en la tabla de entries para refrescar el feed en tiempo real
-    const channel = supabase
-      .channel('entries-updates')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'entries' },
-        () => {
-          loadEntries();
-        }
-      )
-      .subscribe();
+    loadEntries();
+  }, [user.id]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session.user.id]);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPromptEvent(e);
-      setTimeout(() => setShowInstallBanner(true), 2000);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-
-  const handleInstallClick = async () => {
-    if (installPromptEvent) {
-      const promptEvent = installPromptEvent as { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
-      await promptEvent.prompt?.();
-    }
-    setShowInstallBanner(false);
-    setInstallPromptEvent(null);
-  };
-
-  // --- Stats calculadas ---
   const stats = useMemo(() => {
     if (!entries.length) {
       return {
@@ -156,24 +101,21 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
     const restaurantCounter = new Map<string, number>();
     const burgerTypes: BurgerTypeStats = { beef: 0, chicken: 0, vegan: 0 };
 
-    for (const e of entries) {
-      if (e.price != null) totalSpent += e.price;
-      if (e.is_burger) burgerCount++;
+    for (const entry of entries) {
+      if (entry.price != null) totalSpent += entry.price;
+      if (entry.is_burger) burgerCount++;
 
-      if (e.rating != null) {
-        ratingSum += e.rating;
+      if (entry.rating != null) {
+        ratingSum += entry.rating;
         ratingCount++;
       }
 
-      const restaurantName = e.restaurant?.name;
+      const restaurantName = entry.restaurant?.name;
       if (restaurantName) {
-        restaurantCounter.set(
-          restaurantName,
-          (restaurantCounter.get(restaurantName) ?? 0) + 1
-        );
+        restaurantCounter.set(restaurantName, (restaurantCounter.get(restaurantName) ?? 0) + 1);
       }
 
-      const meat = e.burger?.meat_type;
+      const meat = entry.burger?.meat_type;
       if (meat === 'beef') burgerTypes.beef++;
       if (meat === 'chicken') burgerTypes.chicken++;
       if (meat === 'vegan') burgerTypes.vegan++;
@@ -199,53 +141,32 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
     };
   }, [entries]);
 
-  const handleEntrySaved = async () => {
-    await loadEntries();
-    setEditingEntry(null);
-  };
+  const titleHandle = user.username ?? user.displayName ?? 'usuario';
 
   return (
     <div className="bw-app-root">
       <div className="bw-shell">
         <header className="bw-header">
+          <button type="button" className="bw-back-button" onClick={onBack} aria-label="Volver">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+            </svg>
+          </button>
           <div className="bw-header-icon">
             <img src="/logo.png" alt="Burger Wrapped" />
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Burger Wrapped</h1>
-            <p className="bw-subtitle">
-              Tu año 2026 en hamburguesas - {username ?? session.user.email}
-            </p>
+            <p className="bw-subtitle">Resumen de @{titleHandle}</p>
           </div>
 
           <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
         </header>
 
-        {showInstallBanner && (
-          <div className="bw-install-modal">
-            <div className="bw-install-modal-card">
-              <div className="bw-install-modal-body">
-                <div>
-                  <div className="bw-install-title">Instala la app</div>
-                  <div className="bw-install-text">Añádela a tu pantalla de inicio para abrirla rápido.</div>
-                </div>
-                <div className="bw-install-actions">
-                  <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
-                    Más tarde
-                  </button>
-                  <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
-                    Instalar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         <main className="bw-main">
           <section className="bw-stats-grid">
             {loading ? (
-              Array.from({ length: 4 }).map((_ , idx) => (
+              Array.from({ length: 4 }).map((_, idx) => (
                 <div className="bw-stat-card bw-skeleton" key={idx}>
                   <div className="bw-skeleton-line bw-skeleton-short" />
                   <div className="bw-skeleton-line" />
@@ -294,56 +215,29 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
             </div>
           </section>
 
+          {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
+
           <section className="bw-history">
             <div className="bw-section-header">
               <h2 className="bw-section-title">Posts ({postsCount})</h2>
               <div className="bw-section-right">
                 <FeedTabs
                   currentUserId={session.user.id}
-                  focusUserId={session.user.id}
+                  focusUserId={user.id}
                   onCountChange={setPostsCount}
                   headerOnly
                 />
               </div>
             </div>
-            {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
             <FeedTabs
               currentUserId={session.user.id}
-              focusUserId={session.user.id}
+              focusUserId={user.id}
               onCountChange={setPostsCount}
               hideHeader
             />
           </section>
-
         </main>
-
-        <div className="bw-fab-wrapper">
-          <button
-            className="bw-fab"
-            onClick={openAddModal}
-            aria-label="Añadir entrada"
-          >
-            <span className="bw-fab-plus">+</span>
-            <span className="bw-fab-label">Añadir</span>
-          </button>
-        </div>
       </div>
-
-      <AddEntryModal
-        open={isAddModalOpen}
-        onClose={closeAddModal}
-        onSaved={handleEntrySaved}
-        session={session}
-        theme={theme}
-        mode="create"
-      />
-
-
-
-
     </div>
   );
 }
-
-
-
