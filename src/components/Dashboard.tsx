@@ -142,6 +142,9 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
   }, [session.user.id]);
 
   useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) return;
+
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallPromptEvent(e);
