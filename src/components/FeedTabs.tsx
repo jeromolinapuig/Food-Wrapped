@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Close } from '@mui/icons-material';
+import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 
 type FeedTab = 'following' | 'global';
@@ -12,6 +12,11 @@ type FeedTabsProps = {
   onCountChange?: (count: number) => void;
   hideHeader?: boolean;
   headerOnly?: boolean;
+  monthFilter?: 'all' | string;
+  onMonthFilterChange?: (value: 'all' | string) => void;
+  showOwnerActions?: boolean;
+  onEditEntry?: (entry: FeedEntry) => void;
+  onDeleteEntry?: (entry: FeedEntry) => void;
 };
 
 type FeedEntry = {
@@ -24,6 +29,10 @@ type FeedEntry = {
   price: number;
   rating: number;
   isBurger: boolean;
+  additionalNotes: string | null;
+  restaurantId: string | null;
+  burgerId: string | null;
+  meatType: 'beef' | 'chicken' | 'vegan' | 'other' | null;
   restaurantName: string | null;
   burgerName: string | null;
   photoUrl: string | null;
@@ -36,10 +45,13 @@ type SupabaseEntryRow = {
   price: number | null;
   rating: number | null;
   is_burger: boolean | null;
+  additional_notes: string | null;
+  restaurant_id: string | null;
+  burger_id: string | null;
   visibility?: string | null;
   photo_url: string | null;
   restaurants: { name: string | null } | null;
-  burgers: { name: string | null } | null;
+  burgers: { name: string | null; meat_type: 'beef' | 'chicken' | 'vegan' | 'other' | null } | null;
 };
 
 const renderStarString = (rating: number) => {
@@ -64,6 +76,11 @@ export function FeedTabs({
   onCountChange,
   hideHeader = false,
   headerOnly = false,
+  monthFilter,
+  onMonthFilterChange,
+  showOwnerActions = false,
+  onEditEntry,
+  onDeleteEntry,
 }: Readonly<FeedTabsProps>) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
@@ -71,19 +88,10 @@ export function FeedTabs({
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const isUserFeed = Boolean(focusUserId);
-  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [internalMonthFilter, setInternalMonthFilter] = useState<'all' | string>('all');
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
-
-  useEffect(() => {
-    if (!focusUserId) return;
-    setMonthFilter('all');
-  }, [focusUserId]);
-
-  useEffect(() => {
-    if (!headerOnly) return;
-    if (monthFilter === 'all') return;
-    setMonthFilter('all');
-  }, [headerOnly, monthFilter]);
+  const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
+  const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
 
   useEffect(() => {
     if (!focusUserId) return;
@@ -176,10 +184,13 @@ export function FeedTabs({
           price,
           rating,
           is_burger,
+          additional_notes,
+          restaurant_id,
+          burger_id,
           visibility,
           photo_url,
           restaurants ( name ),
-          burgers ( name )
+          burgers ( name, meat_type )
         `
         )
         .order('datetime', { ascending: false })
@@ -193,8 +204,8 @@ export function FeedTabs({
         query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
       }
 
-      if (focusUserId && monthFilter !== 'all') {
-        const [yearStr, monthStr] = monthFilter.split('-');
+      if (focusUserId && effectiveMonthFilter !== 'all') {
+        const [yearStr, monthStr] = effectiveMonthFilter.split('-');
         const year = Number(yearStr);
         const month = Number(monthStr);
         if (!Number.isNaN(year) && !Number.isNaN(month)) {
@@ -249,6 +260,10 @@ export function FeedTabs({
           price: entry.price ?? 0,
           rating: entry.rating ?? 0,
           isBurger: Boolean(entry.is_burger),
+          additionalNotes: entry.additional_notes ?? null,
+          restaurantId: entry.restaurant_id ?? null,
+          burgerId: entry.burger_id ?? null,
+          meatType: entry.burgers?.meat_type ?? null,
           restaurantName: entry.restaurants?.name ?? null,
           burgerName: entry.burgers?.name ?? null,
           photoUrl: entry.photo_url ?? null,
@@ -265,10 +280,10 @@ export function FeedTabs({
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, currentUserId, refreshKey, focusUserId, monthFilter, onCountChange, headerOnly]);
+  }, [activeTab, currentUserId, refreshKey, focusUserId, effectiveMonthFilter, onCountChange, headerOnly]);
 
   const renderPlaceholderText = () => {
-    if (isUserFeed && monthFilter !== 'all') return 'Este usuario no tiene comidas públicas en este mes.';
+    if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas públicas en este mes.';
     if (isUserFeed) return 'Este usuario no tiene comidas públicas todavía.';
     if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
     return 'No hay comidas todavía en este feed.';
@@ -302,8 +317,8 @@ export function FeedTabs({
           <select
             id="bw-user-feed-month"
             className="bw-select bw-select-compact"
-            value={monthFilter}
-            onChange={(e) => setMonthFilter(e.target.value as 'all' | string)}
+            value={effectiveMonthFilter}
+            onChange={(e) => setEffectiveMonthFilter(e.target.value as 'all' | string)}
           >
             {monthOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -347,6 +362,7 @@ export function FeedTabs({
             const shouldDisableProfileClick = isSelf || isUserFeed;
             const name = isSelf ? 'Tú' : entry.displayName || entry.username;
             const stars = renderStarString(entry.rating);
+            const canEdit = showOwnerActions && isSelf;
 
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
@@ -393,6 +409,10 @@ export function FeedTabs({
                     </button>
                   )}
 
+                  {entry.additionalNotes && (
+                    <p className="bw-feed-notes">{entry.additionalNotes}</p>
+                  )}
+
                   <div className="bw-feed-footer">
                     <div className="bw-feed-rating">
                       <span className="bw-feed-stars">{stars}</span>
@@ -400,11 +420,31 @@ export function FeedTabs({
                         {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
                       </span>
                     </div>
-                    <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
+                    <div className="bw-feed-footer-right">
+                      <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
+                      {canEdit && (
+                        <div className="bw-history-actions">
+                          <button
+                            className="bw-icon-button"
+                            title="Editar entrada"
+                            onClick={() => onEditEntry?.(entry)}
+                          >
+                            <Edit fontSize="small" />
+                          </button>
+                          <button
+                            className="bw-icon-button bw-icon-danger"
+                            title="Eliminar entrada"
+                            onClick={() => onDeleteEntry?.(entry)}
+                          >
+                            <Delete fontSize="small" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-          </article>
-        );
+              </article>
+            );
       })}
       </div>
       )}

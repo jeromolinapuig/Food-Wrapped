@@ -36,21 +36,43 @@ type DbEntryRow = {
   burger: { name: string | null; meat_type: MeatType | null } | null;
 };
 
+type EditEntry = {
+  id: string;
+  datetime: string;
+  rating: number | null;
+  price: number | null;
+  is_burger: boolean;
+  additionalNotes?: string | null;
+  restaurantId?: string | null;
+  restaurantName?: string | null;
+  burgerId?: string | null;
+  burgerName?: string | null;
+  meatType?: MeatType | null;
+  photoUrl?: string | null;
+};
+
 export function Dashboard({ session, theme, onToggleTheme, onNavigate }: DashboardProps) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
+  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [refreshFeedKey, setRefreshFeedKey] = useState(0);
+  const [mutating, setMutating] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<EditEntry | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const openAddModal = () => {
+    setEditingEntry(null);
     setIsAddModalOpen(true);
   };
   const closeAddModal = () => {
     setIsAddModalOpen(false);
+    setEditingEntry(null);
   };
 
   // --- Cargar entradas del año 2026 ---
@@ -201,7 +223,33 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
 
   const handleEntrySaved = async () => {
     await loadEntries();
+    setRefreshFeedKey((prev) => prev + 1);
     setEditingEntry(null);
+  };
+
+  const handleEditEntry = (entry: EditEntry) => {
+    setEditingEntry(entry);
+    setIsAddModalOpen(true);
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!deleteEntry) return;
+    setMutating(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', deleteEntry.id);
+      if (deleteError) throw deleteError;
+      await loadEntries();
+      setRefreshFeedKey((prev) => prev + 1);
+      setDeleteEntry(null);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo eliminar la entrada.');
+    } finally {
+      setMutating(false);
+    }
   };
 
   return (
@@ -303,6 +351,9 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
                   focusUserId={session.user.id}
                   onCountChange={setPostsCount}
                   headerOnly
+                  monthFilter={monthFilter}
+                  onMonthFilterChange={setMonthFilter}
+                  refreshKey={refreshFeedKey}
                 />
               </div>
             </div>
@@ -312,6 +363,42 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
               focusUserId={session.user.id}
               onCountChange={setPostsCount}
               hideHeader
+              monthFilter={monthFilter}
+              onMonthFilterChange={setMonthFilter}
+              refreshKey={refreshFeedKey}
+              showOwnerActions
+              onEditEntry={(entry) =>
+                handleEditEntry({
+                  id: entry.id,
+                  datetime: entry.datetime,
+                  rating: entry.rating,
+                  price: entry.price,
+                  is_burger: entry.isBurger,
+                  additionalNotes: entry.additionalNotes,
+                  restaurantId: entry.restaurantId,
+                  restaurantName: entry.restaurantName,
+                  burgerId: entry.burgerId,
+                  burgerName: entry.burgerName,
+                  meatType: entry.meatType,
+                  photoUrl: entry.photoUrl,
+                })
+              }
+              onDeleteEntry={(entry) =>
+                setDeleteEntry({
+                  id: entry.id,
+                  datetime: entry.datetime,
+                  rating: entry.rating,
+                  price: entry.price,
+                  is_burger: entry.isBurger,
+                  additionalNotes: entry.additionalNotes,
+                  restaurantId: entry.restaurantId,
+                  restaurantName: entry.restaurantName,
+                  burgerId: entry.burgerId,
+                  burgerName: entry.burgerName,
+                  meatType: entry.meatType,
+                  photoUrl: entry.photoUrl,
+                })
+              }
             />
           </section>
 
@@ -335,9 +422,45 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
         onSaved={handleEntrySaved}
         session={session}
         theme={theme}
-        mode="create"
+        mode={editingEntry ? 'edit' : 'create'}
+        entry={editingEntry ?? undefined}
       />
 
+      {deleteEntry && (
+        <div className="bw-confirm-backdrop" onClick={() => (!mutating ? setDeleteEntry(null) : null)}>
+          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="bw-confirm-title">Eliminar entrada</h3>
+            <p className="bw-confirm-text">
+              ¿Seguro que deseas eliminar la entrada del{' '}
+              {new Date(deleteEntry.datetime).toLocaleString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+              {' '}en {deleteEntry.restaurantName ?? 'restaurante desconocido'}?
+            </p>
+            <div className="bw-confirm-actions">
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => setDeleteEntry(null)}
+                disabled={mutating}
+              >
+                Cancelar
+              </button>
+              <button
+                className="bw-btn bw-btn-danger"
+                type="button"
+                onClick={handleDeleteEntry}
+                disabled={mutating}
+              >
+                {mutating ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
 

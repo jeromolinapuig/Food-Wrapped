@@ -137,7 +137,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .bw-section-header .bw-section-title {
@@ -576,6 +576,12 @@
   gap: 12px;
 }
 
+.bw-feed-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .bw-feed-rating {
   display: flex;
   align-items: center;
@@ -595,6 +601,13 @@
 .bw-feed-price {
   font-weight: 700;
   font-size: 16px;
+}
+
+.bw-feed-notes {
+  font-size: 13px;
+  color: var(--bw-text-muted);
+  line-height: 1.4;
+  white-space: pre-line;
 }
 
 .bw-feed-search {

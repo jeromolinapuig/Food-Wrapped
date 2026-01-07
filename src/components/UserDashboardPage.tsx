@@ -40,6 +40,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
+  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -226,6 +227,8 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
                   focusUserId={user.id}
                   onCountChange={setPostsCount}
                   headerOnly
+                  monthFilter={monthFilter}
+                  onMonthFilterChange={setMonthFilter}
                 />
               </div>
             </div>
@@ -234,6 +237,8 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
               focusUserId={user.id}
               onCountChange={setPostsCount}
               hideHeader
+              monthFilter={monthFilter}
+              onMonthFilterChange={setMonthFilter}
             />
           </section>
         </main>

@@ -9,15 +9,16 @@ import { UserDashboardPage } from './components/UserDashboardPage';
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
 type Theme = 'light' | 'dark';
 type Page = 'dashboard' | 'feed' | 'profile' | 'user-dashboard';
+type FeedReturnPage = 'dashboard' | 'feed' | 'profile';
 type FocusUser = { id: string; username: string | null; displayName: string | null };
 
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [activePage, setActivePage] = useState<Page>('dashboard');
   const [feedFocusUser, setFeedFocusUser] = useState<FocusUser | null>(null);
-  const [feedReturnPage, setFeedReturnPage] = useState<Page>('feed');
+  const [feedReturnPage, setFeedReturnPage] = useState<FeedReturnPage>('feed');
   const [userDashboardUser, setUserDashboardUser] = useState<FocusUser | null>(null);
-  const [userDashboardReturn, setUserDashboardReturn] = useState<{ page: Page; profileUserId: string | null }>({
+  const [userDashboardReturn, setUserDashboardReturn] = useState<{ page: FeedReturnPage; profileUserId: string | null }>({
     page: 'feed',
     profileUserId: null,
   });

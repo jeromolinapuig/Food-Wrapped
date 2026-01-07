@@ -52,9 +52,8 @@ export function FeedPage({
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
-  const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(
-    focusedUser ?? null
-  );
+  const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
+  const [userMonthFilter, setUserMonthFilter] = useState<'all' | string>('all');
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
@@ -199,22 +198,8 @@ export function FeedPage({
     setProfileModalUserId(null);
   };
   const showBackButton = searchFocused || Boolean(searchTerm);
-  const shouldHideFeed = trimmedTerm.length >= 2 && !focusedFeedUser;
-
-  useEffect(() => {
-    if (!focusedUser) return;
-    if (focusedUser.id === focusedFeedUser?.id) return;
-    setFocusedFeedUser(focusedUser);
-    setProfileModalUserId(null);
-    setSearchTerm('');
-  }, [focusedUser, focusedFeedUser?.id]);
-
-  useEffect(() => {
-    if (!openProfileUserId) return;
-    if (openProfileUserId === profileModalUserId) return;
-    setProfileModalUserId(openProfileUserId);
-    onProfileModalConsumed?.();
-  }, [openProfileUserId, onProfileModalConsumed, profileModalUserId]);
+  const effectiveFocusedUser = focusedUser ?? focusedFeedUser;
+  const shouldHideFeed = trimmedTerm.length >= 2 && !effectiveFocusedUser;
 
   return (
     <div className="bw-app-root">
@@ -231,7 +216,7 @@ export function FeedPage({
         </header>
 
         <main className="bw-main">
-          {focusedFeedUser ? (
+          {effectiveFocusedUser ? (
             <div className="bw-feed-focus">
               <div className="bw-feed-focus-left">
                 <button
@@ -252,11 +237,17 @@ export function FeedPage({
                   </svg>
                 </button>
                 <div className="bw-feed-focus-text">
-                  <div className="bw-feed-focus-name">Posts de @{focusedFeedUser.username ?? 'usuario'}</div>
+                  <div className="bw-feed-focus-name">Posts de @{effectiveFocusedUser.username ?? 'usuario'}</div>
                 </div>
               </div>
               <div className="bw-feed-focus-right">
-                <FeedTabs currentUserId={session.user.id} focusUserId={focusedFeedUser.id} headerOnly />
+                <FeedTabs
+                  currentUserId={session.user.id}
+                  focusUserId={effectiveFocusedUser.id}
+                  headerOnly
+                  monthFilter={userMonthFilter}
+                  onMonthFilterChange={setUserMonthFilter}
+                />
               </div>
             </div>
           ) : (
@@ -301,7 +292,7 @@ export function FeedPage({
             </div>
           )}
 
-          {!focusedFeedUser && trimmedTerm.length >= 2 && (
+          {!effectiveFocusedUser && trimmedTerm.length >= 2 && (
             <div className="bw-user-results">
               {searchLoading && <p className="bw-helper">Buscando...</p>}
               {searchError && <p style={{ color: 'red', fontSize: 12 }}>{searchError}</p>}
@@ -379,17 +370,25 @@ export function FeedPage({
               currentUserId={session.user.id}
               refreshKey={refreshFeedKey}
               onOpenProfile={(userId) => setProfileModalUserId(userId)}
-              focusUserId={focusedFeedUser?.id ?? null}
-              hideHeader={Boolean(focusedFeedUser)}
+              focusUserId={effectiveFocusedUser?.id ?? null}
+              hideHeader={Boolean(effectiveFocusedUser)}
+              monthFilter={userMonthFilter}
+              onMonthFilterChange={setUserMonthFilter}
             />
           </div>
         </main>
       </div>
       <UserProfileModal
-        open={Boolean(profileModalUserId)}
-        userId={profileModalUserId}
+        open={Boolean(openProfileUserId ?? profileModalUserId)}
+        userId={openProfileUserId ?? profileModalUserId}
         session={session}
-        onClose={() => setProfileModalUserId(null)}
+        onClose={() => {
+          if (openProfileUserId) {
+            onProfileModalConsumed?.();
+          } else {
+            setProfileModalUserId(null);
+          }
+        }}
         onFollowChange={(targetId, isNowFollowing) => {
           setFollowingIds((prev) => {
             const copy = { ...prev };
