@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DarkMode, DynamicFeed, Home, LightMode, Menu, Person } from '@mui/icons-material';
+import { DarkMode, DynamicFeed, Groups, Home, LightMode, Menu, Person } from '@mui/icons-material';
 import '../styles/shared.css';
 import '../styles/top-menu.css';
 
-type MenuPage = 'dashboard' | 'feed' | 'profile';
+type MenuPage = 'dashboard' | 'feed' | 'profile' | 'groups';
 
 type TopMenuProps = {
   theme: 'light' | 'dark';
@@ -113,6 +113,10 @@ export function TopMenu({ theme, onToggleTheme, onNavigate }: Readonly<TopMenuPr
           <button className="bw-menu-item" type="button" onClick={() => handle('profile')}>
             <span className="bw-menu-icon"><Person fontSize="small" /></span>
             Mi perfil
+          </button>
+          <button className="bw-menu-item" type="button" onClick={() => handle('groups')}>
+            <span className="bw-menu-icon"><Groups fontSize="small" /></span>
+            Grupos
           </button>
           <button className="bw-menu-item" type="button" onClick={() => handle('theme')}>
             <span className="bw-menu-icon">

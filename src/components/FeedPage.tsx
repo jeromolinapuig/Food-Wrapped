@@ -14,7 +14,7 @@ type FeedPageProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
   focusedUser?: { id: string; username: string | null; displayName: string | null } | null;
   onFocusedUserChange?: (user: { id: string; username: string | null; displayName: string | null } | null) => void;
   returnPage?: 'dashboard' | 'feed' | 'profile';

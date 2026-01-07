@@ -20,7 +20,7 @@ type ProfilePageProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
   onOpenUserDashboard: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 

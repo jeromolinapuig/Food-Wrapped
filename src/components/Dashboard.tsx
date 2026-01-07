@@ -14,7 +14,7 @@ type DashboardProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile') => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
 };
 
 type BurgerTypeStats = {

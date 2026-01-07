@@ -1,0 +1,213 @@
+/* Groups page */
+
+.bw-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bw-group-invites-button {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--bw-card-bg);
+  color: var(--bw-text);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.bw-group-invites-button:active {
+  transform: translateY(1px);
+}
+
+.bw-group-card {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  padding: 18px;
+  background: var(--bw-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bw-group-card:active {
+  transform: translateY(1px);
+}
+
+.bw-group-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bw-group-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bw-text);
+}
+
+.bw-group-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--bw-text-muted);
+  font-weight: 600;
+}
+
+.bw-group-avatars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.bw-group-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--bw-accent);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bw-surface);
+  margin-left: -8px;
+  overflow: hidden;
+}
+
+.bw-group-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bw-group-avatar:first-child {
+  margin-left: 0;
+}
+
+.bw-group-chevron {
+  color: #9aa0a6;
+}
+
+.bw-group-card-add {
+  border-style: dashed;
+  border-width: 2px;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: var(--bw-text-muted);
+  justify-content: center;
+  min-height: 96px;
+}
+
+:root[data-theme="dark"] .bw-group-card-add {
+  border-color: var(--bw-text-muted);
+}
+
+.bw-group-modal {
+  height: auto;
+  max-height: 80vh;
+}
+
+.bw-group-search {
+  margin: 12px 0;
+}
+
+.bw-group-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 2px;
+  flex: 1;
+}
+
+.bw-group-modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.bw-group-create-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.bw-group-create-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bw-group-invites {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bw-group-invite-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--bw-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bw-group-invite-card:nth-child(odd) {
+  background: rgba(255, 59, 141, 0.06);
+  border-color: rgba(255, 59, 141, 0.25);
+}
+
+.bw-group-invite-card:nth-child(even) {
+  background: rgba(17, 17, 17, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.bw-group-invite-actions button {
+  flex: 1;
+}
+
+.bw-group-invite-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--bw-text);
+}
+
+.bw-group-invite-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.bw-group-friends {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bw-group-friend-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: left;
+}
+
+.bw-group-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bw-text-muted);
+}
+
+.bw-group-check.is-selected {
+  color: var(--bw-accent);
+}

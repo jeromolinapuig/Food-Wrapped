@@ -4,6 +4,7 @@ import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen';
 import { Dashboard } from './components/Dashboard';
 import { FeedPage } from './components/FeedPage';
+import { GroupsPage } from './components/GroupsPage';
 import { ProfilePage } from './components/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage';
 
@@ -105,7 +106,7 @@ function App() {
     return <AuthScreen />;
   }
 
-  const handleNavigate = (page: 'dashboard' | 'feed' | 'profile') => {
+  const handleNavigate = (page: 'dashboard' | 'feed' | 'profile' | 'groups') => {
     const path = page === 'dashboard' ? '/' : `/${page}`;
     navigate(path);
   };
@@ -194,6 +195,17 @@ function App() {
             onOpenUserDashboard={(user) =>
               handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
             }
+          />
+        }
+      />
+      <Route
+        path="/groups"
+        element={
+          <GroupsPage
+            session={session}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onNavigate={handleNavigate}
           />
         }
       />
