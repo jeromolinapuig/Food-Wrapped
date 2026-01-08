@@ -622,7 +622,7 @@ function GroupManageModal({
     return () => {
       cancelled = true;
     };
-  }, [currentUserId, groupId]);
+  }, [currentUserId, groupId, groupName]);
 
   const handleRename = async () => {
     const nextName = groupTitle.trim();

@@ -91,6 +91,17 @@
   transform: translateY(1px);
 }
 
+.bw-feed-load-more {
+  height: 1px;
+}
+
+.bw-feed-loading-more {
+  text-align: center;
+  font-size: 12px;
+  color: var(--bw-text-muted);
+  padding: 12px 0;
+}
+
 .bw-feed-entry {
   gap: 10px;
   color: var(--bw-text);

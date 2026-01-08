@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import { lockBodyScroll } from '../utils/scrollLock';
@@ -93,8 +93,15 @@ export function FeedTabs({
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const entriesRef = useRef<FeedEntry[]>([]);
+  const cursorRef = useRef<{ datetime: string; id: string } | null>(null);
+  const pageSize = 10;
+  const [cursor, setCursor] = useState<{ datetime: string; id: string } | null>(null);
   const isUserFeed = Boolean(focusUserId);
   const isCustomList = Boolean(userIdsFilter?.length);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
@@ -112,6 +119,14 @@ export function FeedTabs({
       ? `bw-feed-months-group-${userIdsKey}`
       : null;
   const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}`;
+
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
+
+  useEffect(() => {
+    cursorRef.current = cursor;
+  }, [cursor]);
 
   const checkFocusPrivacy = useCallback(async () => {
     if (ignorePrivacy || !focusUserId) {
@@ -150,9 +165,11 @@ export function FeedTabs({
     setPrivacyBlocked(!isMutual);
   }, [currentUserId, focusUserId, ignorePrivacy]);
 
-  const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
+  const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean; append?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
-    if (showLoading) setLoading(true);
+    const append = options?.append ?? false;
+    if (showLoading && !append) setLoading(true);
+    if (append) setLoadingMore(true);
     setError(null);
 
     let userIdsForQuery: string[] | null = null;
@@ -160,9 +177,14 @@ export function FeedTabs({
     if (isCustomList && userIdsFilter?.length) {
       userIdsForQuery = userIdsFilter;
     } else if (isCustomList) {
-      setEntries([]);
+      if (!append) {
+        setEntries([]);
+        setCursor(null);
+        setHasMore(false);
+      }
       onCountChange?.(0);
-      setLoading(false);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
       setPrivacyBlocked(false);
       return;
     } else if (focusUserId) {
@@ -175,17 +197,27 @@ export function FeedTabs({
 
       if (followsError) {
         setError(followsError.message);
-        setEntries([]);
+        if (!append) {
+          setEntries([]);
+          setCursor(null);
+          setHasMore(false);
+        }
         onCountChange?.(0);
-        setLoading(false);
+        if (!append) setLoading(false);
+        if (append) setLoadingMore(false);
         return;
       }
 
       userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
       if (!userIdsForQuery.length) {
-        setEntries([]);
+        if (!append) {
+          setEntries([]);
+          setCursor(null);
+          setHasMore(false);
+        }
         onCountChange?.(0);
-        setLoading(false);
+        if (!append) setLoading(false);
+        if (append) setLoadingMore(false);
         return;
       }
     }
@@ -210,7 +242,13 @@ export function FeedTabs({
         `
       )
       .order('datetime', { ascending: false })
-      .limit(50);
+      .order('id', { ascending: false })
+      .limit(pageSize);
+
+    const appendCursor = cursorRef.current;
+    if (append && appendCursor) {
+      query = query.or(`datetime.lt.${appendCursor.datetime},and(datetime.eq.${appendCursor.datetime},id.lt.${appendCursor.id})`);
+    }
 
     if (isCustomList && userIdsForQuery) {
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
@@ -237,9 +275,14 @@ export function FeedTabs({
 
     if (error) {
       setError(error.message);
-      setEntries([]);
+      if (!append) {
+        setEntries([]);
+        setCursor(null);
+        setHasMore(false);
+      }
       onCountChange?.(0);
-      setLoading(false);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
       setPrivacyBlocked(false);
       return;
     }
@@ -364,25 +407,44 @@ export function FeedTabs({
       }
       const canSee = focusUserId === currentUserId || isMutual || !isPrivate;
       if (!canSee) {
-        setEntries([]);
+        if (!append) {
+          setEntries([]);
+          setCursor(null);
+          setHasMore(false);
+        }
         onCountChange?.(0);
-        setLoading(false);
+        if (!append) setLoading(false);
+        if (append) setLoadingMore(false);
         setPrivacyBlocked(true);
         return;
       }
     }
 
     setPrivacyBlocked(false);
-    setEntries(mapped);
-    onCountChange?.(mapped.length);
+    const baseEntries = append ? entriesRef.current : [];
+    const nextEntries = append ? [...baseEntries, ...mapped] : mapped;
+    const seen = new Set<string>();
+    const deduped = nextEntries.filter((entry) => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    });
+    const nextCursor = deduped.length
+      ? { datetime: deduped[deduped.length - 1].datetime, id: deduped[deduped.length - 1].id }
+      : null;
+    setEntries(deduped);
+    setCursor(nextCursor);
+    setHasMore((data ?? []).length === pageSize);
+    onCountChange?.(deduped.length);
     if (!options?.skipCache) {
       try {
-        sessionStorage.setItem(entriesCacheKey, JSON.stringify(mapped));
+        sessionStorage.setItem(entriesCacheKey, JSON.stringify(deduped));
       } catch {
         // Ignore cache write errors (private mode, quota, etc.).
       }
     }
-    setLoading(false);
+    if (!append) setLoading(false);
+    if (append) setLoadingMore(false);
   }, [
     activeTab,
     currentUserId,
@@ -392,6 +454,7 @@ export function FeedTabs({
     ignorePrivacy,
     isCustomList,
     onCountChange,
+    pageSize,
     userIdsFilter,
   ]);
 
@@ -511,7 +574,23 @@ export function FeedTabs({
 
     if (!usedCache) {
       startTransition(() => {
+        setHasMore(true);
+        setCursor(null);
         loadEntries();
+      });
+    } else {
+      startTransition(() => {
+        setHasMore(true);
+        const cached = sessionStorage.getItem(entriesCacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached) as FeedEntry[];
+            const last = parsed[parsed.length - 1];
+            setCursor(last ? { datetime: last.datetime, id: last.id } : null);
+          } catch {
+            setCursor(null);
+          }
+        }
       });
     }
 
@@ -547,6 +626,25 @@ export function FeedTabs({
       supabase.removeChannel(channel);
     };
   }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
+
+  useEffect(() => {
+    if (headerOnly) return;
+    if (loading || loadingMore || !hasMore || privacyBlocked) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entriesList) => {
+        const entry = entriesList[0];
+        if (!entry?.isIntersecting) return;
+        loadEntries({ showLoading: false, skipCache: true, append: true });
+      },
+      { root: null, rootMargin: '200px', threshold: 0 }
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, headerOnly, loadEntries, loading, loadingMore, privacyBlocked]);
 
   useEffect(() => {
     if (!photoPreviewUrl) return;
@@ -721,7 +819,9 @@ export function FeedTabs({
                 </div>
               </article>
             );
-      })}
+          })}
+        {loadingMore && <div className="bw-feed-loading-more">Cargando mas...</div>}
+        {!loading && !loadingMore && hasMore && <div ref={loadMoreRef} className="bw-feed-load-more" />}
       </div>
       )}
 
