@@ -216,7 +216,7 @@ export function FeedPage({
             <h1 className="bw-title">Feed</h1>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">

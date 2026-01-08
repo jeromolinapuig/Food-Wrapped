@@ -54,7 +54,7 @@ type EditEntry = {
   photoUrl?: string | null;
 };
 
-export function Dashboard({ session, theme, onToggleTheme, onNavigate }: DashboardProps) {
+export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,7 +272,7 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
             </p>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         {showInstallBanner && (
@@ -299,7 +299,7 @@ export function Dashboard({ session, theme, onToggleTheme, onNavigate }: Dashboa
         <main className="bw-main">
           <section className="bw-stats-grid">
             {loading ? (
-              Array.from({ length: 4 }).map((_ , idx) => (
+              Array.from({ length: 4 }).map((_, idx) => (
                 <div className="bw-stat-card bw-skeleton" key={idx}>
                   <div className="bw-skeleton-line bw-skeleton-short" />
                   <div className="bw-skeleton-line" />

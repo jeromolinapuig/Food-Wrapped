@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen';
+import { BottomNav } from './components/BottomNav';
 import { Dashboard } from './components/Dashboard';
 import { FeedPage } from './components/FeedPage';
 import { GroupsPage } from './components/GroupsPage';
 import { ProfilePage } from './components/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage';
+import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
 type Theme = 'light' | 'dark';
@@ -99,7 +101,11 @@ function App() {
   }, [location.pathname, location.state, navigate]);
 
   if (session === undefined) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="bw-loader-overlay">
+        <div className="bw-loader-spinner" aria-label="Cargando..." />
+      </div>
+    );
   }
 
   if (!session) {
@@ -155,63 +161,66 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <Dashboard
-            session={session}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onNavigate={handleNavigate}
-          />
-        }
-      />
-      <Route
-        path="/feed"
-        element={
-          <FeedPage
-            session={session}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onNavigate={handleNavigate}
-            focusedUser={feedFocusUser}
-            onFocusedUserChange={(user) => setFeedFocusUser(user)}
-            returnPage="feed"
-            openProfileUserId={feedOpenProfileUserId}
-            onProfileModalConsumed={() => setFeedOpenProfileUserId(null)}
-            onOpenUserDashboard={handleOpenUserDashboard}
-          />
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProfilePage
-            session={session}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onNavigate={handleNavigate}
-            onOpenUserDashboard={(user) =>
-              handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
-            }
-          />
-        }
-      />
-      <Route
-        path="/groups"
-        element={
-          <GroupsPage
-            session={session}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onNavigate={handleNavigate}
-          />
-        }
-      />
-      <Route path="/users/:userId" element={<UserDashboardRoute />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Dashboard
+              session={session}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onNavigate={handleNavigate}
+            />
+          }
+        />
+        <Route
+          path="/feed"
+          element={
+            <FeedPage
+              session={session}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onNavigate={handleNavigate}
+              focusedUser={feedFocusUser}
+              onFocusedUserChange={(user) => setFeedFocusUser(user)}
+              returnPage="feed"
+              openProfileUserId={feedOpenProfileUserId}
+              onProfileModalConsumed={() => setFeedOpenProfileUserId(null)}
+              onOpenUserDashboard={handleOpenUserDashboard}
+            />
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProfilePage
+              session={session}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onNavigate={handleNavigate}
+              onOpenUserDashboard={(user) =>
+                handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
+              }
+            />
+          }
+        />
+        <Route
+          path="/groups"
+          element={
+            <GroupsPage
+              session={session}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onNavigate={handleNavigate}
+            />
+          }
+        />
+        <Route path="/users/:userId" element={<UserDashboardRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <BottomNav session={session} />
+    </>
   );
 }
 

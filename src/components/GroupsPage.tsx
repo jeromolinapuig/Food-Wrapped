@@ -31,7 +31,7 @@ type GroupInvite = {
   inviterDisplayName: string | null;
 };
 
-export function GroupsPage({ session, theme, onToggleTheme, onNavigate }: Readonly<GroupsPageProps>) {
+export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPageProps>) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [groups, setGroups] = useState<GroupCard[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
@@ -265,7 +265,7 @@ export function GroupsPage({ session, theme, onToggleTheme, onNavigate }: Readon
             <h1 className="bw-title">Grupos</h1>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">
@@ -496,8 +496,9 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
       return;
     }
 
-    setSaving(false);
-    onCreated();
+      setSaving(false);
+      window.dispatchEvent(new Event('bw-invites-updated'));
+      onCreated();
   };
 
   return (
@@ -513,7 +514,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
           </button>
         </div>
 
-        <div className="bw-field">
+        <div className="bw-field bw-group-name-field">
           <label className="bw-label" htmlFor="bw-group-name">Nombre del grupo</label>
           <input
             id="bw-group-name"
@@ -649,6 +650,7 @@ function GroupInvitesModal({
     setMutating(false);
     setConfirmAction(null);
     onChanged();
+    window.dispatchEvent(new Event('bw-invites-updated'));
   };
 
   return (

@@ -119,6 +119,10 @@
   max-height: 80vh;
 }
 
+.bw-group-name-field {
+  margin-bottom: 12px;
+}
+
 .bw-group-search {
   margin: 12px 0;
 }

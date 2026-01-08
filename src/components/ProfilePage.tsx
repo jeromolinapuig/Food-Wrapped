@@ -285,7 +285,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onNavigate, onOpenU
             <h1 className="bw-title">Mi perfil</h1>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">

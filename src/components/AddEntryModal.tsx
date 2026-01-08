@@ -32,6 +32,22 @@ type BurgerOption = {
   meat_type: MeatType | null;
 };
 
+const normalizeName = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const normalizeCompact = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '')
+    .trim()
+    .toLowerCase();
+
 type AddEntryModalProps = {
   open: boolean;
   onClose: () => void;
@@ -64,7 +80,7 @@ export function AddEntryModal({
   mode,
   entry,
 }: AddEntryModalProps) {
-  const maxDateTime = useMemo(() => formatLocalDateTime(new Date()), []);
+  const [maxDateTime, setMaxDateTime] = useState(() => formatLocalDateTime(new Date()));
   const [datetimeInput, setDatetimeInput] = useState('');
   const [restaurantInput, setRestaurantInput] = useState('');
   const [restaurantSuggestions, setRestaurantSuggestions] = useState<RestaurantOption[]>([]);
@@ -97,6 +113,8 @@ export function AddEntryModal({
   // Reset form when opening
   useEffect(() => {
     if (!open) return;
+    const nowString = formatLocalDateTime(new Date());
+    setMaxDateTime(nowString);
     setIsClosing(false);
     if (mode === 'edit' && entry) {
       const date = new Date(entry.datetime);
@@ -127,9 +145,7 @@ export function AddEntryModal({
     setPhotoZoom(1);
     setPhotoCrop({ x: 0, y: 0 });
   } else {
-    const now = new Date();
-    const iso = formatLocalDateTime(now); // yyyy-MM-ddTHH:mm
-      setDatetimeInput(iso);
+    setDatetimeInput(nowString);
       setRestaurantInput('');
       setRestaurantSuggestions([]);
       setSelectedRestaurant(null);
@@ -171,10 +187,13 @@ export function AddEntryModal({
       return;
     }
 
+    const trimmedValue = value.trim();
+    const normalizedValue = normalizeName(trimmedValue);
+    const compactValue = normalizeCompact(trimmedValue);
     const { data, error } = await supabase
       .from('restaurants')
       .select('id, name')
-      .ilike('name', `%${value.trim()}%`)
+      .or(`name.ilike.%${trimmedValue}%,name_normalized.ilike.%${normalizedValue}%,name_compact.ilike.%${compactValue}%`)
       .order('name')
       .limit(10);
 
@@ -307,12 +326,12 @@ export function AddEntryModal({
 
     try {
       const trimmedRestaurant = restaurantInput.trim();
+      const normalizedRestaurant = normalizeName(trimmedRestaurant);
+      const compactRestaurant = normalizeCompact(trimmedRestaurant);
       const editingSameRestaurant =
         mode === 'edit' &&
         entry?.restaurantName &&
-        trimmedRestaurant.localeCompare(entry.restaurantName.trim(), undefined, {
-          sensitivity: 'base',
-        }) === 0;
+        normalizeName(entry.restaurantName.trim()) === normalizedRestaurant;
 
       let photoUrl: string | null = photoPreview ?? null;
 
@@ -336,11 +355,16 @@ export function AddEntryModal({
       if (!restaurantId) {
         const { data, error } = await supabase
           .from('restaurants')
-          .insert({
-            name: trimmedRestaurant,
-            is_chain: false,
-            created_by: session.user.id,
-          })
+          .upsert(
+            {
+              name: trimmedRestaurant,
+              name_normalized: normalizedRestaurant,
+              name_compact: compactRestaurant,
+              is_chain: false,
+              created_by: session.user.id,
+            },
+            { onConflict: 'name_normalized' }
+          )
           .select('id, name')
           .single();
 
@@ -546,7 +570,7 @@ export function AddEntryModal({
                   label="Restaurante"
                   value={restaurantInput}
                   onChange={(e) => handleRestaurantChange(e.target.value)}
-                  placeholder="Jenkins, Goiko, McDonalds..."
+                  placeholder="Jenkin's, Goiko, McDonalds..."
                   autoComplete="off"
                   fullWidth
                 />
@@ -621,7 +645,7 @@ export function AddEntryModal({
                       label="Hamburguesa"
                       value={burgerInput}
                       onChange={(e) => handleBurgerChange(e.target.value)}
-                      placeholder="Emmy, Big Mac..."
+                      placeholder="Emmy B, Valhalla..."
                       autoComplete="off"
                       fullWidth
                     />

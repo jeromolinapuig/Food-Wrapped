@@ -39,7 +39,7 @@ type UserDashboardPageProps = {
   onBack: () => void;
 };
 
-export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, userId, onBack }: Readonly<UserDashboardPageProps>) {
+export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBack }: Readonly<UserDashboardPageProps>) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -196,7 +196,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, onNavigate, u
             <p className="bw-subtitle">Resumen de @{titleHandle}</p>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
+          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">
