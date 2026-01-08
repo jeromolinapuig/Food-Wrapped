@@ -53,15 +53,33 @@ export function FeedPage({
   const [confirmAction, setConfirmAction] = useState<{ user: SearchUser; action: 'request' | 'cancel' } | null>(null);
   const [followingIds, setFollowingIds] = useState<Record<string, number>>({});
   const [followersIds, setFollowersIds] = useState<Record<string, number>>({});
+  const [followsLoaded, setFollowsLoaded] = useState(false);
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
   const [userMonthFilter, setUserMonthFilter] = useState<'all' | string>('all');
+  const followsCacheKey = `bw-feed-follows-${session.user.id}`;
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
   useEffect(() => {
+    const cached = sessionStorage.getItem(followsCacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as {
+          followingIds?: Record<string, number>;
+          followersIds?: Record<string, number>;
+        };
+        setFollowingIds(parsed.followingIds ?? {});
+        setFollowersIds(parsed.followersIds ?? {});
+        setFollowsLoaded(true);
+        return;
+      } catch {
+        // Fall through to fetch.
+      }
+    }
+
     const loadFollows = async () => {
       const { data, error } = await supabase
         .from('follows')
@@ -87,9 +105,30 @@ export function FeedPage({
       });
       setFollowingIds(newFollowing);
       setFollowersIds(newFollowers);
+      setFollowsLoaded(true);
+      try {
+        sessionStorage.setItem(
+          followsCacheKey,
+          JSON.stringify({ followingIds: newFollowing, followersIds: newFollowers })
+        );
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
     };
     loadFollows();
   }, [session.user.id]);
+
+  useEffect(() => {
+    if (!followsLoaded) return;
+    try {
+      sessionStorage.setItem(
+        followsCacheKey,
+        JSON.stringify({ followingIds, followersIds })
+      );
+    } catch {
+      // Ignore cache write errors (private mode, quota, etc.).
+    }
+  }, [followsCacheKey, followersIds, followingIds, followsLoaded]);
 
   useEffect(() => {
     const doSearch = async () => {

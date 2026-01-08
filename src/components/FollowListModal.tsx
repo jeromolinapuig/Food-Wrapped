@@ -25,6 +25,7 @@ type FollowListModalProps = {
   currentUserId: string;
   onClose: () => void;
   onFollowingDelta: (delta: number) => void;
+  onListCount?: (mode: FollowListMode, count: number) => void;
   onViewPosts?: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
@@ -34,6 +35,7 @@ export function FollowListModal({
   currentUserId,
   onClose,
   onFollowingDelta,
+  onListCount,
   onViewPosts,
 }: Readonly<FollowListModalProps>) {
   const [items, setItems] = useState<FollowListItem[]>([]);
@@ -42,6 +44,7 @@ export function FollowListModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowListItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!open || !mode) return;
@@ -73,6 +76,7 @@ export function FollowListModal({
 
       if (!userIds.length) {
         setItems([]);
+        onListCount?.(mode, 0);
         setLoading(false);
         return;
       }
@@ -127,6 +131,7 @@ export function FollowListModal({
       });
 
       setItems(mapped);
+      onListCount?.(mode, mapped.length);
       setLoading(false);
     };
 
@@ -135,7 +140,28 @@ export function FollowListModal({
     return () => {
       cancelled = true;
     };
-  }, [open, mode, currentUserId]);
+  }, [open, mode, currentUserId, onListCount, refreshKey]);
+
+  useEffect(() => {
+    if (!open || !mode) return;
+    const filter = mode === 'followers'
+      ? `following_id=eq.${currentUserId}`
+      : `follower_id=eq.${currentUserId}`;
+    const channel = supabase
+      .channel(`follow-list-${currentUserId}-${mode}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows', filter },
+        () => {
+          setRefreshKey((prev) => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, mode, open]);
 
   if (!open || !mode) return null;
 

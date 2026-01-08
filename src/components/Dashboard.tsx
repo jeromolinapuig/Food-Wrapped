@@ -69,6 +69,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const cacheKey = `bw-dashboard-entries-${session.user.id}-2026`;
   const openAddModal = () => {
     setEditingEntry(null);
     setIsAddModalOpen(true);
@@ -79,8 +80,9 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   };
 
   // --- Cargar entradas del año 2026 ---
-  const loadEntries = async () => {
-    setLoading(true);
+  const loadEntries = async (options?: { showLoading?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) setLoading(true);
     setError(null);
 
     const from = '2026-01-01';
@@ -112,17 +114,37 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
       setError(error.message);
       setEntries([]);
     } else {
-      setEntries((data ?? []) as unknown as DbEntryRow[]);
+      const nextEntries = (data ?? []) as unknown as DbEntryRow[];
+      setEntries(nextEntries);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(nextEntries));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
     }
 
     setLoading(false);
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await loadEntries();
-    };
-    fetchData();
+    let cancelled = false;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as DbEntryRow[];
+        if (!cancelled) {
+          setEntries(parsed);
+          setLoading(false);
+          setError(null);
+        }
+      } catch {
+        if (!cancelled) {
+          loadEntries();
+        }
+      }
+    } else {
+      loadEntries();
+    }
 
     // Suscripción a cambios en la tabla de entries para refrescar el feed en tiempo real
     const channel = supabase
@@ -131,12 +153,13 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
         () => {
-          loadEntries();
+          loadEntries({ showLoading: false });
         }
       )
       .subscribe();
 
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [session.user.id]);

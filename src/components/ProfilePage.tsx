@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
@@ -76,8 +76,24 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   const [avatarCropArea, setAvatarCropArea] = useState<Area | null>(null);
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
   const [followListMode, setFollowListMode] = useState<FollowListMode | null>(null);
+  const profileCacheKey = `bw-profile-${session.user.id}`;
+  const followCountsCacheKey = `bw-profile-follow-counts-${session.user.id}`;
 
   useEffect(() => {
+    const cached = sessionStorage.getItem(profileCacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as ProfileData;
+        setProfile(parsed);
+        setUsernameInput(parsed.username ?? username ?? '');
+        setBioInput(parsed.bio ?? '');
+        setAvatarPreview(parsed.avatar_url ?? null);
+        return;
+      } catch {
+        // Fall through to fetch.
+      }
+    }
+
     const loadProfile = async () => {
       setLoading(true);
       setError(null);
@@ -95,35 +111,116 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
         setUsernameInput(data?.username ?? username ?? '');
         setBioInput(data?.bio ?? '');
         setAvatarPreview(data?.avatar_url ?? null);
+        try {
+          sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
+        } catch {
+          // Ignore cache write errors (private mode, quota, etc.).
+        }
       }
       setLoading(false);
     };
 
     loadProfile();
-  }, [session.user.id, username]);
+  }, [profileCacheKey, session.user.id, username]);
+
+  const loadFollowCounts = useCallback(async () => {
+    const [
+      { data: followersRows, error: followersError },
+      { data: followingRows, error: followingError },
+    ] = await Promise.all([
+      supabase.from('follows').select('follower_id').eq('following_id', session.user.id),
+      supabase.from('follows').select('following_id').eq('follower_id', session.user.id),
+    ]);
+
+    if (followersError) {
+      console.error('Error cargando seguidores', followersError);
+    }
+
+    if (followingError) {
+      console.error('Error cargando seguidos', followingError);
+    }
+
+    const followerIds = Array.from(
+      new Set((followersRows ?? []).map((row) => (row as { follower_id: string }).follower_id))
+    );
+    const followingIds = Array.from(
+      new Set((followingRows ?? []).map((row) => (row as { following_id: string }).following_id))
+    );
+
+    const [{ data: followerProfiles }, { data: followingProfiles }] = await Promise.all([
+      followerIds.length
+        ? supabase.from('profiles').select('id').in('id', followerIds)
+        : Promise.resolve({ data: [] as { id: string }[] }),
+      followingIds.length
+        ? supabase.from('profiles').select('id').in('id', followingIds)
+        : Promise.resolve({ data: [] as { id: string }[] }),
+    ]);
+
+    const nextFollowers = (followerProfiles ?? []).length;
+    const nextFollowing = (followingProfiles ?? []).length;
+
+    setFollowCounts({ followers: nextFollowers, following: nextFollowing });
+
+    try {
+      sessionStorage.setItem(
+        followCountsCacheKey,
+        JSON.stringify({
+          followers: nextFollowers,
+          following: nextFollowing,
+        })
+      );
+    } catch {
+      // Ignore cache write errors (private mode, quota, etc.).
+    }
+  }, [followCountsCacheKey, session.user.id]);
 
   useEffect(() => {
-    const loadFollowCounts = async () => {
-      const [{ count: followersCount, error: followersError }, { count: followingCount, error: followingError }] = await Promise.all([
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', session.user.id),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', session.user.id),
-      ]);
-
-      if (followersError) {
-        console.error('Error cargando seguidores', followersError);
-      } else if (typeof followersCount === 'number') {
-        setFollowCounts((prev) => ({ ...prev, followers: followersCount }));
+    const cachedCounts = sessionStorage.getItem(followCountsCacheKey);
+    if (cachedCounts) {
+      try {
+        const parsed = JSON.parse(cachedCounts) as { followers: number; following: number };
+        setFollowCounts(parsed);
+        return;
+      } catch {
+        // Fall through to fetch.
       }
-
-      if (followingError) {
-        console.error('Error cargando seguidos', followingError);
-      } else if (typeof followingCount === 'number') {
-        setFollowCounts((prev) => ({ ...prev, following: followingCount }));
-      }
-    };
+    }
 
     loadFollowCounts();
-  }, [session.user.id]);
+  }, [followCountsCacheKey, loadFollowCounts]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`profile-follows-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${session.user.id}` },
+        () => {
+          loadFollowCounts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${session.user.id}` },
+        () => {
+          loadFollowCounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadFollowCounts, session.user.id]);
+
+  useEffect(() => {
+    if (!profile) return;
+    try {
+      sessionStorage.setItem(profileCacheKey, JSON.stringify(profile));
+    } catch {
+      // Ignore cache write errors (private mode, quota, etc.).
+    }
+  }, [profile, profileCacheKey]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const hasChanges = useMemo(() => {
@@ -262,12 +359,19 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
     setAvatarPreview(profile?.avatar_url ?? null);
   };
 
-  const handleFollowingDelta = (delta: number) => {
+  const handleFollowingDelta = useCallback((delta: number) => {
     setFollowCounts((prev) => ({
       ...prev,
       following: Math.max(0, prev.following + delta),
     }));
-  };
+  }, []);
+
+  const handleFollowListCount = useCallback((mode: FollowListMode, count: number) => {
+    setFollowCounts((prev) => ({
+      ...prev,
+      [mode === 'following' ? 'following' : 'followers']: count,
+    }));
+  }, []);
 
   const handleOpenUserFeed = (user: { id: string; username: string | null; displayName: string | null }) => {
     setFollowListMode(null);
@@ -391,6 +495,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
         currentUserId={session.user.id}
         onClose={() => setFollowListMode(null)}
         onFollowingDelta={handleFollowingDelta}
+        onListCount={handleFollowListCount}
         onViewPosts={handleOpenUserFeed}
       />
 

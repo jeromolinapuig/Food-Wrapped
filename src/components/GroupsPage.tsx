@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { TopMenu } from './TopMenu';
@@ -31,228 +31,301 @@ type GroupInvite = {
   inviterDisplayName: string | null;
 };
 
+const readSessionCache = <T,>(key: string) => {
+  try {
+    const cached = sessionStorage.getItem(key);
+    if (!cached) return { value: null as T | null, hasCache: false };
+    return { value: JSON.parse(cached) as T, hasCache: true };
+  } catch {
+    return { value: null as T | null, hasCache: false };
+  }
+};
+
 export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPageProps>) {
+  const groupsCacheKey = `bw-groups-${session.user.id}`;
+  const invitesCacheKey = `bw-group-invites-${session.user.id}`;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [groups, setGroups] = useState<GroupCard[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [groups, setGroups] = useState<GroupCard[]>(() => readSessionCache<GroupCard[]>(groupsCacheKey).value ?? []);
+  const [ownedGroupIds, setOwnedGroupIds] = useState<string[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(() => !readSessionCache<GroupCard[]>(groupsCacheKey).hasCache);
   const [groupsError, setGroupsError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [invites, setInvites] = useState<GroupInvite[]>([]);
-  const [loadingInvites, setLoadingInvites] = useState(false);
+  const [invites, setInvites] = useState<GroupInvite[]>(() => readSessionCache<GroupInvite[]>(invitesCacheKey).value ?? []);
+  const [loadingInvites, setLoadingInvites] = useState(() => !readSessionCache<GroupInvite[]>(invitesCacheKey).hasCache);
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
+  const hasGroupsCache = Boolean(sessionStorage.getItem(groupsCacheKey));
+  const hasInvitesCache = Boolean(sessionStorage.getItem(invitesCacheKey));
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadGroups = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) setLoadingGroups(true);
+    setGroupsError(null);
 
-    const loadGroups = async () => {
-      setLoadingGroups(true);
-      setGroupsError(null);
+    const [{ data: ownedGroups, error: ownedError }, { data: memberRows, error: memberError }] = await Promise.all([
+      supabase.from('groups').select('id, name').eq('owner_id', session.user.id),
+      supabase.from('group_members').select('group_id').eq('user_id', session.user.id),
+    ]);
 
-      const [{ data: ownedGroups, error: ownedError }, { data: memberRows, error: memberError }] = await Promise.all([
-        supabase.from('groups').select('id, name').eq('owner_id', session.user.id),
-        supabase.from('group_members').select('group_id').eq('user_id', session.user.id),
-      ]);
-
-      if (cancelled) return;
-
-      if (ownedError || memberError) {
-        setGroupsError('No se pudieron cargar los grupos.');
-        setLoadingGroups(false);
-        return;
-      }
-
-      const ownedGroupIds = (ownedGroups ?? []).map((row) => (row as { id: string }).id);
-      const memberGroupIds = (memberRows ?? []).map((row) => (row as { group_id: string }).group_id);
-      const groupIds = Array.from(new Set([...ownedGroupIds, ...memberGroupIds]));
-
-      if (!groupIds.length) {
-        setGroups([]);
-        setLoadingGroups(false);
-        return;
-      }
-
-      const { data: groupsData, error: groupsError } = await supabase
-        .from('groups')
-        .select('id, name')
-        .in('id', groupIds);
-
-      if (cancelled) return;
-
-      if (groupsError) {
-        setGroupsError('No se pudieron cargar los grupos.');
-        setLoadingGroups(false);
-        return;
-      }
-
-      const { data: allMembers, error: membersError } = await supabase
-        .from('group_members')
-        .select('group_id, user_id')
-        .in('group_id', groupIds);
-
-      if (cancelled) return;
-
-      if (membersError) {
-        setGroupsError('No se pudieron cargar los grupos.');
-        setLoadingGroups(false);
-        return;
-      }
-
-      const memberMap = new Map<string, Set<string>>();
-      (allMembers ?? []).forEach((row) => {
-        const groupId = (row as { group_id: string }).group_id;
-        const userId = (row as { user_id: string }).user_id;
-        if (!memberMap.has(groupId)) {
-          memberMap.set(groupId, new Set());
-        }
-        memberMap.get(groupId)?.add(userId);
-      });
-
-      const profileMap = new Map<
-        string,
-        { username: string | null; displayName: string | null; avatarUrl: string | null }
-      >();
-      const memberUserIds = Array.from(
-        new Set((allMembers ?? []).map((row) => (row as { user_id: string }).user_id))
-      );
-
-      if (memberUserIds.length) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', memberUserIds);
-
-        if (cancelled) return;
-
-        if (profilesError) {
-          setGroupsError('No se pudieron cargar los grupos.');
-          setLoadingGroups(false);
-          return;
-        }
-
-        (profiles ?? []).forEach((profile) => {
-          profileMap.set((profile as { id: string }).id, {
-            username: (profile as { username: string | null }).username,
-            displayName: (profile as { display_name: string | null }).display_name,
-            avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
-          });
-        });
-      }
-
-      const mappedGroups = (groupsData ?? []).map((group) => {
-        const id = (group as { id: string }).id;
-        const name = (group as { name: string }).name;
-        const members = memberMap.get(id) ?? new Set();
-        const membersPreview = Array.from(members)
-          .slice(0, 4)
-          .map((userId) => {
-            const profile = profileMap.get(userId);
-            const base = profile?.username ?? profile?.displayName ?? '?';
-            return {
-              id: userId,
-              initial: base.charAt(0).toUpperCase(),
-              avatarUrl: profile?.avatarUrl ?? null,
-            };
-          });
-
-        return {
-          id,
-          name,
-          members: members.size,
-          membersPreview,
-        };
-      });
-
-      setGroups(mappedGroups);
+    if (ownedError || memberError) {
+      setGroupsError('No se pudieron cargar los grupos.');
       setLoadingGroups(false);
-    };
+      return;
+    }
 
-    loadGroups();
+    const ownedIds = (ownedGroups ?? []).map((row) => (row as { id: string }).id);
+    const memberGroupIds = (memberRows ?? []).map((row) => (row as { group_id: string }).group_id);
+    const groupIds = Array.from(new Set([...ownedIds, ...memberGroupIds]));
+    setOwnedGroupIds(ownedIds);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [session.user.id, refreshKey]);
+    if (!groupIds.length) {
+      setGroups([]);
+      setLoadingGroups(false);
+      if (!options?.skipCache) {
+        try {
+          sessionStorage.setItem(groupsCacheKey, JSON.stringify([]));
+        } catch {
+          // Ignore cache write errors (private mode, quota, etc.).
+        }
+      }
+      return;
+    }
 
-  useEffect(() => {
-    let cancelled = false;
+    const { data: groupsData, error: groupsError } = await supabase
+      .from('groups')
+      .select('id, name')
+      .in('id', groupIds);
 
-    const loadInvites = async () => {
-      setLoadingInvites(true);
-      setInvitesError(null);
+    if (groupsError) {
+      setGroupsError('No se pudieron cargar los grupos.');
+      setLoadingGroups(false);
+      return;
+    }
 
-      const { data: inviteRows, error: inviteError } = await supabase
-        .from('group_invitations')
-        .select('id, group_id, inviter_id')
-        .eq('invitee_id', session.user.id);
+    const { data: allMembers, error: membersError } = await supabase
+      .from('group_members')
+      .select('group_id, user_id')
+      .in('group_id', groupIds);
 
-      if (cancelled) return;
+    if (membersError) {
+      setGroupsError('No se pudieron cargar los grupos.');
+      setLoadingGroups(false);
+      return;
+    }
 
-      if (inviteError) {
-        setInvitesError('No se pudieron cargar las invitaciones.');
-        setLoadingInvites(false);
+    const memberMap = new Map<string, Set<string>>();
+    (allMembers ?? []).forEach((row) => {
+      const groupId = (row as { group_id: string }).group_id;
+      const userId = (row as { user_id: string }).user_id;
+      if (!memberMap.has(groupId)) {
+        memberMap.set(groupId, new Set());
+      }
+      memberMap.get(groupId)?.add(userId);
+    });
+
+    const profileMap = new Map<
+      string,
+      { username: string | null; displayName: string | null; avatarUrl: string | null }
+    >();
+    const memberUserIds = Array.from(
+      new Set((allMembers ?? []).map((row) => (row as { user_id: string }).user_id))
+    );
+
+    if (memberUserIds.length) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', memberUserIds);
+
+      if (profilesError) {
+        setGroupsError('No se pudieron cargar los grupos.');
+        setLoadingGroups(false);
         return;
       }
 
-      const baseInvites = (inviteRows ?? []) as { id: string; group_id: string; inviter_id: string }[];
-
-      if (!baseInvites.length) {
-        setInvites([]);
-        setLoadingInvites(false);
-        return;
-      }
-
-      const groupIds = Array.from(new Set(baseInvites.map((row) => row.group_id)));
-      const inviterIds = Array.from(new Set(baseInvites.map((row) => row.inviter_id)));
-
-      const [{ data: groupsData, error: groupsError }, { data: profilesData, error: profilesError }] = await Promise.all([
-        supabase.from('groups').select('id, name').in('id', groupIds),
-        supabase.from('profiles').select('id, username, display_name').in('id', inviterIds),
-      ]);
-
-      if (cancelled) return;
-
-      if (groupsError || profilesError) {
-        setInvitesError('No se pudieron cargar las invitaciones.');
-        setLoadingInvites(false);
-        return;
-      }
-
-      const groupMap = new Map<string, string>();
-      (groupsData ?? []).forEach((group) => {
-        groupMap.set((group as { id: string }).id, (group as { name: string }).name);
-      });
-
-      const inviterMap = new Map<string, { username: string | null; displayName: string | null }>();
-      (profilesData ?? []).forEach((profile) => {
-        inviterMap.set((profile as { id: string }).id, {
+      (profiles ?? []).forEach((profile) => {
+        profileMap.set((profile as { id: string }).id, {
           username: (profile as { username: string | null }).username,
           displayName: (profile as { display_name: string | null }).display_name,
+          avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
         });
       });
+    }
 
-      const mapped = baseInvites.map((row) => {
-        const inviter = inviterMap.get(row.inviter_id);
-        return {
-          id: row.id,
-          groupId: row.group_id,
-          groupName: groupMap.get(row.group_id) ?? null,
-          inviterId: row.inviter_id,
-          inviterUsername: inviter?.username ?? null,
-          inviterDisplayName: inviter?.displayName ?? null,
-        };
-      });
+    const mappedGroups = (groupsData ?? []).map((group) => {
+      const id = (group as { id: string }).id;
+      const name = (group as { name: string }).name;
+      const members = memberMap.get(id) ?? new Set();
+      const membersPreview = Array.from(members)
+        .slice(0, 4)
+        .map((userId) => {
+          const profile = profileMap.get(userId);
+          const base = profile?.username ?? profile?.displayName ?? '?';
+          return {
+            id: userId,
+            initial: base.charAt(0).toUpperCase(),
+            avatarUrl: profile?.avatarUrl ?? null,
+          };
+        });
 
-      setInvites(mapped);
+      return {
+        id,
+        name,
+        members: members.size,
+        membersPreview,
+      };
+    });
+
+    setGroups(mappedGroups);
+    setLoadingGroups(false);
+    if (!options?.skipCache) {
+      try {
+        sessionStorage.setItem(groupsCacheKey, JSON.stringify(mappedGroups));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
+    }
+  }, [groupsCacheKey, session.user.id]);
+
+  useEffect(() => {
+    if (refreshKey === 0 && hasGroupsCache) return;
+    const timeoutId = window.setTimeout(() => {
+      loadGroups();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [hasGroupsCache, loadGroups, refreshKey]);
+
+  const loadInvites = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) setLoadingInvites(true);
+    setInvitesError(null);
+
+    const { data: inviteRows, error: inviteError } = await supabase
+      .from('group_invitations')
+      .select('id, group_id, inviter_id')
+      .eq('invitee_id', session.user.id);
+
+    if (inviteError) {
+      setInvitesError('No se pudieron cargar las invitaciones.');
       setLoadingInvites(false);
-    };
+      return;
+    }
 
-    loadInvites();
+    const baseInvites = (inviteRows ?? []) as { id: string; group_id: string; inviter_id: string }[];
+
+    if (!baseInvites.length) {
+      setInvites([]);
+      setLoadingInvites(false);
+      if (!options?.skipCache) {
+        try {
+          sessionStorage.setItem(invitesCacheKey, JSON.stringify([]));
+        } catch {
+          // Ignore cache write errors (private mode, quota, etc.).
+        }
+      }
+      return;
+    }
+
+    const groupIds = Array.from(new Set(baseInvites.map((row) => row.group_id)));
+    const inviterIds = Array.from(new Set(baseInvites.map((row) => row.inviter_id)));
+
+    const [{ data: groupsData, error: groupsError }, { data: profilesData, error: profilesError }] = await Promise.all([
+      supabase.from('groups').select('id, name').in('id', groupIds),
+      supabase.from('profiles').select('id, username, display_name').in('id', inviterIds),
+    ]);
+
+    if (groupsError || profilesError) {
+      setInvitesError('No se pudieron cargar las invitaciones.');
+      setLoadingInvites(false);
+      return;
+    }
+
+    const groupMap = new Map<string, string>();
+    (groupsData ?? []).forEach((group) => {
+      groupMap.set((group as { id: string }).id, (group as { name: string }).name);
+    });
+
+    const inviterMap = new Map<string, { username: string | null; displayName: string | null }>();
+    (profilesData ?? []).forEach((profile) => {
+      inviterMap.set((profile as { id: string }).id, {
+        username: (profile as { username: string | null }).username,
+        displayName: (profile as { display_name: string | null }).display_name,
+      });
+    });
+
+    const mapped = baseInvites.map((row) => {
+      const inviter = inviterMap.get(row.inviter_id);
+      return {
+        id: row.id,
+        groupId: row.group_id,
+        groupName: groupMap.get(row.group_id) ?? null,
+        inviterId: row.inviter_id,
+        inviterUsername: inviter?.username ?? null,
+        inviterDisplayName: inviter?.displayName ?? null,
+      };
+    });
+
+    setInvites(mapped);
+    setLoadingInvites(false);
+    if (!options?.skipCache) {
+      try {
+        sessionStorage.setItem(invitesCacheKey, JSON.stringify(mapped));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
+    }
+  }, [invitesCacheKey, session.user.id]);
+
+  useEffect(() => {
+    if (refreshKey === 0 && hasInvitesCache) return;
+    const timeoutId = window.setTimeout(() => {
+      loadInvites();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [hasInvitesCache, loadInvites, refreshKey]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`groups-rt-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_invitations', filter: `invitee_id=eq.${session.user.id}` },
+        () => {
+          loadInvites({ showLoading: false, skipCache: true });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_members', filter: `user_id=eq.${session.user.id}` },
+        () => {
+          loadGroups({ showLoading: false, skipCache: true });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_members' },
+        (payload) => {
+          if (!ownedGroupIds.length) return;
+          const row = (payload.new ?? payload.old) as { group_id?: string } | null;
+          const groupId = row?.group_id;
+          if (!groupId) return;
+          if (!ownedGroupIds.includes(groupId)) return;
+          loadGroups({ showLoading: false, skipCache: true });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'groups', filter: `owner_id=eq.${session.user.id}` },
+        () => {
+          loadGroups({ showLoading: false, skipCache: true });
+        }
+      )
+      .subscribe();
 
     return () => {
-      cancelled = true;
+      supabase.removeChannel(channel);
     };
-  }, [session.user.id, refreshKey]);
+  }, [loadGroups, loadInvites, ownedGroupIds, session.user.id]);
 
   return (
     <div className="bw-app-root">

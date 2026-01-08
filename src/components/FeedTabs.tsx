@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import '../styles/shared.css';
@@ -95,10 +95,174 @@ export function FeedTabs({
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
+  const monthCacheKey = focusUserId ? `bw-feed-months-${focusUserId}` : null;
+  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}`;
+
+  const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) setLoading(true);
+    setError(null);
+
+    let userIdsForQuery: string[] | null = null;
+
+    if (focusUserId) {
+      userIdsForQuery = [focusUserId];
+    } else if (activeTab === 'following') {
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', currentUserId);
+
+      if (followsError) {
+        setError(followsError.message);
+        setEntries([]);
+        onCountChange?.(0);
+        setLoading(false);
+        return;
+      }
+
+      userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
+      if (!userIdsForQuery.length) {
+        setEntries([]);
+        onCountChange?.(0);
+        setLoading(false);
+        return;
+      }
+    }
+
+    let query = supabase
+      .from('entries')
+      .select(
+        `
+          id,
+          user_id,
+          datetime,
+          price,
+          rating,
+          is_burger,
+          additional_notes,
+          restaurant_id,
+          burger_id,
+          visibility,
+          photo_url,
+          restaurants ( name ),
+          burgers ( name, meat_type )
+        `
+      )
+      .order('datetime', { ascending: false })
+      .limit(50);
+
+    if (focusUserId) {
+      query = query.eq('visibility', 'public').eq('user_id', focusUserId);
+    } else if (activeTab === 'global') {
+      query = query.eq('visibility', 'public');
+    } else if (activeTab === 'following' && userIdsForQuery) {
+      query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
+    }
+
+    if (focusUserId && effectiveMonthFilter !== 'all') {
+      const [yearStr, monthStr] = effectiveMonthFilter.split('-');
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      if (!Number.isNaN(year) && !Number.isNaN(month)) {
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 1);
+        query = query.gte('datetime', start.toISOString()).lt('datetime', end.toISOString());
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      setError(error.message);
+      setEntries([]);
+      onCountChange?.(0);
+      setLoading(false);
+      return;
+    }
+
+    const rows = (data ?? []) as unknown as SupabaseEntryRow[];
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean)));
+
+    let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+    if (userIds.length) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', userIds);
+      profileMap = Object.fromEntries(
+        (profilesData ?? []).map((p) => [
+          (p as { id: string }).id,
+          {
+            username: (p as { username: string | null }).username,
+            display_name: (p as { display_name: string | null }).display_name,
+            avatar_url: (p as { avatar_url: string | null }).avatar_url,
+          },
+        ])
+      );
+    }
+
+    const mapped: FeedEntry[] = rows.map((entry) => {
+      const profile = profileMap[entry.user_id];
+      return {
+        id: entry.id,
+        userId: entry.user_id,
+        username: profile?.username ?? 'usuario',
+        displayName: profile?.display_name ?? null,
+        avatarUrl: profile?.avatar_url ?? null,
+        datetime: entry.datetime,
+        price: entry.price ?? 0,
+        rating: entry.rating ?? 0,
+        isBurger: Boolean(entry.is_burger),
+        additionalNotes: entry.additional_notes ?? null,
+        restaurantId: entry.restaurant_id ?? null,
+        burgerId: entry.burger_id ?? null,
+        meatType: entry.burgers?.meat_type ?? null,
+        restaurantName: entry.restaurants?.name ?? null,
+        burgerName: entry.burgers?.name ?? null,
+        photoUrl: entry.photo_url ?? null,
+      };
+    });
+
+    setEntries(mapped);
+    onCountChange?.(mapped.length);
+    if (!options?.skipCache) {
+      try {
+        sessionStorage.setItem(entriesCacheKey, JSON.stringify(mapped));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
+    }
+    setLoading(false);
+  }, [
+    activeTab,
+    currentUserId,
+    effectiveMonthFilter,
+    entriesCacheKey,
+    focusUserId,
+    onCountChange,
+  ]);
 
   useEffect(() => {
     if (!focusUserId) return;
     let cancelled = false;
+
+    if (monthCacheKey) {
+      const cached = sessionStorage.getItem(monthCacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as { value: string; label: string }[];
+          if (!cancelled) {
+            setMonthOptions(parsed);
+            return () => {
+              cancelled = true;
+            };
+          }
+        } catch {
+          // Fall through to fetch.
+        }
+      }
+    }
 
     const loadMonths = async () => {
       const { data, error } = await supabase
@@ -133,6 +297,13 @@ export function FeedTabs({
         options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
       });
       setMonthOptions(options);
+      if (monthCacheKey) {
+        try {
+          sessionStorage.setItem(monthCacheKey, JSON.stringify(options));
+        } catch {
+          // Ignore cache write errors (private mode, quota, etc.).
+        }
+      }
     };
 
     loadMonths();
@@ -146,144 +317,57 @@ export function FeedTabs({
     if (headerOnly) return;
     let isCancelled = false;
 
-    const loadEntries = async () => {
-      setLoading(true);
-      setError(null);
-
-      let userIdsForQuery: string[] | null = null;
-
-      if (focusUserId) {
-        userIdsForQuery = [focusUserId];
-      } else if (activeTab === 'following') {
-        const { data: followsData, error: followsError } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', currentUserId);
-
-        if (followsError) {
-          setError(followsError.message);
-          setEntries([]);
-          onCountChange?.(0);
-          setLoading(false);
-          return;
-        }
-
-        userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
-        if (!userIdsForQuery.length) {
-          setEntries([]);
-          onCountChange?.(0);
-          setLoading(false);
-          return;
+    if (refreshKey === 0) {
+      const cached = sessionStorage.getItem(entriesCacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as FeedEntry[];
+          if (!isCancelled) {
+            setEntries(parsed);
+            onCountChange?.(parsed.length);
+            setLoading(false);
+            setError(null);
+            return () => {
+              isCancelled = true;
+            };
+          }
+        } catch {
+          // Fall through to fetch.
         }
       }
-
-      let query = supabase
-        .from('entries')
-        .select(
-          `
-          id,
-          user_id,
-          datetime,
-          price,
-          rating,
-          is_burger,
-          additional_notes,
-          restaurant_id,
-          burger_id,
-          visibility,
-          photo_url,
-          restaurants ( name ),
-          burgers ( name, meat_type )
-        `
-        )
-        .order('datetime', { ascending: false })
-        .limit(50);
-
-      if (focusUserId) {
-        query = query.eq('visibility', 'public').eq('user_id', focusUserId);
-      } else if (activeTab === 'global') {
-        query = query.eq('visibility', 'public');
-      } else if (activeTab === 'following' && userIdsForQuery) {
-        query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
-      }
-
-      if (focusUserId && effectiveMonthFilter !== 'all') {
-        const [yearStr, monthStr] = effectiveMonthFilter.split('-');
-        const year = Number(yearStr);
-        const month = Number(monthStr);
-        if (!Number.isNaN(year) && !Number.isNaN(month)) {
-          const start = new Date(year, month - 1, 1);
-          const end = new Date(year, month, 1);
-          query = query.gte('datetime', start.toISOString()).lt('datetime', end.toISOString());
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (isCancelled) return;
-
-      if (error) {
-        setError(error.message);
-        setEntries([]);
-        onCountChange?.(0);
-        setLoading(false);
-        return;
-      }
-
-      const rows = (data ?? []) as unknown as SupabaseEntryRow[];
-      const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean)));
-
-      let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
-      if (userIds.length) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', userIds);
-        profileMap = Object.fromEntries(
-          (profilesData ?? []).map((p) => [
-            (p as { id: string }).id,
-            {
-              username: (p as { username: string | null }).username,
-              display_name: (p as { display_name: string | null }).display_name,
-              avatar_url: (p as { avatar_url: string | null }).avatar_url,
-            },
-          ])
-        );
-      }
-
-      const mapped: FeedEntry[] = rows.map((entry) => {
-        const profile = profileMap[entry.user_id];
-        return {
-          id: entry.id,
-          userId: entry.user_id,
-          username: profile?.username ?? 'usuario',
-          displayName: profile?.display_name ?? null,
-          avatarUrl: profile?.avatar_url ?? null,
-          datetime: entry.datetime,
-          price: entry.price ?? 0,
-          rating: entry.rating ?? 0,
-          isBurger: Boolean(entry.is_burger),
-          additionalNotes: entry.additional_notes ?? null,
-          restaurantId: entry.restaurant_id ?? null,
-          burgerId: entry.burger_id ?? null,
-          meatType: entry.burgers?.meat_type ?? null,
-          restaurantName: entry.restaurants?.name ?? null,
-          burgerName: entry.burgers?.name ?? null,
-          photoUrl: entry.photo_url ?? null,
-        };
-      });
-
-      setEntries(mapped);
-      onCountChange?.(mapped.length);
-      setLoading(false);
-    };
+    }
 
     loadEntries();
 
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, currentUserId, refreshKey, focusUserId, effectiveMonthFilter, onCountChange, headerOnly]);
+  }, [entriesCacheKey, headerOnly, loadEntries, onCountChange, refreshKey]);
+
+  useEffect(() => {
+    if (headerOnly) return;
+    const channel = supabase
+      .channel(`feed-entries-${currentUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'entries' },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { user_id?: string; visibility?: string | null } | null;
+          if (focusUserId) {
+            if (row?.user_id !== focusUserId) return;
+            if (row?.visibility && row.visibility !== 'public') return;
+          } else if (activeTab === 'global') {
+            if (row?.visibility && row.visibility !== 'public') return;
+          }
+          loadEntries({ showLoading: false, skipCache: true });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeTab, currentUserId, focusUserId, headerOnly, loadEntries]);
 
   const renderPlaceholderText = () => {
     if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas públicas en este mes.';
