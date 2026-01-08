@@ -58,7 +58,7 @@ const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Pro
   }
 };
 
-export function ProfilePage({ session, theme, onToggleTheme, onNavigate, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
+export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
