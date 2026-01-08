@@ -332,6 +332,15 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      sessionStorage.clear();
+    } catch (err) {
+      console.error('No se pudo cerrar sesion', err);
+    }
+  };
+
   const handleAvatarCropConfirm = async () => {
     if (!avatarCropFile || !avatarCropArea) return;
     try {
@@ -469,6 +478,14 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
               />
 
               <div className="bw-profile-actions">
+                <button
+                  type="button"
+                  className="bw-btn bw-btn-danger-outline"
+                  onClick={handleSignOut}
+                  disabled={saving}
+                >
+                  Cerrar sesion
+                </button>
                 <button
                   type="button"
                   className="bw-btn bw-btn-primary"

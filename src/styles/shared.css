@@ -97,6 +97,17 @@
   color: #ffffff;
 }
 
+.bw-btn-danger-outline {
+  background: transparent;
+  color: #d7264d;
+  border: 1px solid #d7264d;
+}
+
+.bw-btn-danger-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .bw-link-button {
   border: none;
   background: transparent;
