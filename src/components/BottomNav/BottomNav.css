@@ -22,11 +22,12 @@
   background: transparent;
   color: var(--bw-text-muted);
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 6px 8px;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 22px; /* controls icon size */
 }
 
 .bw-bottom-nav-item.is-active {
@@ -38,6 +39,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 22px;
 }
 
 .bw-bottom-nav-dot {
@@ -76,4 +78,16 @@
   object-fit: cover;
   display: block;
   border-radius: 50%;
+}
+
+.bw-bottom-nav-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--bw-text-muted);
+}
+
+.bw-bottom-nav-item.is-active .bw-bottom-nav-label {
+  color: var(--bw-accent);
 }

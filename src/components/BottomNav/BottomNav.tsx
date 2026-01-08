@@ -1,8 +1,9 @@
 import { DynamicFeed, Groups, Home } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import './BottomNav.css';
 import '../../styles/shared.css';
 
@@ -24,66 +25,62 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
     return 'home';
   }, [location.pathname]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadProfile = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('avatar_url, username, display_name')
+      .eq('id', session.user.id)
+      .single();
 
-    const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url, username, display_name')
-        .eq('id', session.user.id)
-        .single();
+    if (error || !data) {
+      setAvatarUrl(null);
+      setInitial(session.user.email?.charAt(0).toUpperCase() ?? '?');
+      return;
+    }
 
-      if (cancelled) return;
-
-      if (error || !data) {
-        setAvatarUrl(null);
-        setInitial(session.user.email?.charAt(0).toUpperCase() ?? '?');
-        return;
-      }
-
-      const profile = data as { avatar_url: string | null; username: string | null; display_name: string | null };
-      const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
-      setAvatarUrl(profile.avatar_url);
-      setInitial(base.charAt(0).toUpperCase());
-    };
-
-    loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session.user.id, session.user.email]);
+    const profile = data as { avatar_url: string | null; username: string | null; display_name: string | null };
+    const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
+    setAvatarUrl(profile.avatar_url);
+    setInitial(base.charAt(0).toUpperCase());
+  }, [session.user.email, session.user.id]);
 
   useEffect(() => {
-    let cancelled = false;
+    startTransition(() => {
+      void loadProfile();
+    });
+  }, [loadProfile]);
 
-    const loadInvites = async () => {
-      const { count, error } = await supabase
-        .from('group_invitations')
-        .select('id', { count: 'exact', head: true })
-        .eq('invitee_id', session.user.id);
+  const loadInvites = useCallback(async () => {
+    const { count, error } = await supabase
+      .from('group_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('invitee_id', session.user.id);
 
-      if (cancelled) return;
+    if (error) {
+      setInviteCount(0);
+      return;
+    }
 
-      if (error) {
-        setInviteCount(0);
-        return;
-      }
+    setInviteCount(count ?? 0);
+  }, [session.user.id]);
 
-      setInviteCount(count ?? 0);
-    };
-
-    loadInvites();
+  useEffect(() => {
+    startTransition(() => {
+      void loadInvites();
+    });
 
     const handleInvitesUpdated = () => loadInvites();
     window.addEventListener('bw-invites-updated', handleInvitesUpdated);
 
     return () => {
-      cancelled = true;
       window.removeEventListener('bw-invites-updated', handleInvitesUpdated);
     };
-  }, [session.user.id, location.pathname]);
+  }, [loadInvites, location.pathname]);
+
+  useRevalidateOnFocus(() => {
+    loadProfile();
+    loadInvites();
+  }, [loadInvites, loadProfile]);
 
   return (
     <nav className="bw-bottom-nav" aria-label="Navegacion principal">
@@ -93,7 +90,8 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
         onClick={() => navigate('/')}
         aria-label="Inicio"
       >
-        <Home />
+        <span className="bw-bottom-nav-icon"><Home /></span>
+        <span className="bw-bottom-nav-label">Inicio</span>
       </button>
       <button
         type="button"
@@ -101,7 +99,8 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
         onClick={() => navigate('/feed')}
         aria-label="Feed"
       >
-        <DynamicFeed />
+        <span className="bw-bottom-nav-icon"><DynamicFeed /></span>
+        <span className="bw-bottom-nav-label">Feed</span>
       </button>
       <button
         type="button"
@@ -113,6 +112,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
           <Groups />
           {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
         </span>
+        <span className="bw-bottom-nav-label">Grupos</span>
       </button>
       <button
         type="button"
@@ -123,6 +123,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
         <span className="bw-bottom-nav-avatar">
           {avatarUrl ? <img src={avatarUrl} alt="Mi perfil" /> : <span>{initial}</span>}
         </span>
+        <span className="bw-bottom-nav-label"></span>
       </button>
     </nav>
   );

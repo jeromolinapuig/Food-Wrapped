@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { TopMenu } from '../TopMenu/TopMenu';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { cropImageFile } from '../../utils/cropImage';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './ProfilePage.css';
@@ -81,6 +82,37 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   const profileCacheKey = `bw-profile-${session.user.id}`;
   const followCountsCacheKey = `bw-profile-follow-counts-${session.user.id}`;
 
+  const loadProfile = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) setLoading(true);
+    setError(null);
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, display_name, avatar_url, bio, is_private')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error) {
+      setError(error.message);
+      setProfile(null);
+    } else {
+      setProfile(data as ProfileData);
+      setUsernameInput(data?.username ?? username ?? '');
+      setBioInput(data?.bio ?? '');
+      setAvatarPreview(data?.avatar_url ?? null);
+      setIsPrivate(Boolean(data?.is_private));
+      if (!options?.skipCache) {
+        try {
+          sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
+        } catch {
+          // Ignore cache write errors (private mode, quota, etc.).
+        }
+      }
+    }
+    if (showLoading) setLoading(false);
+  }, [profileCacheKey, session.user.id, username]);
+
   useEffect(() => {
     const cached = sessionStorage.getItem(profileCacheKey);
     if (cached) {
@@ -97,35 +129,8 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       }
     }
 
-    const loadProfile = async () => {
-      setLoading(true);
-      setError(null);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, display_name, avatar_url, bio, is_private')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) {
-        setError(error.message);
-        setProfile(null);
-      } else {
-        setProfile(data as ProfileData);
-        setUsernameInput(data?.username ?? username ?? '');
-        setBioInput(data?.bio ?? '');
-        setAvatarPreview(data?.avatar_url ?? null);
-        setIsPrivate(Boolean(data?.is_private));
-        try {
-          sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
-        } catch {
-          // Ignore cache write errors (private mode, quota, etc.).
-        }
-      }
-      setLoading(false);
-    };
-
     loadProfile();
-  }, [profileCacheKey, session.user.id, username]);
+  }, [loadProfile, profileCacheKey, username]);
 
   const loadFollowCounts = useCallback(async () => {
     const [
@@ -177,6 +182,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       // Ignore cache write errors (private mode, quota, etc.).
     }
   }, [followCountsCacheKey, session.user.id]);
+
+  useRevalidateOnFocus(() => {
+    loadProfile({ showLoading: false, skipCache: true });
+    loadFollowCounts();
+  }, [loadFollowCounts, loadProfile]);
 
   useEffect(() => {
     const cachedCounts = sessionStorage.getItem(followCountsCacheKey);

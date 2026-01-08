@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Euro, LunchDining } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { StatCard } from '../StatCard/StatCard';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../Dashboard/Dashboard.css';
@@ -59,105 +60,92 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const groupUserIds = memberIds.length ? memberIds : null;
   const hideGroupFilter = !groupUserIds;
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadGroup = async () => {
-      setError(null);
-      const { data: groupRow, error: groupError } = await supabase
-        .from('groups')
-        .select('id, name, owner_id')
-        .eq('id', groupId)
-        .single();
+  const loadGroup = useCallback(async () => {
+    setError(null);
+    const { data: groupRow, error: groupError } = await supabase
+      .from('groups')
+      .select('id, name, owner_id')
+      .eq('id', groupId)
+      .single();
 
-      if (cancelled) return;
+    if (groupError || !groupRow) {
+      setError('No se pudo cargar el grupo.');
+      setGroupName(null);
+      setMemberIds([]);
+      setMembers([]);
+      return;
+    }
 
-      if (groupError || !groupRow) {
-        setError('No se pudo cargar el grupo.');
-        setGroupName(null);
-        setMemberIds([]);
-        setMembers([]);
-        return;
-      }
+    setGroupName((groupRow as { name: string }).name);
+    const ownerId = (groupRow as { owner_id: string }).owner_id;
 
-      setGroupName((groupRow as { name: string }).name);
-      const ownerId = (groupRow as { owner_id: string }).owner_id;
+    const { data: memberRows, error: membersError } = await supabase
+      .from('group_members')
+      .select('user_id')
+      .eq('group_id', groupId);
 
-      const { data: memberRows, error: membersError } = await supabase
-        .from('group_members')
-        .select('user_id')
-        .eq('group_id', groupId);
+    if (membersError) {
+      setError('No se pudieron cargar los miembros.');
+      setMemberIds([]);
+      setMembers([]);
+      return;
+    }
 
-      if (cancelled) return;
+    const memberIdsSet = new Set<string>();
+    memberIdsSet.add(ownerId);
+    (memberRows ?? []).forEach((row) => {
+      memberIdsSet.add((row as { user_id: string }).user_id);
+    });
+    const uniqueMemberIds = Array.from(memberIdsSet);
+    setMemberIds(uniqueMemberIds);
 
-      if (membersError) {
-        setError('No se pudieron cargar los miembros.');
-        setMemberIds([]);
-        setMembers([]);
-        return;
-      }
+    if (!uniqueMemberIds.length) {
+      setMembers([]);
+      return;
+    }
 
-      const memberIdsSet = new Set<string>();
-      memberIdsSet.add(ownerId);
-      (memberRows ?? []).forEach((row) => {
-        memberIdsSet.add((row as { user_id: string }).user_id);
-      });
-      const uniqueMemberIds = Array.from(memberIdsSet);
-      setMemberIds(uniqueMemberIds);
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', uniqueMemberIds);
 
-      if (!uniqueMemberIds.length) {
-        setMembers([]);
-        return;
-      }
+    if (profilesError) {
+      setError('No se pudieron cargar los miembros.');
+      setMembers([]);
+      return;
+    }
 
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .in('id', uniqueMemberIds);
-
-      if (cancelled) return;
-
-      if (profilesError) {
-        setError('No se pudieron cargar los miembros.');
-        setMembers([]);
-        return;
-      }
-
-      const mapped = (profilesData ?? []).map((profile) => ({
-        id: (profile as { id: string }).id,
-        username: (profile as { username: string | null }).username,
-        displayName: (profile as { display_name: string | null }).display_name,
-        avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
-      }));
-      setMembers(mapped);
-    };
-
-    loadGroup();
-
-    return () => {
-      cancelled = true;
-    };
+    const mapped = (profilesData ?? []).map((profile) => ({
+      id: (profile as { id: string }).id,
+      username: (profile as { username: string | null }).username,
+      displayName: (profile as { display_name: string | null }).display_name,
+      avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+    }));
+    setMembers(mapped);
   }, [groupId]);
 
   useEffect(() => {
-    let cancelled = false;
-    const loadEntries = async () => {
-      setLoading(true);
-      setError(null);
+    loadGroup();
+  }, [loadGroup]);
 
-      if (!memberIds.length) {
-        setEntries([]);
-        setPostsCount(0);
-        setLoading(false);
-        return;
-      }
+  const loadEntries = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const from = '2026-01-01';
-      const to = '2027-01-01';
+    if (!memberIds.length) {
+      setEntries([]);
+      setPostsCount(0);
+      setLoading(false);
+      return;
+    }
 
-      const { data, error } = await supabase
-        .from('entries')
-        .select(
-          `
+    const from = '2026-01-01';
+    const to = '2027-01-01';
+
+    const { data, error } = await supabase
+      .from('entries')
+      .select(
+        `
           id,
           user_id,
           datetime,
@@ -169,31 +157,31 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
           restaurant:restaurants ( name ),
           burger:burgers ( name, meat_type )
         `
-        )
-        .eq('visibility', 'public')
-        .gte('datetime', from)
-        .lt('datetime', to)
-        .in('user_id', memberIds)
-        .order('datetime', { ascending: false });
+      )
+      .eq('visibility', 'public')
+      .gte('datetime', from)
+      .lt('datetime', to)
+      .in('user_id', memberIds)
+      .order('datetime', { ascending: false });
 
-      if (cancelled) return;
+    if (error) {
+      setError(error.message);
+      setEntries([]);
+    } else {
+      setEntries((data ?? []) as unknown as DbEntryRow[]);
+    }
 
-      if (error) {
-        setError(error.message);
-        setEntries([]);
-      } else {
-        setEntries((data ?? []) as unknown as DbEntryRow[]);
-      }
-
-      setLoading(false);
-    };
-
-    loadEntries();
-
-    return () => {
-      cancelled = true;
-    };
+    setLoading(false);
   }, [memberIds]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
+
+  useRevalidateOnFocus(() => {
+    loadGroup();
+    loadEntries();
+  }, [loadEntries, loadGroup]);
 
   const stats = useMemo(() => {
     if (!entries.length) {

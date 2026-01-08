@@ -130,6 +130,14 @@
   transform: translateY(1px);
 }
 
+.bw-icon-button.bw-icon-danger {
+  color: var(--bw-accent);
+}
+
+.bw-icon-button.bw-icon-danger svg {
+  color: var(--bw-accent);
+}
+
 .bw-group-card-add {
   border-style: dashed;
   border-width: 2px;

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked, Settings } from '@mui/icons-material';
+import { Add, CheckCircle, ChevronRight, Close, Delete, PeopleOutline, RadioButtonUnchecked, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../FollowListModal/FollowListModal.css';
@@ -46,20 +47,24 @@ const readSessionCache = <T,>(key: string) => {
 export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const groupsCacheKey = `bw-groups-v2-${session.user.id}`;
   const invitesCacheKey = `bw-group-invites-${session.user.id}`;
+  const groupsCache = readSessionCache<GroupCard[]>(groupsCacheKey);
+  const invitesCache = readSessionCache<GroupInvite[]>(invitesCacheKey);
+  const initialGroups = groupsCache.value ?? [];
+  const initialOwnedGroupIds = initialGroups.filter((group) => group.isOwner).map((group) => group.id);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [groups, setGroups] = useState<GroupCard[]>(() => readSessionCache<GroupCard[]>(groupsCacheKey).value ?? []);
-  const [ownedGroupIds, setOwnedGroupIds] = useState<string[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(() => !readSessionCache<GroupCard[]>(groupsCacheKey).hasCache);
+  const [groups, setGroups] = useState<GroupCard[]>(() => initialGroups);
+  const [ownedGroupIds, setOwnedGroupIds] = useState<string[]>(() => initialOwnedGroupIds);
+  const [loadingGroups, setLoadingGroups] = useState(() => !groupsCache.hasCache);
   const [groupsError, setGroupsError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [invites, setInvites] = useState<GroupInvite[]>(() => readSessionCache<GroupInvite[]>(invitesCacheKey).value ?? []);
-  const [loadingInvites, setLoadingInvites] = useState(() => !readSessionCache<GroupInvite[]>(invitesCacheKey).hasCache);
+  const [invites, setInvites] = useState<GroupInvite[]>(() => invitesCache.value ?? []);
+  const [loadingInvites, setLoadingInvites] = useState(() => !invitesCache.hasCache);
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
   const [manageGroupId, setManageGroupId] = useState<string | null>(null);
   const [manageGroupName, setManageGroupName] = useState<string | null>(null);
-  const hasGroupsCache = Boolean(sessionStorage.getItem(groupsCacheKey));
-  const hasInvitesCache = Boolean(sessionStorage.getItem(invitesCacheKey));
+  const hasGroupsCache = groupsCache.hasCache;
+  const hasInvitesCache = invitesCache.hasCache;
 
   const loadGroups = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -294,6 +299,11 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     return () => window.clearTimeout(timeoutId);
   }, [hasInvitesCache, loadInvites, refreshKey]);
 
+  useRevalidateOnFocus(() => {
+    loadGroups({ showLoading: false, skipCache: true });
+    loadInvites({ showLoading: false, skipCache: true });
+  }, [loadGroups, loadInvites]);
+
   useEffect(() => {
     const channel = supabase
       .channel(`groups-rt-${session.user.id}`)
@@ -505,6 +515,7 @@ function GroupManageModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => lockBodyScroll(), []);
 
@@ -690,6 +701,25 @@ function GroupManageModal({
     window.dispatchEvent(new Event('bw-invites-updated'));
   };
 
+  const handleDeleteGroup = async () => {
+    if (saving) return;
+    setSaving(true);
+    const { error: deleteError } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', groupId)
+      .eq('owner_id', currentUserId);
+    if (deleteError) {
+      setError('No se pudo eliminar el grupo.');
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    setConfirmDelete(false);
+    onChanged();
+    onClose();
+  };
+
   const handleRemoveMember = async (member: GroupMemberItem) => {
     if (saving || member.isOwner) return;
     const confirmRemove = window.confirm(`¿Eliminar a @${member.username ?? 'usuario'} del grupo?`);
@@ -717,9 +747,19 @@ function GroupManageModal({
             <h2 className="bw-modal-title">Configurar grupo</h2>
             <p className="bw-modal-subtitle">{groupName ?? 'Grupo'}</p>
           </div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
-            <Close fontSize="small" />
-          </button>
+          <div className="bw-modal-header-actions">
+            <button
+              type="button"
+              className="bw-icon-button bw-icon-danger"
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Eliminar grupo"
+            >
+              <Delete fontSize="small" />
+            </button>
+            <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+              <Close fontSize="small" />
+            </button>
+          </div>
         </div>
 
         <div className="bw-group-modal-body">
@@ -846,10 +886,38 @@ function GroupManageModal({
                   </button>
                 </div>
               </div>
+
             </>
           )}
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="bw-confirm-backdrop" onClick={() => setConfirmDelete(false)}>
+          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="bw-confirm-title">¿Estas seguro que quieres eliminar el grupo?</h3>
+            <p className="bw-confirm-text">Esta accion no se puede deshacer.</p>
+            <div className="bw-confirm-actions">
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                className="bw-btn bw-btn-primary"
+                type="button"
+                onClick={handleDeleteGroup}
+                disabled={saving}
+              >
+                {saving ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { StatCard } from '../StatCard/StatCard';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -176,6 +177,10 @@ export function Dashboard({ session, theme }: DashboardProps) {
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  useRevalidateOnFocus(() => {
+    loadEntries({ showLoading: false });
+  }, [loadEntries]);
 
   useEffect(() => {
     if (!showInstallBanner && !deleteEntry) return;

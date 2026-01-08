@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, startTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { StatCard } from '../StatCard/StatCard';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../Dashboard/Dashboard.css';
@@ -47,36 +48,29 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   const [profile, setProfile] = useState<{ username: string | null; displayName: string | null; isPrivate?: boolean | null } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, display_name, is_private')
-        .eq('id', userId)
-        .single();
+  const loadProfile = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, display_name, is_private')
+      .eq('id', userId)
+      .single();
 
-      if (cancelled) return;
+    if (error) {
+      console.error('Error loading profile', error);
+      setProfile({ username: null, displayName: null });
+      return;
+    }
 
-      if (error) {
-        console.error('Error loading profile', error);
-        setProfile({ username: null, displayName: null });
-        return;
-      }
-
-      setProfile({
-        username: (data as { username: string | null }).username,
-        displayName: (data as { display_name: string | null }).display_name,
-        isPrivate: (data as { is_private: boolean | null }).is_private,
-      });
-    };
-
-    loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
+    setProfile({
+      username: (data as { username: string | null }).username,
+      displayName: (data as { display_name: string | null }).display_name,
+      isPrivate: (data as { is_private: boolean | null }).is_private,
+    });
   }, [userId]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   useEffect(() => {
     if (!profile) return;
@@ -118,7 +112,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     };
   }, [profile, session.user.id, userId]);
 
-  useEffect(() => {
+  const loadEntries = useCallback(async () => {
     if (privacyBlocked) {
       startTransition(() => {
         setEntries([]);
@@ -128,17 +122,16 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       });
       return;
     }
-    const loadEntries = async () => {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      const from = '2026-01-01';
-      const to = '2027-01-01';
+    const from = '2026-01-01';
+    const to = '2027-01-01';
 
-      const { data, error } = await supabase
-        .from('entries')
-        .select(
-          `
+    const { data, error } = await supabase
+      .from('entries')
+      .select(
+        `
           id,
           datetime,
           rating,
@@ -149,24 +142,32 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
           restaurant:restaurants ( name ),
           burger:burgers ( name, meat_type )
         `
-        )
-        .gte('datetime', from)
-        .lt('datetime', to)
-        .eq('user_id', userId)
-        .order('datetime', { ascending: false });
+      )
+      .gte('datetime', from)
+      .lt('datetime', to)
+      .eq('user_id', userId)
+      .order('datetime', { ascending: false });
 
-      if (error) {
-        setError(error.message);
-        setEntries([]);
-      } else {
-        setEntries((data ?? []) as unknown as DbEntryRow[]);
-      }
+    if (error) {
+      setError(error.message);
+      setEntries([]);
+    } else {
+      setEntries((data ?? []) as unknown as DbEntryRow[]);
+    }
 
-      setLoading(false);
-    };
-
-    loadEntries();
+    setLoading(false);
   }, [privacyBlocked, userId]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
+
+  useRevalidateOnFocus(() => {
+    loadProfile();
+    if (!privacyBlocked) {
+      loadEntries();
+    }
+  }, [loadEntries, loadProfile, privacyBlocked]);
 
   const stats = useMemo(() => {
     if (!entries.length) {

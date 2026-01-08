@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, startTransition } fr
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/shared.css';
 import './FeedTabs.css';
 import '../EntryCard/EntryCard.css';
@@ -626,6 +627,13 @@ export function FeedTabs({
       supabase.removeChannel(channel);
     };
   }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
+
+  useRevalidateOnFocus(() => {
+    if (headerOnly) return;
+    setHasMore(true);
+    setCursor(null);
+    loadEntries({ showLoading: false, skipCache: true });
+  }, [headerOnly, loadEntries]);
 
   useEffect(() => {
     if (headerOnly) return;
