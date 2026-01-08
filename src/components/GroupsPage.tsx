@@ -277,9 +277,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   }, [invitesCacheKey, session.user.id]);
 
   useEffect(() => {
-    if (refreshKey === 0 && hasInvitesCache) return;
     const timeoutId = window.setTimeout(() => {
-      loadInvites();
+      loadInvites({ showLoading: !hasInvitesCache });
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [hasInvitesCache, loadInvites, refreshKey]);
@@ -818,6 +817,5 @@ function GroupInvitesModal({
     </div>
   );
 }
-
 
 

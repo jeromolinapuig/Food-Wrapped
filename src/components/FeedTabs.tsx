@@ -547,6 +547,15 @@ export function FeedTabs({
     };
   }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
 
+  useEffect(() => {
+    if (!photoPreviewUrl) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [photoPreviewUrl]);
+
   const renderPlaceholderText = () => {
     if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas publicas en este mes.';
     if (isUserFeed) return 'Este usuario no tiene comidas publicas todavia.';
@@ -737,4 +746,3 @@ export function FeedTabs({
     </section>
   );
 }
-
