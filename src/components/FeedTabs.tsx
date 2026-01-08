@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/shared.css';
 import '../styles/feed-tabs.css';
 import '../styles/entry-card.css';
@@ -549,11 +550,7 @@ export function FeedTabs({
 
   useEffect(() => {
     if (!photoPreviewUrl) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return lockBodyScroll();
   }, [photoPreviewUrl]);
 
   const renderPlaceholderText = () => {

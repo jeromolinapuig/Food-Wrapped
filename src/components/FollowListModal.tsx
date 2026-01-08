@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/shared.css';
 import '../styles/follow-list.css';
 import '../styles/user-profile-modal.css';
@@ -45,6 +46,11 @@ export function FollowListModal({
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowListItem | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    return lockBodyScroll();
+  }, [open]);
 
   useEffect(() => {
     if (!open || !mode) return;

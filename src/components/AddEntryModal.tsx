@@ -16,6 +16,7 @@ import { addEntrySchema } from '../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
 import { createAppTheme } from '../theme';
 import { compressImage } from '../utils/image';
+import { lockBodyScroll } from '../utils/scrollLock';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { cropImageFile } from '../utils/cropImage';
@@ -109,6 +110,11 @@ export function AddEntryModal({
   const [photoCropArea, setPhotoCropArea] = useState<Area | null>(null);
 
   const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
+
+  useEffect(() => {
+    if (!open) return;
+    return lockBodyScroll();
+  }, [open]);
 
   // Reset form when opening
   useEffect(() => {

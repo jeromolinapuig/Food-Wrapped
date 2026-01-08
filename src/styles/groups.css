@@ -50,6 +50,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
 }
 
 .bw-group-title {
@@ -104,6 +105,31 @@
   color: #9aa0a6;
 }
 
+.bw-group-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bw-group-settings {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--bw-card-bg);
+  color: var(--bw-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.bw-group-settings:active {
+  transform: translateY(1px);
+}
+
 .bw-group-card-add {
   border-style: dashed;
   border-width: 2px;
@@ -143,6 +169,13 @@
   display: flex;
   justify-content: center;
   margin-top: 16px;
+}
+
+.bw-group-modal-actions-sticky {
+  position: sticky;
+  bottom: 0;
+  padding-top: 8px;
+  background: var(--bw-surface);
 }
 
 .bw-group-create-button {
@@ -217,4 +250,79 @@
 
 .bw-group-check.is-selected {
   color: var(--bw-accent);
+}
+
+.bw-group-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bw-group-section + .bw-group-section {
+  margin-top: 12px;
+}
+
+.bw-group-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bw-text);
+}
+
+.bw-group-rename {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.bw-group-rename .bw-input {
+  flex: 1;
+}
+
+.bw-group-members {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bw-group-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: var(--bw-card-bg);
+}
+
+.bw-group-member-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bw-group-owner {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bw-text-muted);
+}
+
+.bw-group-remove {
+  border: 1px solid rgba(255, 59, 141, 0.35);
+  background: transparent;
+  color: var(--bw-accent);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bw-group-remove:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bw-group-friend-card {
+  position: relative;
 }

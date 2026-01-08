@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { AddEntryModal } from './AddEntryModal';
 import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/layout.css';
 import '../styles/shared.css';
 import '../styles/Dashboard.css';
@@ -175,6 +176,11 @@ export function Dashboard({ session, theme }: DashboardProps) {
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  useEffect(() => {
+    if (!showInstallBanner && !deleteEntry) return;
+    return lockBodyScroll();
+  }, [deleteEntry, showInstallBanner]);
 
 
   const handleInstallClick = async () => {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/shared.css';
 import '../styles/profile.css';
 import '../styles/user-profile-modal.css';
@@ -34,6 +35,11 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
   const [isMutual, setIsMutual] = useState(false);
   const [saving, setSaving] = useState(false);
   const shouldShow = open && Boolean(userId);
+
+  useEffect(() => {
+    if (!shouldShow) return;
+    return lockBodyScroll();
+  }, [shouldShow]);
 
   useEffect(() => {
     if (!shouldShow || !userId) return;

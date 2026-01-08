@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked } from '@mui/icons-material';
+import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/layout.css';
 import '../styles/shared.css';
 import '../styles/follow-list.css';
@@ -20,6 +21,7 @@ type GroupCard = {
   name: string;
   members: number;
   membersPreview: Array<{ id: string; initial: string; avatarUrl: string | null }>;
+  isOwner: boolean;
 };
 
 type GroupInvite = {
@@ -42,7 +44,7 @@ const readSessionCache = <T,>(key: string) => {
 };
 
 export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
-  const groupsCacheKey = `bw-groups-${session.user.id}`;
+  const groupsCacheKey = `bw-groups-v2-${session.user.id}`;
   const invitesCacheKey = `bw-group-invites-${session.user.id}`;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [groups, setGroups] = useState<GroupCard[]>(() => readSessionCache<GroupCard[]>(groupsCacheKey).value ?? []);
@@ -54,6 +56,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const [loadingInvites, setLoadingInvites] = useState(() => !readSessionCache<GroupInvite[]>(invitesCacheKey).hasCache);
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
+  const [manageGroupId, setManageGroupId] = useState<string | null>(null);
+  const [manageGroupName, setManageGroupName] = useState<string | null>(null);
   const hasGroupsCache = Boolean(sessionStorage.getItem(groupsCacheKey));
   const hasInvitesCache = Boolean(sessionStorage.getItem(invitesCacheKey));
 
@@ -93,7 +97,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
 
     const { data: groupsData, error: groupsError } = await supabase
       .from('groups')
-      .select('id, name')
+      .select('id, name, owner_id')
       .in('id', groupIds);
 
     if (groupsError) {
@@ -155,6 +159,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     const mappedGroups = (groupsData ?? []).map((group) => {
       const id = (group as { id: string }).id;
       const name = (group as { name: string }).name;
+      const ownerId = (group as { owner_id: string }).owner_id;
       const members = memberMap.get(id) ?? new Set();
       const membersPreview = Array.from(members)
         .slice(0, 4)
@@ -173,9 +178,15 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         name,
         members: members.size,
         membersPreview,
+        isOwner: ownerId === session.user.id,
       };
     });
 
+    setOwnedGroupIds(
+      (groupsData ?? [])
+        .filter((group) => (group as { owner_id: string }).owner_id === session.user.id)
+        .map((group) => (group as { id: string }).id)
+    );
     setGroups(mappedGroups);
     setLoadingGroups(false);
     if (!options?.skipCache) {
@@ -380,7 +391,24 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
                     ))}
                   </div>
                 </div>
-                <ChevronRight className="bw-group-chevron" />
+                <div className="bw-group-card-actions">
+                  {group.isOwner && (
+                    <button
+                      type="button"
+                      className="bw-group-settings"
+                      aria-label="Configurar grupo"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setManageGroupId(group.id);
+                        setManageGroupName(group.name);
+                      }}
+                    >
+                      <Settings fontSize="small" />
+                    </button>
+                  )}
+                  <ChevronRight className="bw-group-chevron" />
+                </div>
               </Link>
             ))}
 
@@ -416,6 +444,18 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
           onChanged={() => setRefreshKey((prev) => prev + 1)}
         />
       )}
+      {manageGroupId && (
+        <GroupManageModal
+          currentUserId={session.user.id}
+          groupId={manageGroupId}
+          groupName={manageGroupName}
+          onClose={() => {
+            setManageGroupId(null);
+            setManageGroupName(null);
+          }}
+          onChanged={() => setRefreshKey((prev) => prev + 1)}
+        />
+      )}
     </div>
   );
 }
@@ -433,6 +473,387 @@ type CreateGroupModalProps = {
   onCreated: () => void;
 };
 
+type GroupMemberItem = {
+  id: string;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isOwner: boolean;
+};
+
+type GroupManageModalProps = {
+  currentUserId: string;
+  groupId: string;
+  groupName: string | null;
+  onClose: () => void;
+  onChanged: () => void;
+};
+
+function GroupManageModal({
+  currentUserId,
+  groupId,
+  groupName,
+  onClose,
+  onChanged,
+}: Readonly<GroupManageModalProps>) {
+  const [members, setMembers] = useState<GroupMemberItem[]>([]);
+  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [groupTitle, setGroupTitle] = useState(groupName ?? '');
+  const [initialGroupTitle, setInitialGroupTitle] = useState(groupName ?? '');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => lockBodyScroll(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      const { data: groupRow, error: groupError } = await supabase
+        .from('groups')
+        .select('id, owner_id')
+        .eq('id', groupId)
+        .single();
+
+      if (cancelled) return;
+
+      if (groupError || !groupRow) {
+        setError('No se pudo cargar el grupo.');
+        setLoading(false);
+        return;
+      }
+
+      const ownerId = (groupRow as { owner_id: string; name?: string | null }).owner_id;
+      const name = (groupRow as { name?: string | null }).name ?? groupName ?? '';
+      setGroupTitle(name);
+      setInitialGroupTitle(name);
+
+      const { data: memberRows, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', groupId);
+
+      if (cancelled) return;
+
+      if (membersError) {
+        setError('No se pudieron cargar los miembros.');
+        setLoading(false);
+        return;
+      }
+
+      const memberIds = new Set<string>();
+      memberIds.add(ownerId);
+      (memberRows ?? []).forEach((row) => memberIds.add((row as { user_id: string }).user_id));
+
+      const memberIdList = Array.from(memberIds);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', memberIdList);
+
+      if (cancelled) return;
+
+      if (profilesError) {
+        setError('No se pudieron cargar los miembros.');
+        setLoading(false);
+        return;
+      }
+
+      const mappedMembers = (profilesData ?? []).map((profile) => {
+        const id = (profile as { id: string }).id;
+        return {
+          id,
+          username: (profile as { username: string | null }).username,
+          displayName: (profile as { display_name: string | null }).display_name,
+          avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+          isOwner: id === ownerId,
+        };
+      });
+      setMembers(mappedMembers);
+
+      const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+        supabase.from('follows').select('following_id').eq('follower_id', currentUserId),
+        supabase.from('follows').select('follower_id').eq('following_id', currentUserId),
+      ]);
+
+      if (cancelled) return;
+
+      const outgoingIds = new Set((outgoing ?? []).map((row) => (row as { following_id: string }).following_id));
+      const incomingIds = new Set((incoming ?? []).map((row) => (row as { follower_id: string }).follower_id));
+      const mutualIds = Array.from(outgoingIds).filter((id) => incomingIds.has(id));
+      const inviteCandidates = mutualIds.filter((id) => !memberIds.has(id));
+
+      if (!inviteCandidates.length) {
+        setFriends([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: friendsData, error: friendsError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', inviteCandidates);
+
+      if (cancelled) return;
+
+      if (friendsError) {
+        setError('No se pudieron cargar los amigos.');
+        setLoading(false);
+        return;
+      }
+
+      const mappedFriends = (friendsData ?? []).map((profile) => ({
+        id: (profile as { id: string }).id,
+        username: (profile as { username: string | null }).username,
+        displayName: (profile as { display_name: string | null }).display_name,
+        avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+      }));
+      setFriends(mappedFriends);
+      setLoading(false);
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId, groupId]);
+
+  const handleRename = async () => {
+    const nextName = groupTitle.trim();
+    if (!nextName || saving) return;
+    if (nextName === initialGroupTitle.trim()) return;
+    setSaving(true);
+    const { error: renameError } = await supabase
+      .from('groups')
+      .update({ name: nextName })
+      .eq('id', groupId)
+      .eq('owner_id', currentUserId);
+    if (renameError) {
+      setError('No se pudo cambiar el nombre del grupo.');
+      setSaving(false);
+      return;
+    }
+    setInitialGroupTitle(nextName);
+    setSaving(false);
+    onChanged();
+  };
+
+  const term = searchTerm.trim().toLowerCase();
+  const filteredFriends = term
+    ? friends.filter((friend) => {
+        const u = (friend.username ?? '').toLowerCase();
+        const d = (friend.displayName ?? '').toLowerCase();
+        return u.includes(term) || d.includes(term);
+      })
+    : friends;
+
+  const toggleSelected = (userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+
+  const handleInvite = async () => {
+    if (!selectedIds.size || saving) return;
+    setSaving(true);
+    const payload = Array.from(selectedIds).map((userId) => ({
+      group_id: groupId,
+      inviter_id: currentUserId,
+      invitee_id: userId,
+    }));
+
+    const { error: inviteError } = await supabase
+      .from('group_invitations')
+      .insert(payload);
+
+    if (inviteError) {
+      setError('No se pudieron enviar las invitaciones.');
+      setSaving(false);
+      return;
+    }
+
+    setSelectedIds(new Set());
+    setSaving(false);
+    onChanged();
+    window.dispatchEvent(new Event('bw-invites-updated'));
+  };
+
+  const handleRemoveMember = async (member: GroupMemberItem) => {
+    if (saving || member.isOwner) return;
+    const confirmRemove = window.confirm(`¿Eliminar a @${member.username ?? 'usuario'} del grupo?`);
+    if (!confirmRemove) return;
+    setSaving(true);
+    const { error: removeError } = await supabase
+      .from('group_members')
+      .delete()
+      .match({ group_id: groupId, user_id: member.id });
+    if (removeError) {
+      setError('No se pudo expulsar al miembro.');
+      setSaving(false);
+      return;
+    }
+    setMembers((prev) => prev.filter((row) => row.id !== member.id));
+    setSaving(false);
+    onChanged();
+  };
+
+  return (
+    <div className="bw-modal-backdrop" onClick={onClose}>
+      <div className="bw-modal bw-group-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="bw-modal-header">
+          <div>
+            <h2 className="bw-modal-title">Configurar grupo</h2>
+            <p className="bw-modal-subtitle">{groupName ?? 'Grupo'}</p>
+          </div>
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+            <Close fontSize="small" />
+          </button>
+        </div>
+
+        <div className="bw-group-modal-body">
+          {loading && <p className="bw-helper">Cargando...</p>}
+          {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
+
+          {!loading && (
+            <>
+              <div className="bw-group-section">
+                <div className="bw-group-section-title">Nombre del grupo</div>
+                <div className="bw-group-rename">
+                  <input
+                    className="bw-input"
+                    value={groupTitle}
+                    onChange={(e) => setGroupTitle(e.target.value)}
+                    placeholder="Nombre del grupo"
+                  />
+                  <button
+                    type="button"
+                    className="bw-btn bw-btn-primary"
+                    onClick={handleRename}
+                    disabled={saving || !groupTitle.trim() || groupTitle.trim() === initialGroupTitle.trim()}
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+              <div className="bw-group-section">
+                <div className="bw-group-section-title">Miembros</div>
+                <div className="bw-group-members">
+                  {members.map((member) => {
+                    const name = member.displayName ?? member.username ?? 'Usuario';
+                    return (
+                      <div key={member.id} className="bw-group-member-row">
+                        <div className="bw-group-member-info">
+                          <div className="bw-avatar bw-avatar-sm">
+                            {member.avatarUrl ? (
+                              <img src={member.avatarUrl} alt={name} className="bw-avatar-image" />
+                            ) : (
+                              <div className="bw-avatar-placeholder">
+                                {(member.username ?? '?').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="bw-user-name">@{member.username ?? 'usuario'}</div>
+                            <div className="bw-user-meta">{name}</div>
+                          </div>
+                        </div>
+                        {member.isOwner ? (
+                          <span className="bw-group-owner">Admin</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="bw-group-remove"
+                            onClick={() => handleRemoveMember(member)}
+                            disabled={saving}
+                          >
+                            Expulsar
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {!members.length && <p className="bw-helper">No hay miembros.</p>}
+                </div>
+              </div>
+
+              <div className="bw-group-section">
+                <div className="bw-group-section-title">Invitar amigos</div>
+                <div className="bw-group-search">
+                  <input
+                    type="search"
+                    className="bw-input"
+                    placeholder="Buscar por nombre o username..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                {!friends.length && <p className="bw-helper">No tienes amigos para invitar.</p>}
+                {friends.length > 0 && (
+                  <div className="bw-group-friends">
+                    {filteredFriends.map((friend) => {
+                      const isSelected = selectedIds.has(friend.id);
+                      const displayName = friend.displayName ?? friend.username ?? 'Usuario';
+                      return (
+                        <button
+                          key={friend.id}
+                          type="button"
+                          className="bw-user-card bw-group-friend-card"
+                          onClick={() => toggleSelected(friend.id)}
+                        >
+                          <div className="bw-user-info">
+                            <div className="bw-avatar bw-avatar-sm">
+                              {friend.avatarUrl ? (
+                                <img src={friend.avatarUrl} alt={displayName} className="bw-avatar-image" />
+                              ) : (
+                                <div className="bw-avatar-placeholder">
+                                  {(friend.username ?? '?').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div className="bw-user-name">@{friend.username ?? 'usuario'}</div>
+                              <div className="bw-user-meta">{displayName}</div>
+                            </div>
+                          </div>
+                          <span className={`bw-group-check ${isSelected ? 'is-selected' : ''}`} aria-hidden="true">
+                            {isSelected ? <CheckCircle fontSize="small" /> : <RadioButtonUnchecked fontSize="small" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="bw-group-modal-actions bw-group-modal-actions-sticky">
+                  <button
+                    type="button"
+                    className="bw-fab bw-group-create-button"
+                    disabled={selectedIds.size === 0 || saving}
+                    onClick={handleInvite}
+                  >
+                    {saving ? 'Enviando...' : 'Invitar'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<CreateGroupModalProps>) {
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -441,6 +862,8 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [groupName, setGroupName] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => lockBodyScroll(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -697,6 +1120,8 @@ function GroupInvitesModal({
   } | null>(null);
   const [mutating, setMutating] = useState(false);
 
+  useEffect(() => lockBodyScroll(), []);
+
   const handleConfirm = async () => {
     if (!confirmAction) return;
     const { invite, action } = confirmAction;
@@ -817,5 +1242,3 @@ function GroupInvitesModal({
     </div>
   );
 }
-
-

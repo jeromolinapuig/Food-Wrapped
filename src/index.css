@@ -49,6 +49,10 @@ body {
   color: var(--bw-text);
 }
 
+body.bw-modal-open {
+  overflow: hidden;
+}
+
 /* Estilos básicos de enlaces y botones (muy neutros) */
 a {
   color: inherit;

@@ -4,6 +4,7 @@ import { FeedTabs } from './FeedTabs';
 import { supabase } from '../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
 import { UserProfileModal } from './UserProfileModal';
+import { lockBodyScroll } from '../utils/scrollLock';
 import '../styles/layout.css';
 import '../styles/shared.css';
 import '../styles/feed-page.css';
@@ -59,6 +60,11 @@ export function FeedPage({
   const followsCacheKey = `bw-feed-follows-${session.user.id}`;
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
+
+  useEffect(() => {
+    if (!confirmAction) return;
+    return lockBodyScroll();
+  }, [confirmAction]);
 
   useEffect(() => {
     const cached = sessionStorage.getItem(followsCacheKey);
