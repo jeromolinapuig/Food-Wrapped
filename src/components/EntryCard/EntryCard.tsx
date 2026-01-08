@@ -7,8 +7,8 @@ import {
   StarBorder,
   StarHalf,
 } from '@mui/icons-material';
-import '../styles/shared.css';
-import '../styles/entry-card.css';
+import '../../styles/shared.css';
+import './EntryCard.css';
 
 type EntryCardProps = {
   restaurantName: string;

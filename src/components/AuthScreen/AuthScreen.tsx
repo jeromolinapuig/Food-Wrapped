@@ -1,8 +1,8 @@
 import { type FormEvent, useState } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { supabase } from '../lib/supabaseClient';
-import '../styles/auth-screen.css';
+import { supabase } from '../../lib/supabaseClient';
+import './AuthScreen.css';
 
 export function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');

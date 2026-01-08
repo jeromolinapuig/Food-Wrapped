@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
-import { supabase } from '../lib/supabaseClient';
-import { lockBodyScroll } from '../utils/scrollLock';
-import '../styles/shared.css';
-import '../styles/feed-tabs.css';
-import '../styles/entry-card.css';
+import { supabase } from '../../lib/supabaseClient';
+import { lockBodyScroll } from '../../utils/scrollLock';
+import '../../styles/shared.css';
+import './FeedTabs.css';
+import '../EntryCard/EntryCard.css';
 
 type FeedTab = 'following' | 'global';
 

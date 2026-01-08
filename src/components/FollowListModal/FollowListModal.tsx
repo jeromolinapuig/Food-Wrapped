@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
-import { supabase } from '../lib/supabaseClient';
-import { lockBodyScroll } from '../utils/scrollLock';
-import '../styles/shared.css';
-import '../styles/follow-list.css';
-import '../styles/user-profile-modal.css';
+import { supabase } from '../../lib/supabaseClient';
+import { lockBodyScroll } from '../../utils/scrollLock';
+import '../../styles/shared.css';
+import './FollowListModal.css';
+import '../UserProfileModal/UserProfileModal.css';
 
 export type FollowListMode = 'followers' | 'following';
 

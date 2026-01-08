@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Euro, LunchDining } from '@mui/icons-material';
-import { supabase } from '../lib/supabaseClient';
-import { FeedTabs } from './FeedTabs';
-import { StatCard } from './StatCard';
-import '../styles/layout.css';
-import '../styles/shared.css';
-import '../styles/Dashboard.css';
-import '../styles/group-page.css';
+import { supabase } from '../../lib/supabaseClient';
+import { FeedTabs } from '../FeedTabs/FeedTabs';
+import { StatCard } from '../StatCard/StatCard';
+import '../../styles/layout.css';
+import '../../styles/shared.css';
+import '../Dashboard/Dashboard.css';
+import './GroupPage.css';
 
 type BurgerTypeStats = {
   beef: number;

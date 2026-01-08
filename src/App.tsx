@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
-import { AuthScreen } from './components/AuthScreen';
-import { BottomNav } from './components/BottomNav';
-import { Dashboard } from './components/Dashboard';
-import { FeedPage } from './components/FeedPage';
-import { GroupsPage } from './components/GroupsPage';
-import { GroupPage } from './components/GroupPage';
-import { ProfilePage } from './components/ProfilePage';
-import { UserDashboardPage } from './components/UserDashboardPage';
+import { AuthScreen } from './components/AuthScreen/AuthScreen';
+import { BottomNav } from './components/BottomNav/BottomNav';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { FeedPage } from './components/FeedPage/FeedPage';
+import { GroupsPage } from './components/GroupsPage/GroupsPage';
+import { GroupPage } from './components/GroupPage/GroupPage';
+import { ProfilePage } from './components/ProfilePage/ProfilePage';
+import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];

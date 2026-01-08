@@ -2,9 +2,9 @@ import { DynamicFeed, Groups, Home } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import '../styles/bottom-nav.css';
-import '../styles/shared.css';
+import { supabase } from '../../lib/supabaseClient';
+import './BottomNav.css';
+import '../../styles/shared.css';
 
 type BottomNavProps = {
   session: Session;

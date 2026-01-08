@@ -1,5 +1,5 @@
 import { DarkMode, LightMode } from '@mui/icons-material';
-import '../styles/shared.css';
+import '../../styles/shared.css';
 
 type TopMenuProps = {
   theme: 'light' | 'dark';

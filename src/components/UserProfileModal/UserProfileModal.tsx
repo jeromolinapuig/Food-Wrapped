@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
-import { supabase } from '../lib/supabaseClient';
-import { lockBodyScroll } from '../utils/scrollLock';
-import '../styles/shared.css';
-import '../styles/profile.css';
-import '../styles/user-profile-modal.css';
+import { supabase } from '../../lib/supabaseClient';
+import { lockBodyScroll } from '../../utils/scrollLock';
+import '../../styles/shared.css';
+import '../ProfilePage/ProfilePage.css';
+import './UserProfileModal.css';
 
 type UserProfileModalProps = {
   open: boolean;

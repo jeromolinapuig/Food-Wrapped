@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
-import { TopMenu } from './TopMenu';
-import { FollowListModal, type FollowListMode } from './FollowListModal';
-import { cropImageFile } from '../utils/cropImage';
-import '../styles/layout.css';
-import '../styles/shared.css';
-import '../styles/profile.css';
+import { supabase } from '../../lib/supabaseClient';
+import { TopMenu } from '../TopMenu/TopMenu';
+import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
+import { cropImageFile } from '../../utils/cropImage';
+import '../../styles/layout.css';
+import '../../styles/shared.css';
+import './ProfilePage.css';
 
 type ProfileData = {
   username: string | null;

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { FeedTabs } from './FeedTabs';
-import { supabase } from '../lib/supabaseClient';
+import { FeedTabs } from '../FeedTabs/FeedTabs';
+import { supabase } from '../../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
-import { UserProfileModal } from './UserProfileModal';
-import { lockBodyScroll } from '../utils/scrollLock';
-import '../styles/layout.css';
-import '../styles/shared.css';
-import '../styles/feed-page.css';
-import '../styles/follow-list.css';
+import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
+import { lockBodyScroll } from '../../utils/scrollLock';
+import '../../styles/layout.css';
+import '../../styles/shared.css';
+import './FeedPage.css';
+import '../FollowListModal/FollowListModal.css';
 
 type FeedPageProps = {
   session: Session;

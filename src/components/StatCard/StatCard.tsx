@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import '../styles/stat-card.css';
+import './StatCard.css';
 
 type StatCardProps = {
   icon: ReactNode;

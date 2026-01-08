@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import { lockBodyScroll } from '../utils/scrollLock';
-import '../styles/layout.css';
-import '../styles/shared.css';
-import '../styles/follow-list.css';
-import '../styles/groups.css';
+import { supabase } from '../../lib/supabaseClient';
+import { lockBodyScroll } from '../../utils/scrollLock';
+import '../../styles/layout.css';
+import '../../styles/shared.css';
+import '../FollowListModal/FollowListModal.css';
+import './GroupsPage.css';
 
 type GroupsPageProps = {
   session: Session;

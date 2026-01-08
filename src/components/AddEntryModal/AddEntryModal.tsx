@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
-import '../styles/shared.css';
-import '../styles/add-entry-modal.css';
+import { supabase } from '../../lib/supabaseClient';
+import '../../styles/shared.css';
+import './AddEntryModal.css';
 import {
   Button,
   CssBaseline,
@@ -12,14 +12,14 @@ import {
   Rating,
 } from '@mui/material';
 import { LunchDining } from '@mui/icons-material';
-import { addEntrySchema } from '../schemas/addEntrySchema';
-import { formatLocalDateTime, MIN_DATETIME_STRING } from '../utils/datetime';
-import { createAppTheme } from '../theme';
-import { compressImage } from '../utils/image';
-import { lockBodyScroll } from '../utils/scrollLock';
+import { addEntrySchema } from '../../schemas/addEntrySchema';
+import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
+import { createAppTheme } from '../../theme';
+import { compressImage } from '../../utils/image';
+import { lockBodyScroll } from '../../utils/scrollLock';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-import { cropImageFile } from '../utils/cropImage';
+import { cropImageFile } from '../../utils/cropImage';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 
 type RestaurantOption = {
