@@ -30,7 +30,7 @@
 }
 
 .bw-bottom-nav-item.is-active {
-  color: var(--bw-text);
+  color: var(--bw-accent);
 }
 
 .bw-bottom-nav-icon {
@@ -55,8 +55,10 @@
   height: 28px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--bw-accent-soft);
   color: var(--bw-text);
+  padding: 2px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -64,9 +66,14 @@
   font-size: 12px;
 }
 
+.bw-bottom-nav-item.is-active .bw-bottom-nav-avatar {
+  border-color: var(--bw-accent);
+}
+
 .bw-bottom-nav-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 50%;
 }
