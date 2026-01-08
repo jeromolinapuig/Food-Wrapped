@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
+import { Euro, LunchDining } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
@@ -308,7 +308,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
         <main className="bw-main">
           <section className="bw-stats-grid">
             {loading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
+              Array.from({ length: 2 }).map((_, idx) => (
                 <div className="bw-stat-card bw-skeleton" key={idx}>
                   <div className="bw-skeleton-line bw-skeleton-short" />
                   <div className="bw-skeleton-line" />
@@ -323,38 +323,8 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   label="Total gastado"
                 />
                 <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
-                <StatCard
-                  icon={<Star fontSize="small" />}
-                  value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-                  label="Nota media"
-                />
-                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
               </>
             )}
-          </section>
-
-          <section className="bw-card bw-burger-types">
-            <h2 className="bw-section-title">Tipos de hamburguesa</h2>
-            <div className="bw-burger-types-row">
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.beef}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.chicken}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.vegan}</span>
-              </div>
-            </div>
           </section>
 
           {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
