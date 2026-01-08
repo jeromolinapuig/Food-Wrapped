@@ -1,0 +1,123 @@
+/* Group dashboard */
+
+.bw-group-section-header {
+  align-items: center;
+}
+
+.bw-group-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bw-card-bg);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.bw-group-tab {
+  border: none;
+  background: transparent;
+  color: var(--bw-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.bw-group-tab.is-active {
+  background: var(--bw-surface);
+  color: var(--bw-text);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.bw-ranking-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bw-card-bg);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.bw-ranking-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--bw-text-muted);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.bw-ranking-toggle-btn.is-active {
+  background: var(--bw-surface);
+  color: var(--bw-text);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.bw-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.bw-ranking-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bw-card-bg);
+  border-radius: 18px;
+  padding: 10px 14px;
+}
+
+.bw-ranking-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bw-ranking-index {
+  font-weight: 700;
+  color: var(--bw-text-muted);
+  width: 22px;
+  text-align: center;
+}
+
+.bw-ranking-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bw-accent-soft);
+  color: var(--bw-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.bw-ranking-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bw-ranking-name {
+  font-weight: 600;
+}
+
+.bw-ranking-value {
+  font-weight: 700;
+}
+
+.bw-ranking-empty {
+  font-size: 13px;
+  opacity: 0.8;
+}

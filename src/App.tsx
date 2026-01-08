@@ -6,6 +6,7 @@ import { BottomNav } from './components/BottomNav';
 import { Dashboard } from './components/Dashboard';
 import { FeedPage } from './components/FeedPage';
 import { GroupsPage } from './components/GroupsPage';
+import { GroupPage } from './components/GroupPage';
 import { ProfilePage } from './components/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage';
 import './styles/shared.css';
@@ -216,11 +217,46 @@ function App() {
             />
           }
         />
+        <Route
+          path="/groups/:groupId"
+          element={
+            <GroupRoute
+              session={session}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+            />
+          }
+        />
         <Route path="/users/:userId" element={<UserDashboardRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav session={session} />
     </>
+  );
+}
+
+type GroupRouteProps = {
+  session: Session | null;
+  theme: Theme;
+  onToggleTheme: () => void;
+};
+
+function GroupRoute({ session, theme, onToggleTheme }: GroupRouteProps) {
+  const { groupId } = useParams();
+  const navigate = useNavigate();
+
+  if (!groupId || !session) {
+    return <Navigate to="/groups" replace />;
+  }
+
+  return (
+    <GroupPage
+      session={session}
+      theme={theme}
+      onToggleTheme={onToggleTheme}
+      groupId={groupId}
+      onBack={() => navigate('/groups')}
+    />
   );
 }
 

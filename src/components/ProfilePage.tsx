@@ -14,6 +14,7 @@ type ProfileData = {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  is_private?: boolean | null;
 };
 
 type ProfilePageProps = {
@@ -66,6 +67,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   const [saving, setSaving] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [bioInput, setBioInput] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const BIO_LIMIT = 250;
@@ -88,6 +90,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
         setUsernameInput(parsed.username ?? username ?? '');
         setBioInput(parsed.bio ?? '');
         setAvatarPreview(parsed.avatar_url ?? null);
+        setIsPrivate(Boolean(parsed.is_private));
         return;
       } catch {
         // Fall through to fetch.
@@ -99,7 +102,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       setError(null);
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, display_name, avatar_url, bio')
+        .select('username, display_name, avatar_url, bio, is_private')
         .eq('id', session.user.id)
         .single();
 
@@ -111,6 +114,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
         setUsernameInput(data?.username ?? username ?? '');
         setBioInput(data?.bio ?? '');
         setAvatarPreview(data?.avatar_url ?? null);
+        setIsPrivate(Boolean(data?.is_private));
         try {
           sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
         } catch {
@@ -226,8 +230,9 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   const hasChanges = useMemo(() => {
     const usernameChanged = (usernameInput.trim() || '') !== (profile?.username ?? '');
     const bioChanged = (bioInput.trim() || '') !== (profile?.bio ?? '');
-    return usernameChanged || bioChanged;
-  }, [bioInput, profile?.bio, profile?.username, usernameInput]);
+    const privacyChanged = Boolean(isPrivate) !== Boolean(profile?.is_private);
+    return usernameChanged || bioChanged || privacyChanged;
+  }, [bioInput, isPrivate, profile?.bio, profile?.is_private, profile?.username, usernameInput]);
 
   const getStoragePathFromUrl = (url: string | null | undefined) => {
     if (!url) return null;
@@ -316,6 +321,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
           username: usernameInput.trim(),
           display_name: usernameInput.trim(),
           bio: bioInput.trim(),
+          is_private: isPrivate,
         })
         .eq('id', session.user.id)
         .select()
@@ -324,6 +330,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       if (updateError) throw updateError;
 
       setProfile(data as ProfileData);
+      try {
+        sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo guardar el perfil.';
       setError(msg);
@@ -467,6 +478,22 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
                 <div className="bw-helper" style={{ textAlign: 'right', marginTop: 4 }}>
                   {bioInput.length}/{BIO_LIMIT}
                 </div>
+              </div>
+              <div className="bw-privacy-toggle">
+                <div>
+                  <div className="bw-privacy-title">Perfil privado</div>
+                  <div className="bw-privacy-text">
+                    Solo tus amigos podran ver tus estadisticas y publicaciones.
+                  </div>
+                </div>
+                <label className="bw-switch">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                  />
+                  <span className="bw-switch-slider" aria-hidden="true" />
+                </label>
               </div>
 
               <input

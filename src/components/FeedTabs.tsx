@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { Close, Delete, Edit } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import '../styles/shared.css';
@@ -12,6 +12,8 @@ type FeedTabsProps = {
   refreshKey?: number;
   onOpenProfile?: (userId: string) => void;
   focusUserId?: string | null;
+  userIdsFilter?: string[] | null;
+  ignorePrivacy?: boolean;
   onCountChange?: (count: number) => void;
   hideHeader?: boolean;
   headerOnly?: boolean;
@@ -76,6 +78,8 @@ export function FeedTabs({
   refreshKey = 0,
   onOpenProfile,
   focusUserId,
+  userIdsFilter,
+  ignorePrivacy = false,
   onCountChange,
   hideHeader = false,
   headerOnly = false,
@@ -91,12 +95,59 @@ export function FeedTabs({
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const isUserFeed = Boolean(focusUserId);
+  const isCustomList = Boolean(userIdsFilter?.length);
+  const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const [internalMonthFilter, setInternalMonthFilter] = useState<'all' | string>('all');
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
-  const monthCacheKey = focusUserId ? `bw-feed-months-${focusUserId}` : null;
-  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}`;
+  const userIdsKey = useMemo(() => {
+    if (!userIdsFilter?.length) return '';
+    return [...userIdsFilter].sort().join('|');
+  }, [userIdsFilter]);
+  const monthCacheKey = focusUserId
+    ? `bw-feed-months-${focusUserId}`
+    : isCustomList
+      ? `bw-feed-months-group-${userIdsKey}`
+      : null;
+  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}`;
+
+  const checkFocusPrivacy = useCallback(async () => {
+    if (ignorePrivacy || !focusUserId) {
+      setPrivacyBlocked(false);
+      return;
+    }
+    if (focusUserId === currentUserId) {
+      setPrivacyBlocked(false);
+      return;
+    }
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('is_private')
+      .eq('id', focusUserId)
+      .single();
+    const isPrivate = Boolean((profileData as { is_private?: boolean | null })?.is_private);
+    if (!isPrivate) {
+      setPrivacyBlocked(false);
+      return;
+    }
+    const [{ data: out }, { data: inc }] = await Promise.all([
+      supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', focusUserId)
+        .limit(1),
+      supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', currentUserId)
+        .eq('follower_id', focusUserId)
+        .limit(1),
+    ]);
+    const isMutual = Boolean((out ?? []).length && (inc ?? []).length);
+    setPrivacyBlocked(!isMutual);
+  }, [currentUserId, focusUserId, ignorePrivacy]);
 
   const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -105,7 +156,15 @@ export function FeedTabs({
 
     let userIdsForQuery: string[] | null = null;
 
-    if (focusUserId) {
+    if (isCustomList && userIdsFilter?.length) {
+      userIdsForQuery = userIdsFilter;
+    } else if (isCustomList) {
+      setEntries([]);
+      onCountChange?.(0);
+      setLoading(false);
+      setPrivacyBlocked(false);
+      return;
+    } else if (focusUserId) {
       userIdsForQuery = [focusUserId];
     } else if (activeTab === 'following') {
       const { data: followsData, error: followsError } = await supabase
@@ -152,7 +211,9 @@ export function FeedTabs({
       .order('datetime', { ascending: false })
       .limit(50);
 
-    if (focusUserId) {
+    if (isCustomList && userIdsForQuery) {
+      query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
+    } else if (focusUserId) {
       query = query.eq('visibility', 'public').eq('user_id', focusUserId);
     } else if (activeTab === 'global') {
       query = query.eq('visibility', 'public');
@@ -160,7 +221,7 @@ export function FeedTabs({
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
     }
 
-    if (focusUserId && effectiveMonthFilter !== 'all') {
+    if ((focusUserId || isCustomList) && effectiveMonthFilter !== 'all') {
       const [yearStr, monthStr] = effectiveMonthFilter.split('-');
       const year = Number(yearStr);
       const month = Number(monthStr);
@@ -178,17 +239,21 @@ export function FeedTabs({
       setEntries([]);
       onCountChange?.(0);
       setLoading(false);
+      setPrivacyBlocked(false);
       return;
     }
 
     const rows = (data ?? []) as unknown as SupabaseEntryRow[];
     const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean)));
 
-    let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+    let profileMap: Record<
+      string,
+      { username: string | null; display_name: string | null; avatar_url: string | null; is_private: boolean | null }
+    > = {};
     if (userIds.length) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, is_private')
         .in('id', userIds);
       profileMap = Object.fromEntries(
         (profilesData ?? []).map((p) => [
@@ -197,12 +262,54 @@ export function FeedTabs({
             username: (p as { username: string | null }).username,
             display_name: (p as { display_name: string | null }).display_name,
             avatar_url: (p as { avatar_url: string | null }).avatar_url,
+            is_private: (p as { is_private: boolean | null }).is_private,
           },
         ])
       );
     }
 
-    const mapped: FeedEntry[] = rows.map((entry) => {
+    if (focusUserId && !ignorePrivacy && !profileMap[focusUserId]) {
+      const { data: focusProfile } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, is_private')
+        .eq('id', focusUserId)
+        .single();
+      if (focusProfile) {
+        profileMap[focusUserId] = {
+          username: (focusProfile as { username: string | null }).username,
+          display_name: (focusProfile as { display_name: string | null }).display_name,
+          avatar_url: (focusProfile as { avatar_url: string | null }).avatar_url,
+          is_private: (focusProfile as { is_private: boolean | null }).is_private,
+        };
+      }
+    }
+
+    let mutualIds = new Set<string>();
+    if (!ignorePrivacy && userIds.length && currentUserId) {
+      const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', currentUserId)
+          .in('following_id', userIds),
+        supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', currentUserId)
+          .in('follower_id', userIds),
+      ]);
+      const outgoingIds = new Set(
+        (outgoing ?? []).map((row) => (row as { following_id: string }).following_id)
+      );
+      const incomingIds = new Set(
+        (incoming ?? []).map((row) => (row as { follower_id: string }).follower_id)
+      );
+      mutualIds = new Set(
+        [...outgoingIds].filter((id) => incomingIds.has(id))
+      );
+    }
+
+    let mapped: FeedEntry[] = rows.map((entry) => {
       const profile = profileMap[entry.user_id];
       return {
         id: entry.id,
@@ -224,6 +331,47 @@ export function FeedTabs({
       };
     });
 
+    if (!ignorePrivacy) {
+      mapped = mapped.filter((entry) => {
+        if (entry.userId === currentUserId) return true;
+        const profile = profileMap[entry.userId];
+        if (!profile?.is_private) return true;
+        return mutualIds.has(entry.userId);
+      });
+    }
+
+    if (!ignorePrivacy && focusUserId) {
+      const focusProfile = profileMap[focusUserId];
+      const isPrivate = Boolean(focusProfile?.is_private);
+      let isMutual = mutualIds.has(focusUserId);
+      if (isPrivate && !isMutual && focusUserId !== currentUserId) {
+        const [{ data: out }, { data: inc }] = await Promise.all([
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', currentUserId)
+            .eq('following_id', focusUserId)
+            .limit(1),
+          supabase
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', currentUserId)
+            .eq('follower_id', focusUserId)
+            .limit(1),
+        ]);
+        isMutual = Boolean((out ?? []).length && (inc ?? []).length);
+      }
+      const canSee = focusUserId === currentUserId || isMutual || !isPrivate;
+      if (!canSee) {
+        setEntries([]);
+        onCountChange?.(0);
+        setLoading(false);
+        setPrivacyBlocked(true);
+        return;
+      }
+    }
+
+    setPrivacyBlocked(false);
     setEntries(mapped);
     onCountChange?.(mapped.length);
     if (!options?.skipCache) {
@@ -240,12 +388,16 @@ export function FeedTabs({
     effectiveMonthFilter,
     entriesCacheKey,
     focusUserId,
+    ignorePrivacy,
+    isCustomList,
     onCountChange,
+    userIdsFilter,
   ]);
 
   useEffect(() => {
-    if (!focusUserId) return;
+    if (!focusUserId && !isCustomList) return;
     let cancelled = false;
+    let usedCache = false;
 
     if (monthCacheKey) {
       const cached = sessionStorage.getItem(monthCacheKey);
@@ -253,10 +405,10 @@ export function FeedTabs({
         try {
           const parsed = JSON.parse(cached) as { value: string; label: string }[];
           if (!cancelled) {
-            setMonthOptions(parsed);
-            return () => {
-              cancelled = true;
-            };
+            startTransition(() => {
+              setMonthOptions(parsed);
+            });
+            usedCache = true;
           }
         } catch {
           // Fall through to fetch.
@@ -264,14 +416,27 @@ export function FeedTabs({
       }
     }
 
+    if (usedCache) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const loadMonths = async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('entries')
         .select('datetime')
         .eq('visibility', 'public')
-        .eq('user_id', focusUserId)
         .order('datetime', { ascending: false })
         .limit(500);
+
+      if (focusUserId) {
+        query = query.eq('user_id', focusUserId);
+      } else if (isCustomList && userIdsFilter?.length) {
+        query = query.in('user_id', userIdsFilter);
+      }
+
+      const { data, error } = await query;
 
       if (cancelled) return;
 
@@ -311,11 +476,12 @@ export function FeedTabs({
     return () => {
       cancelled = true;
     };
-  }, [focusUserId]);
+  }, [focusUserId, isCustomList, monthCacheKey, userIdsFilter]);
 
   useEffect(() => {
     if (headerOnly) return;
     let isCancelled = false;
+    let usedCache = false;
 
     if (refreshKey === 0) {
       const cached = sessionStorage.getItem(entriesCacheKey);
@@ -323,13 +489,18 @@ export function FeedTabs({
         try {
           const parsed = JSON.parse(cached) as FeedEntry[];
           if (!isCancelled) {
-            setEntries(parsed);
-            onCountChange?.(parsed.length);
-            setLoading(false);
-            setError(null);
-            return () => {
-              isCancelled = true;
-            };
+            startTransition(() => {
+              setEntries(parsed);
+              onCountChange?.(parsed.length);
+              setLoading(false);
+              setError(null);
+              if (focusUserId && !ignorePrivacy) {
+                checkFocusPrivacy();
+              } else {
+                setPrivacyBlocked(false);
+              }
+            });
+            usedCache = true;
           }
         } catch {
           // Fall through to fetch.
@@ -337,12 +508,16 @@ export function FeedTabs({
       }
     }
 
-    loadEntries();
+    if (!usedCache) {
+      startTransition(() => {
+        loadEntries();
+      });
+    }
 
     return () => {
       isCancelled = true;
     };
-  }, [entriesCacheKey, headerOnly, loadEntries, onCountChange, refreshKey]);
+  }, [checkFocusPrivacy, entriesCacheKey, focusUserId, headerOnly, ignorePrivacy, loadEntries, onCountChange, refreshKey]);
 
   useEffect(() => {
     if (headerOnly) return;
@@ -353,7 +528,10 @@ export function FeedTabs({
         { event: '*', schema: 'public', table: 'entries' },
         (payload) => {
           const row = (payload.new ?? payload.old) as { user_id?: string; visibility?: string | null } | null;
-          if (focusUserId) {
+          if (isCustomList) {
+            if (!row?.user_id || !userIdsFilter?.includes(row.user_id)) return;
+            if (row?.visibility && row.visibility !== 'public') return;
+          } else if (focusUserId) {
             if (row?.user_id !== focusUserId) return;
             if (row?.visibility && row.visibility !== 'public') return;
           } else if (activeTab === 'global') {
@@ -367,18 +545,21 @@ export function FeedTabs({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, currentUserId, focusUserId, headerOnly, loadEntries]);
+  }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
 
   const renderPlaceholderText = () => {
-    if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas públicas en este mes.';
-    if (isUserFeed) return 'Este usuario no tiene comidas públicas todavía.';
-    if (activeTab === 'following') return 'No hay entradas públicas de la gente a la que sigues.';
-    return 'No hay comidas todavía en este feed.';
+    if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas publicas en este mes.';
+    if (isUserFeed) return 'Este usuario no tiene comidas publicas todavia.';
+    if (isCustomList && effectiveMonthFilter !== 'all') return 'Este grupo no tiene comidas publicas en este mes.';
+    if (isCustomList) return 'Este grupo no tiene comidas publicas todavia.';
+    if (privacyBlocked) return 'Este perfil es privado.';
+    if (activeTab === 'following') return 'No hay entradas publicas de la gente a la que sigues.';
+    return 'No hay comidas todavia en este feed.';
   };
 
   return (
     <section className="bw-feed">
-      {!hideHeader && !isUserFeed && (
+      {!hideHeader && !isUserFeed && !isCustomList && (
         <div className="bw-feed-header">
           <div className="bw-feed-tabs bw-feed-tabs-duo" style={{ margin: '0 auto' }}>
             <button
@@ -399,7 +580,7 @@ export function FeedTabs({
         </div>
       )}
 
-      {!hideHeader && isUserFeed && (
+      {!hideHeader && (isUserFeed || isCustomList) && (
         <div className="bw-feed-filter bw-feed-filter-inline">
           <div className="bw-select-wrap">
             <select
@@ -556,3 +737,4 @@ export function FeedTabs({
     </section>
   );
 }
+

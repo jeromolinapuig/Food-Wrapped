@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
@@ -8,7 +8,6 @@ import '../styles/layout.css';
 import '../styles/shared.css';
 import '../styles/Dashboard.css';
 import '../styles/user-dashboard-page.css';
-import { TopMenu } from './TopMenu';
 
 type BurgerTypeStats = {
   beef: number;
@@ -39,20 +38,21 @@ type UserDashboardPageProps = {
   onBack: () => void;
 };
 
-export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBack }: Readonly<UserDashboardPageProps>) {
+export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDashboardPageProps>) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
   const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
-  const [profile, setProfile] = useState<{ username: string | null; displayName: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ username: string | null; displayName: string | null; isPrivate?: boolean | null } | null>(null);
+  const [privacyBlocked, setPrivacyBlocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const loadProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, display_name')
+        .select('username, display_name, is_private')
         .eq('id', userId)
         .single();
 
@@ -67,6 +67,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBac
       setProfile({
         username: (data as { username: string | null }).username,
         displayName: (data as { display_name: string | null }).display_name,
+        isPrivate: (data as { is_private: boolean | null }).is_private,
       });
     };
 
@@ -78,6 +79,55 @@ export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBac
   }, [userId]);
 
   useEffect(() => {
+    if (!profile) return;
+    if (userId === session.user.id) {
+      startTransition(() => {
+        setPrivacyBlocked(false);
+      });
+      return;
+    }
+    if (!profile.isPrivate) {
+      startTransition(() => {
+        setPrivacyBlocked(false);
+      });
+      return;
+    }
+    let cancelled = false;
+    const checkMutual = async () => {
+      const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', session.user.id)
+          .eq('following_id', userId)
+          .limit(1),
+        supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', session.user.id)
+          .eq('follower_id', userId)
+          .limit(1),
+      ]);
+      if (cancelled) return;
+      const isMutual = Boolean((outgoing ?? []).length && (incoming ?? []).length);
+      setPrivacyBlocked(!isMutual);
+    };
+    checkMutual();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, session.user.id, userId]);
+
+  useEffect(() => {
+    if (privacyBlocked) {
+      startTransition(() => {
+        setEntries([]);
+        setLoading(false);
+        setError(null);
+        setPostsCount(0);
+      });
+      return;
+    }
     const loadEntries = async () => {
       setLoading(true);
       setError(null);
@@ -116,7 +166,7 @@ export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBac
     };
 
     loadEntries();
-  }, [userId]);
+  }, [privacyBlocked, userId]);
 
   const stats = useMemo(() => {
     if (!entries.length) {
@@ -196,86 +246,93 @@ export function UserDashboardPage({ session, theme, onToggleTheme, userId, onBac
             <p className="bw-subtitle">Resumen de @{titleHandle}</p>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">
-          <section className="bw-stats-grid">
-            {loading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
-                <div className="bw-stat-card bw-skeleton" key={idx}>
-                  <div className="bw-skeleton-line bw-skeleton-short" />
-                  <div className="bw-skeleton-line" />
-                  <div className="bw-skeleton-line bw-skeleton-short" />
+          {privacyBlocked ? (
+            <div className="bw-card bw-private-card">
+              Este perfil es privado.
+            </div>
+          ) : (
+            <>
+              <section className="bw-stats-grid">
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, idx) => (
+                    <div className="bw-stat-card bw-skeleton" key={idx}>
+                      <div className="bw-skeleton-line bw-skeleton-short" />
+                      <div className="bw-skeleton-line" />
+                      <div className="bw-skeleton-line bw-skeleton-short" />
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <StatCard
+                      icon={<Euro fontSize="small" />}
+                      value={`${stats.totalSpent.toFixed(2)}€`}
+                      label="Total gastado"
+                    />
+                    <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                    <StatCard
+                      icon={<Star fontSize="small" />}
+                      value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+                      label="Nota media"
+                    />
+                    <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
+                  </>
+                )}
+              </section>
+
+              <section className="bw-card bw-burger-types">
+                <h2 className="bw-section-title">Tipos de hamburguesa</h2>
+                <div className="bw-burger-types-row">
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.beef}</span>
+                  </div>
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.chicken}</span>
+                  </div>
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.vegan}</span>
+                  </div>
                 </div>
-              ))
-            ) : (
-              <>
-                <StatCard
-                  icon={<Euro fontSize="small" />}
-                  value={`${stats.totalSpent.toFixed(2)}€`}
-                  label="Total gastado"
-                />
-                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
-                <StatCard
-                  icon={<Star fontSize="small" />}
-                  value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-                  label="Nota media"
-                />
-                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
-              </>
-            )}
-          </section>
+              </section>
 
-          <section className="bw-card bw-burger-types">
-            <h2 className="bw-section-title">Tipos de hamburguesa</h2>
-            <div className="bw-burger-types-row">
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.beef}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.chicken}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.vegan}</span>
-              </div>
-            </div>
-          </section>
+              {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
 
-          {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
-
-          <section className="bw-history">
-            <div className="bw-section-header">
-              <h2 className="bw-section-title">Posts ({postsCount})</h2>
-              <div className="bw-section-right">
-                <FeedTabs
-                  currentUserId={session.user.id}
-                  focusUserId={userId}
-                  onCountChange={setPostsCount}
-                  headerOnly
-                  monthFilter={monthFilter}
-                  onMonthFilterChange={setMonthFilter}
-                />
+              <section className="bw-history">
+                <div className="bw-section-header">
+                  <h2 className="bw-section-title">Posts ({postsCount})</h2>
+                  <div className="bw-section-right">
+                  <FeedTabs
+                    currentUserId={session.user.id}
+                    focusUserId={userId}
+                    onCountChange={setPostsCount}
+                    headerOnly
+                    monthFilter={monthFilter}
+                    onMonthFilterChange={setMonthFilter}
+                  />
+                </div>
               </div>
-            </div>
-            <FeedTabs
-              currentUserId={session.user.id}
-              focusUserId={userId}
-              onCountChange={setPostsCount}
-              hideHeader
-              monthFilter={monthFilter}
-              onMonthFilterChange={setMonthFilter}
-            />
-          </section>
+              <FeedTabs
+                currentUserId={session.user.id}
+                focusUserId={userId}
+                onCountChange={setPostsCount}
+                hideHeader
+                monthFilter={monthFilter}
+                onMonthFilterChange={setMonthFilter}
+              />
+            </section>
+            </>
+          )}
         </main>
       </div>
     </div>

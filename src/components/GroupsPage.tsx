@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Add, CheckCircle, ChevronRight, Close, PeopleOutline, RadioButtonUnchecked } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
-import { TopMenu } from './TopMenu';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import '../styles/layout.css';
 import '../styles/shared.css';
@@ -41,7 +41,7 @@ const readSessionCache = <T,>(key: string) => {
   }
 };
 
-export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPageProps>) {
+export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const groupsCacheKey = `bw-groups-${session.user.id}`;
   const invitesCacheKey = `bw-group-invites-${session.user.id}`;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -338,7 +338,6 @@ export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPag
             <h1 className="bw-title">Grupos</h1>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">
@@ -355,15 +354,20 @@ export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPag
             {loadingGroups && <p className="bw-helper">Cargando grupos...</p>}
             {groupsError && <p className="bw-helper" style={{ color: 'red' }}>{groupsError}</p>}
             {!loadingGroups && !groupsError && groups.length === 0 && (
-              <p className="bw-helper">Aún no tienes grupos. Crea el primero.</p>
+              <p className="bw-helper">Aun no tienes grupos. Crea el primero.</p>
             )}
             {groups.map((group) => (
-              <button key={group.id} type="button" className="bw-group-card">
+              <Link
+                key={group.id}
+                to={`/groups/${group.id}`}
+                className="bw-group-card"
+                aria-label={`Ver grupo ${group.name}`}
+              >
                 <div className="bw-group-card-body">
                   <div className="bw-group-title">{group.name}</div>
                   <div className="bw-group-meta">
                     <PeopleOutline fontSize="small" />
-                    <span>{group.members === 1 ? 'Por ahora estás solo' : `${group.members} miembros`}</span>
+                    <span>{group.members === 1 ? 'Por ahora estas solo' : `${group.members} miembros`}</span>
                   </div>
                   <div className="bw-group-avatars">
                     {group.membersPreview.map((member) => (
@@ -378,7 +382,7 @@ export function GroupsPage({ session, theme, onToggleTheme }: Readonly<GroupsPag
                   </div>
                 </div>
                 <ChevronRight className="bw-group-chevron" />
-              </button>
+              </Link>
             ))}
 
             <button
@@ -814,3 +818,6 @@ function GroupInvitesModal({
     </div>
   );
 }
+
+
+

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { TopMenu } from './TopMenu';
 import { FeedTabs } from './FeedTabs';
 import { supabase } from '../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
@@ -36,8 +35,6 @@ type SearchUser = {
 
 export function FeedPage({
   session,
-  theme,
-  onToggleTheme,
   onNavigate,
   focusedUser,
   onFocusedUserChange,
@@ -71,9 +68,11 @@ export function FeedPage({
           followingIds?: Record<string, number>;
           followersIds?: Record<string, number>;
         };
-        setFollowingIds(parsed.followingIds ?? {});
-        setFollowersIds(parsed.followersIds ?? {});
-        setFollowsLoaded(true);
+        startTransition(() => {
+          setFollowingIds(parsed.followingIds ?? {});
+          setFollowersIds(parsed.followersIds ?? {});
+          setFollowsLoaded(true);
+        });
         return;
       } catch {
         // Fall through to fetch.
@@ -116,7 +115,7 @@ export function FeedPage({
       }
     };
     loadFollows();
-  }, [session.user.id]);
+  }, [followsCacheKey, session.user.id]);
 
   useEffect(() => {
     if (!followsLoaded) return;
@@ -255,7 +254,6 @@ export function FeedPage({
             <h1 className="bw-title">Feed</h1>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         <main className="bw-main">

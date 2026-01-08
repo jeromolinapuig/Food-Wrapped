@@ -1,11 +1,10 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import { AddEntryModal } from './AddEntryModal';
 import { FeedTabs } from './FeedTabs';
 import { StatCard } from './StatCard';
-import { TopMenu } from './TopMenu';
 import '../styles/layout.css';
 import '../styles/shared.css';
 import '../styles/Dashboard.css';
@@ -54,7 +53,7 @@ type EditEntry = {
   photoUrl?: string | null;
 };
 
-export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
+export function Dashboard({ session, theme }: DashboardProps) {
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +79,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
   };
 
   // --- Cargar entradas del año 2026 ---
-  const loadEntries = async (options?: { showLoading?: boolean }) => {
+  const loadEntries = useCallback(async (options?: { showLoading?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
     if (showLoading) setLoading(true);
     setError(null);
@@ -124,7 +123,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
     }
 
     setLoading(false);
-  };
+  }, [cacheKey, session.user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,7 +161,7 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [session.user.id]);
+  }, [cacheKey, loadEntries, session.user.id]);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -295,7 +294,6 @@ export function Dashboard({ session, theme, onToggleTheme }: DashboardProps) {
             </p>
           </div>
 
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
         </header>
 
         {showInstallBanner && (

@@ -21,6 +21,7 @@ type PublicProfile = {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  is_private?: boolean | null;
 };
 
 export function UserProfileModal({ open, userId, session, onClose, onFollowChange, onViewPosts }: Readonly<UserProfileModalProps>) {
@@ -30,6 +31,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
   const [isFollowing, setIsFollowing] = useState(false);
   const [isIncoming, setIsIncoming] = useState(false);
   const [followId, setFollowId] = useState<number | null>(null);
+  const [isMutual, setIsMutual] = useState(false);
   const [saving, setSaving] = useState(false);
   const shouldShow = open && Boolean(userId);
 
@@ -48,7 +50,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
       const [{ data: profileData, error: profileError }, { data: followData, error: followError }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, username, display_name, avatar_url, bio')
+          .select('id, username, display_name, avatar_url, bio, is_private')
           .eq('id', userId)
           .single(),
         supabase
@@ -88,6 +90,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
         setIsFollowing(Boolean(outgoingId));
         setFollowId(outgoingId);
         setIsIncoming(incoming);
+        setIsMutual(Boolean(outgoingId && incoming));
       }
 
       setLoading(false);
@@ -139,9 +142,11 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
 
   const displayName = profile?.display_name || profile?.username || 'Usuario';
   const handleText = isFollowing && isIncoming ? 'Os seguís mutuamente' : isIncoming ? 'Te sigue' : '';
+  const isPrivateBlocked = Boolean(profile?.is_private) && !isMutual;
 
   const handleViewPosts = () => {
     if (!profile) return;
+    if (isPrivateBlocked) return;
     onViewPosts?.({
       id: profile.id,
       username: profile.username,
@@ -182,8 +187,9 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
                     type="button"
                     className="bw-link-button bw-link-inline"
                     onClick={handleViewPosts}
+                    disabled={isPrivateBlocked}
                   >
-                    Ver sus estadísticas
+                    {isPrivateBlocked ? 'Perfil privado' : 'Ver sus estadísticas'}
                   </button>
                 </div>
               </div>

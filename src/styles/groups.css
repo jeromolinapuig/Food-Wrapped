@@ -37,6 +37,9 @@
   cursor: pointer;
   text-align: left;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
 }
 
 .bw-group-card:active {
