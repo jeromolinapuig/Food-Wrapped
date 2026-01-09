@@ -57,6 +57,7 @@ type SupabaseEntryRow = {
   additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
+  meat_type?: 'beef' | 'chicken' | 'vegan' | 'other' | null;
   burger_origin?: 'restaurant' | 'homemade' | null;
   visibility?: string | null;
   photo_url: string | null;
@@ -240,6 +241,7 @@ export function FeedTabs({
           additional_notes,
           restaurant_id,
           burger_id,
+          meat_type,
           burger_origin,
           visibility,
           photo_url,
@@ -371,7 +373,7 @@ export function FeedTabs({
         additionalNotes: entry.additional_notes ?? null,
         restaurantId: entry.restaurant_id ?? null,
         burgerId: entry.burger_id ?? null,
-        meatType: entry.burgers?.meat_type ?? null,
+        meatType: entry.meat_type ?? entry.burgers?.meat_type ?? null,
         restaurantName: entry.restaurants?.name ?? null,
         burgerName: entry.burgers?.name ?? null,
         photoUrl: entry.photo_url ?? null,
@@ -750,6 +752,10 @@ export function FeedTabs({
             const name = isSelf ? 'Tú' : entry.displayName || entry.username;
             const stars = renderStarString(entry.rating);
             const canEdit = showOwnerActions && isSelf;
+            const isHomemade = entry.burgerOrigin === 'homemade';
+            const restaurantLabel = isHomemade
+              ? 'Casera'
+              : entry.restaurantName ?? 'Restaurante';
 
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
@@ -782,8 +788,19 @@ export function FeedTabs({
 
                 <div className="bw-feed-body">
                   <div className="bw-feed-restaurant">
-                    <div className="bw-history-restaurant">{entry.restaurantName ?? 'Restaurante'}</div>
-                    {entry.burgerName && <div className="bw-feed-burger">{entry.burgerName}</div>}
+                    <div className="bw-history-restaurant">
+                      {isHomemade ? (
+                        <span className="bw-feed-homemade">
+                          <img src="/homemade.png" alt="Casera" className="bw-feed-homemade-icon" />
+                          <span>{restaurantLabel}</span>
+                        </span>
+                      ) : (
+                        restaurantLabel
+                      )}
+                    </div>
+                    {!isHomemade && entry.burgerName && (
+                      <div className="bw-feed-burger">{entry.burgerName}</div>
+                    )}
                   </div>
 
                   {entry.photoUrl && (
@@ -802,6 +819,9 @@ export function FeedTabs({
 
                   {entry.additionalNotes && (
                     <p className="bw-feed-notes">{entry.additionalNotes}</p>
+                  )}
+                  {isHomemade && entry.ingredients && (
+                    <p className="bw-feed-ingredients">Ingredientes: {entry.ingredients}</p>
                   )}
 
                   <div className="bw-feed-footer">

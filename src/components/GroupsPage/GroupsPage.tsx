@@ -44,6 +44,14 @@ const readSessionCache = <T,>(key: string) => {
   }
 };
 
+const MAX_GROUPS = 6;
+
+const isGroupLimitError = (message?: string | null) => {
+  if (!message) return false;
+  const lower = message.toLowerCase();
+  return lower.includes('maximo') || lower.includes('limite');
+};
+
 export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const groupsCacheKey = `bw-groups-v2-${session.user.id}`;
   const invitesCacheKey = `bw-group-invites-${session.user.id}`;
@@ -65,6 +73,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const [manageGroupName, setManageGroupName] = useState<string | null>(null);
   const hasGroupsCache = groupsCache.hasCache;
   const hasInvitesCache = invitesCache.hasCache;
+  const groupCount = groups.length;
+  const hasGroupLimit = groupCount >= MAX_GROUPS;
 
   const loadGroups = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -376,6 +386,9 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
             {!loadingGroups && !groupsError && groups.length === 0 && (
               <p className="bw-helper">Aun no tienes grupos. Crea el primero.</p>
             )}
+            {!loadingGroups && hasGroupLimit && (
+              <p className="bw-helper">Has alcanzado el maximo de 6 grupos.</p>
+            )}
             {groups.map((group) => (
               <Link
                 key={group.id}
@@ -426,7 +439,11 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
               type="button"
               className="bw-group-card bw-group-card-add"
               aria-label="Crear grupo"
-              onClick={() => setIsCreateOpen(true)}
+              onClick={() => {
+                if (hasGroupLimit) return;
+                setIsCreateOpen(true);
+              }}
+              disabled={hasGroupLimit}
             >
               <Add fontSize="large" />
             </button>
@@ -437,6 +454,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
       {isCreateOpen && (
         <CreateGroupModal
           currentUserId={session.user.id}
+          currentGroupCount={groupCount}
+          maxGroups={MAX_GROUPS}
           onClose={() => setIsCreateOpen(false)}
           onCreated={() => {
             setIsCreateOpen(false);
@@ -447,6 +466,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
       {isInvitesOpen && (
         <GroupInvitesModal
           currentUserId={session.user.id}
+          currentGroupCount={groupCount}
+          maxGroups={MAX_GROUPS}
           invites={invites}
           loading={loadingInvites}
           error={invitesError}
@@ -479,6 +500,8 @@ type FriendItem = {
 
 type CreateGroupModalProps = {
   currentUserId: string;
+  currentGroupCount: number;
+  maxGroups: number;
   onClose: () => void;
   onCreated: () => void;
 };
@@ -690,7 +713,11 @@ function GroupManageModal({
       .insert(payload);
 
     if (inviteError) {
-      setError('No se pudieron enviar las invitaciones.');
+      if (isGroupLimitError(inviteError.message)) {
+        setError('Alguno de los usuarios ya tiene el maximo de 6 grupos.');
+      } else {
+        setError('No se pudieron enviar las invitaciones.');
+      }
       setSaving(false);
       return;
     }
@@ -922,7 +949,13 @@ function GroupManageModal({
   );
 }
 
-function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<CreateGroupModalProps>) {
+function CreateGroupModal({
+  currentUserId,
+  currentGroupCount,
+  maxGroups,
+  onClose,
+  onCreated,
+}: Readonly<CreateGroupModalProps>) {
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -930,6 +963,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [groupName, setGroupName] = useState('');
   const [saving, setSaving] = useState(false);
+  const isAtLimit = currentGroupCount >= maxGroups;
 
   useEffect(() => lockBodyScroll(), []);
 
@@ -1016,6 +1050,10 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
   };
 
   const handleCreate = async () => {
+    if (isAtLimit) {
+      setError('No puedes crear mas de 6 grupos.');
+      return;
+    }
     if (saving || !groupName.trim() || selectedIds.size === 0) return;
     setSaving(true);
     setError(null);
@@ -1027,7 +1065,11 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
       .single();
 
     if (groupError || !groupRow) {
-      setError('No se pudo crear el grupo.');
+      if (isGroupLimitError(groupError?.message)) {
+        setError('No puedes crear mas de 6 grupos.');
+      } else {
+        setError('No se pudo crear el grupo.');
+      }
       setSaving(false);
       return;
     }
@@ -1047,7 +1089,11 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
         .insert(invitePayload);
 
       if (invitesError) {
-        setError('No se pudieron enviar las invitaciones.');
+        if (isGroupLimitError(invitesError.message)) {
+          setError('Alguno de los usuarios ya tiene el maximo de 6 grupos.');
+        } else {
+          setError('No se pudieron enviar las invitaciones.');
+        }
         setSaving(false);
         return;
       }
@@ -1058,7 +1104,11 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
       .insert({ group_id: groupId, user_id: currentUserId });
 
     if (ownerMemberError) {
-      setError('No se pudo añadir al creador al grupo.');
+      if (isGroupLimitError(ownerMemberError.message)) {
+        setError('No puedes unirte a mas de 6 grupos.');
+      } else {
+        setError('No se pudo añadir al creador al grupo.');
+      }
       setSaving(false);
       return;
     }
@@ -1080,6 +1130,12 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
             <Close fontSize="small" />
           </button>
         </div>
+
+        {isAtLimit && (
+          <p className="bw-helper" style={{ color: 'red', marginBottom: 8 }}>
+            Ya tienes el maximo de {maxGroups} grupos.
+          </p>
+        )}
 
         <div className="bw-field bw-group-name-field">
           <label className="bw-label" htmlFor="bw-group-name">Nombre del grupo</label>
@@ -1154,7 +1210,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
           <button
             type="button"
             className="bw-fab bw-group-create-button"
-            disabled={selectedIds.size === 0 || !groupName.trim() || saving}
+            disabled={isAtLimit || selectedIds.size === 0 || !groupName.trim() || saving}
             onClick={handleCreate}
           >
             {saving ? 'Creando...' : 'Crear grupo'}
@@ -1167,6 +1223,8 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: Readonly<Create
 
 type GroupInvitesModalProps = {
   currentUserId: string;
+  currentGroupCount: number;
+  maxGroups: number;
   invites: GroupInvite[];
   loading: boolean;
   error: string | null;
@@ -1176,6 +1234,8 @@ type GroupInvitesModalProps = {
 
 function GroupInvitesModal({
   currentUserId,
+  currentGroupCount,
+  maxGroups,
   invites,
   loading,
   error,
@@ -1187,6 +1247,8 @@ function GroupInvitesModal({
     action: 'accept' | 'reject';
   } | null>(null);
   const [mutating, setMutating] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const isAtLimit = currentGroupCount >= maxGroups;
 
   useEffect(() => lockBodyScroll(), []);
 
@@ -1194,13 +1256,23 @@ function GroupInvitesModal({
     if (!confirmAction) return;
     const { invite, action } = confirmAction;
     setMutating(true);
+    setActionError(null);
 
     if (action === 'accept') {
+      if (isAtLimit) {
+        setActionError(`No puedes unirte a mas de ${maxGroups} grupos.`);
+        setMutating(false);
+        setConfirmAction(null);
+        return;
+      }
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({ group_id: invite.groupId, user_id: currentUserId });
 
       if (memberError) {
+        if (isGroupLimitError(memberError.message)) {
+          setActionError(`No puedes unirte a mas de ${maxGroups} grupos.`);
+        }
         setMutating(false);
         return;
       }
@@ -1212,6 +1284,7 @@ function GroupInvitesModal({
       .eq('id', invite.id);
 
     if (deleteError) {
+      setActionError('No se pudo actualizar la invitacion.');
       setMutating(false);
       return;
     }
@@ -1227,7 +1300,9 @@ function GroupInvitesModal({
       <div className="bw-modal bw-group-modal" onClick={(e) => e.stopPropagation()}>
         <div className="bw-modal-header">
           <div>
-            <h2 className="bw-modal-title">Invitaciones a grupos</h2>
+            <h2 className="bw-modal-title">
+              Invitaciones a grupos{isAtLimit ? ` (no puedes unirte a mas de ${maxGroups})` : ''}
+            </h2>
             <p className="bw-modal-subtitle">Gestiona las invitaciones pendientes.</p>
           </div>
           <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
@@ -1238,6 +1313,7 @@ function GroupInvitesModal({
         <div className="bw-group-modal-body">
           {loading && <p className="bw-helper">Cargando invitaciones...</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
+          {actionError && <p className="bw-helper" style={{ color: 'red' }}>{actionError}</p>}
           {!loading && !error && invites.length === 0 && (
             <p className="bw-helper">No tienes invitaciones pendientes.</p>
           )}
@@ -1265,7 +1341,7 @@ function GroupInvitesModal({
                         type="button"
                         className="bw-btn bw-btn-primary"
                         onClick={() => setConfirmAction({ invite, action: 'accept' })}
-                        disabled={mutating}
+                        disabled={mutating || isAtLimit}
                       >
                         Aceptar
                       </button>

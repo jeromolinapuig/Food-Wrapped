@@ -167,6 +167,25 @@
   color: var(--bw-text-muted);
 }
 
+.bw-feed-homemade {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bw-feed-homemade-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.bw-feed-ingredients {
+  font-size: 13px;
+  color: var(--bw-text-muted);
+  margin: 0;
+}
+
 .bw-feed-photo {
   width: 100%;
   border-radius: 24px;

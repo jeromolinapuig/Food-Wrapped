@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { StatCard } from '../StatCard/StatCard';
@@ -24,6 +24,8 @@ type DbEntryRow = {
   rating: number | null;
   price: number | null;
   is_burger: boolean;
+  burger_origin: 'restaurant' | 'homemade' | null;
+  meat_type: MeatType | null;
   restaurant_id: string | null;
   burger_id: string | null;
   restaurant: { name: string } | null;
@@ -137,6 +139,8 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
           rating,
           price,
           is_burger,
+          burger_origin,
+          meat_type,
           restaurant_id,
           burger_id,
           restaurant:restaurants ( name ),
@@ -176,12 +180,14 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
         totalBurgers: 0,
         averageRating: 0,
         favoriteRestaurant: '',
+        homemadeBurgers: 0,
         burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
       };
     }
 
     let totalSpent = 0;
     let burgerCount = 0;
+    let homemadeBurgers = 0;
     let ratingSum = 0;
     let ratingCount = 0;
 
@@ -190,7 +196,12 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
 
     for (const entry of entries) {
       if (entry.price != null) totalSpent += entry.price;
-      if (entry.is_burger) burgerCount++;
+      if (entry.is_burger && entry.burger_origin === 'homemade') {
+        homemadeBurgers++;
+      }
+      if (entry.is_burger && entry.burger_origin !== 'homemade') {
+        burgerCount++;
+      }
 
       if (entry.rating != null) {
         ratingSum += entry.rating;
@@ -202,10 +213,12 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
         restaurantCounter.set(restaurantName, (restaurantCounter.get(restaurantName) ?? 0) + 1);
       }
 
-      const meat = entry.burger?.meat_type;
-      if (meat === 'beef') burgerTypes.beef++;
-      if (meat === 'chicken') burgerTypes.chicken++;
-      if (meat === 'vegan') burgerTypes.vegan++;
+      if (entry.is_burger) {
+        const meat = entry.meat_type ?? entry.burger?.meat_type;
+        if (meat === 'beef') burgerTypes.beef++;
+        if (meat === 'chicken') burgerTypes.chicken++;
+        if (meat === 'vegan') burgerTypes.vegan++;
+      }
     }
 
     let favoriteRestaurant = '';
@@ -224,6 +237,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       totalBurgers: burgerCount,
       averageRating,
       favoriteRestaurant,
+      homemadeBurgers,
       burgerTypes,
     };
   }, [entries]);
@@ -283,28 +297,35 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                 )}
               </section>
 
-              <section className="bw-card bw-burger-types">
-                <h2 className="bw-section-title">Tipos de hamburguesa</h2>
-                <div className="bw-burger-types-row">
-                  <div className="bw-burger-type">
-                    <span className="bw-burger-type-emoji">
-                      <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
-                    </span>
-                    <span>{stats.burgerTypes.beef}</span>
-                  </div>
-                  <div className="bw-burger-type">
-                    <span className="bw-burger-type-emoji">
-                      <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
-                    </span>
-                    <span>{stats.burgerTypes.chicken}</span>
-                  </div>
-                  <div className="bw-burger-type">
-                    <span className="bw-burger-type-emoji">
-                      <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
-                    </span>
-                    <span>{stats.burgerTypes.vegan}</span>
+              <section className="bw-dashboard-row">
+                <div className="bw-card bw-burger-types">
+                  <h2 className="bw-section-title">Tipos de hamburguesa</h2>
+                  <div className="bw-burger-types-row">
+                    <div className="bw-burger-type">
+                      <span className="bw-burger-type-emoji">
+                        <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                      </span>
+                      <span>{stats.burgerTypes.beef}</span>
+                    </div>
+                    <div className="bw-burger-type">
+                      <span className="bw-burger-type-emoji">
+                        <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                      </span>
+                      <span>{stats.burgerTypes.chicken}</span>
+                    </div>
+                    <div className="bw-burger-type">
+                      <span className="bw-burger-type-emoji">
+                        <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                      </span>
+                      <span>{stats.burgerTypes.vegan}</span>
+                    </div>
                   </div>
                 </div>
+                <StatCard
+                  icon={<House fontSize="small" />}
+                  value={`${stats.homemadeBurgers}`}
+                  label="Hamburguesas caseras"
+                />
               </section>
 
               {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}

@@ -33,6 +33,7 @@ type DbEntryRow = {
   price: number | null;
   is_burger: boolean;
   burger_origin: 'restaurant' | 'homemade' | null;
+  meat_type: MeatType | null;
   additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
@@ -102,6 +103,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
         price,
         is_burger,
         burger_origin,
+        meat_type,
         additional_notes,
         restaurant_id,
         burger_id,
@@ -245,8 +247,8 @@ export function Dashboard({ session, theme }: DashboardProps) {
         );
       }
 
-      if (e.burger_origin !== 'homemade') {
-        const meat = e.burger?.meat_type;
+      if (e.is_burger) {
+        const meat = e.meat_type ?? e.burger?.meat_type;
         if (meat === 'beef') burgerTypes.beef++;
         if (meat === 'chicken') burgerTypes.chicken++;
         if (meat === 'vegan') burgerTypes.vegan++;

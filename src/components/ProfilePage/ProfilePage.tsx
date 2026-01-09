@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { TopMenu } from '../TopMenu/TopMenu';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { cropImageFile } from '../../utils/cropImage';
+import { compressImage } from '../../utils/image';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
@@ -24,40 +25,6 @@ type ProfilePageProps = {
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
   onOpenUserDashboard: (user: { id: string; username: string | null; displayName: string | null }) => void;
-};
-
-const compressImage = async (file: File, maxDimension = 800, quality = 0.8): Promise<File> => {
-  if (!file.type.startsWith('image/')) return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    let { width, height } = bitmap;
-    const scale = Math.min(1, maxDimension / Math.max(width, height));
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (b) => {
-          if (b) resolve(b);
-          else reject(new Error('No se pudo generar la imagen comprimida.'));
-        },
-        'image/jpeg',
-        quality
-      );
-    });
-
-    const name = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
-    return new File([blob], name, { type: 'image/jpeg' });
-  } catch {
-    return file;
-  }
 };
 
 export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
@@ -242,7 +209,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
     setError(null);
     const previousUrl = profile?.avatar_url ?? null;
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.8 });
       const fileExt = compressed.name.split('.').pop();
       const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, compressed, { upsert: true });

@@ -147,6 +147,12 @@
   min-height: 96px;
 }
 
+.bw-group-card-add:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 :root[data-theme="dark"] .bw-group-card-add {
   border-color: var(--bw-text-muted);
 }
