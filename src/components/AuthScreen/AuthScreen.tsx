@@ -29,7 +29,7 @@ export function AuthScreen() {
         throw new Error('El nombre de usuario no puede tener espacios.');
       }
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -38,7 +38,15 @@ export function AuthScreen() {
             },
           },
         });
-        if (error) throw error;
+        if (error) {
+          if (error.message?.toLowerCase().includes('already') || error.status === 400) {
+            throw new Error('Ya existe una cuenta con ese email.');
+          }
+          throw error;
+        }
+        if (data?.user?.identities && data.user.identities.length === 0) {
+          throw new Error('Ya existe una cuenta con ese email.');
+        }
         setSignupNotice('Revisa tu correo. Te hemos enviado un enlace para verificar la cuenta.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
