@@ -66,8 +66,8 @@
 }
 
 .bw-burger-type-icon {
-  width: 22px;
-  height: 22px;
+  width: clamp(26px, calc(20.93vw - 46.2px), 44px);
+  height: clamp(26px, calc(20.93vw - 46.2px), 44px);
   object-fit: contain;
   display: block;
 }
