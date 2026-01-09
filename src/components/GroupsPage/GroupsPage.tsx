@@ -366,6 +366,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Grupos</h1>
+            <p className="bw-subtitle">Rankings y estadisticas con tus amigos.</p>
           </div>
 
         </header>

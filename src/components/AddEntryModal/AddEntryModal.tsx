@@ -114,6 +114,8 @@ export function AddEntryModal({
   const [photoCrop, setPhotoCrop] = useState({ x: 0, y: 0 });
   const [photoZoom, setPhotoZoom] = useState(1);
   const [photoCropArea, setPhotoCropArea] = useState<Area | null>(null);
+  const [cropIsPortrait, setCropIsPortrait] = useState(false);
+  const [cropAspect, setCropAspect] = useState(9 / 16);
 
   const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
 
@@ -121,6 +123,26 @@ export function AddEntryModal({
     if (!open) return;
     return lockBodyScroll();
   }, [open]);
+
+  useEffect(() => {
+    if (!photoCropSrc) {
+      setCropIsPortrait(false);
+      setCropAspect(9 / 16);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (cancelled) return;
+      const isPortrait = img.height >= img.width;
+      setCropIsPortrait(isPortrait);
+      setCropAspect(isPortrait ? 9 / 16 : 16 / 9);
+    };
+    img.src = photoCropSrc;
+    return () => {
+      cancelled = true;
+    };
+  }, [photoCropSrc]);
 
   // Reset form when opening
   useEffect(() => {
@@ -854,12 +876,12 @@ export function AddEntryModal({
       {photoCropSrc && (
         <div className="bw-photo-viewer-backdrop" onClick={handlePhotoCropCancel}>
           <div className="bw-cropper" onClick={(e) => e.stopPropagation()}>
-            <div className="bw-cropper-stage">
+            <div className={`bw-cropper-stage ${cropIsPortrait ? 'is-portrait' : ''}`}>
               <Cropper
                 image={photoCropSrc}
                 crop={photoCrop}
                 zoom={photoZoom}
-                aspect={4 / 3}
+                aspect={cropAspect}
                 onCropChange={setPhotoCrop}
                 onZoomChange={setPhotoZoom}
                 onCropComplete={(_area, areaPixels) => setPhotoCropArea(areaPixels)}

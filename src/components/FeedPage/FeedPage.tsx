@@ -258,6 +258,7 @@ export function FeedPage({
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Feed</h1>
+            <p className="bw-subtitle">Descubre burgers y conecta con más gente.</p>
           </div>
 
         </header>

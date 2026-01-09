@@ -72,8 +72,8 @@
 }
 
 .bw-burger-type-block {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -121,12 +121,6 @@
 .bw-meat-label {
   font-weight: 700;
   font-size: 14px;
-}
-
-@media (max-width: 640px) {
-  .bw-burger-type-block {
-    grid-template-columns: 1fr;
-  }
 }
 
 .bw-suggestions {

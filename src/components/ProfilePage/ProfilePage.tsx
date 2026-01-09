@@ -370,6 +370,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
           </div>
           <div style={{ flex: 1 }}>
             <h1 className="bw-title">Mi perfil</h1>
+            <p className="bw-subtitle">Edita tus datos del perfil.</p>
           </div>
 
           <TopMenu theme={theme} onToggleTheme={onToggleTheme} />

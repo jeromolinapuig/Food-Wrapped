@@ -273,6 +273,10 @@
   overflow: hidden;
 }
 
+.bw-cropper-stage.is-portrait {
+  height: min(70vh, 520px);
+}
+
 .bw-cropper-actions {
   display: flex;
   justify-content: flex-end;
