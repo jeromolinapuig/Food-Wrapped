@@ -255,7 +255,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
 
   const handleSave = async () => {
     if (!usernameInput.trim()) {
-      setError('El nombre de usuario no puede estar vacío.');
+      setError('El nombre de usuario no puede estar vacio.');
+      return;
+    }
+    if (/\s/.test(usernameInput)) {
+      setError('El nombre de usuario no puede tener espacios.');
       return;
     }
 

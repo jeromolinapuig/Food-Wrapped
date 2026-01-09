@@ -12,6 +12,8 @@ export function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signupNotice, setSignupNotice] = useState<string | null>(null);
+  const hasUsernameWhitespace = (value: string) => /\s/.test(value);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -19,8 +21,12 @@ export function AuthScreen() {
     setLoading(true);
 
     try {
+      setSignupNotice(null);
       if (mode === 'signup' && !username.trim()) {
         throw new Error('El nombre de usuario es obligatorio.');
+      }
+      if (mode === 'signup' && hasUsernameWhitespace(username)) {
+        throw new Error('El nombre de usuario no puede tener espacios.');
       }
       if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({
@@ -33,6 +39,7 @@ export function AuthScreen() {
           },
         });
         if (error) throw error;
+        setSignupNotice('Revisa tu correo. Te hemos enviado un enlace para verificar la cuenta.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -128,6 +135,7 @@ export function AuthScreen() {
           </label>
 
           {error && <p className="auth-error">{error}</p>}
+          {signupNotice && <p className="auth-notice">{signupNotice}</p>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
             {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}

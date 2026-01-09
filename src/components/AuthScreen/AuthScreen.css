@@ -180,6 +180,12 @@
   font-size: 12px;
 }
 
+.auth-notice {
+  margin: 0;
+  color: #0d6b4f;
+  font-size: 12px;
+}
+
 .auth-secondary {
   margin: 14px 0 0;
   font-size: 13px;

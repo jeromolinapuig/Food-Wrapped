@@ -125,7 +125,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
         aria-label="Mi perfil"
       >
         <span className="bw-bottom-nav-avatar">
-          {avatarUrl ? <img src={avatarUrl} alt="Mi perfil" /> : <span>{initial}</span>}
+          {avatarUrl ? <img src={avatarUrl} alt="Mi perfil" /> : <span className="bw-bottom-nav-initial">{initial}</span>}
         </span>
         <span className="bw-bottom-nav-label"></span>
       </button>
