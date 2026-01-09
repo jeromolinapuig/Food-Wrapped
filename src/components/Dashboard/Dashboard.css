@@ -7,8 +7,19 @@
   margin-bottom: 16px;
 }
 
-.bw-burger-types {
+.bw-dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   margin-bottom: 16px;
+}
+
+.bw-burger-types {
+  margin-bottom: 0;
+}
+
+.bw-burger-types .bw-section-title {
+  text-align: center;
 }
 
 .bw-section-title {
@@ -36,6 +47,7 @@
 
 .bw-burger-types-row {
   display: flex;
+  justify-content: space-evenly;
   gap: 24px;
 }
 
@@ -66,7 +78,7 @@
 
 .bw-fab-wrapper {
   position: sticky;
-  bottom: 75px;
+  bottom: 85px;
   display: flex;
   justify-content: center;
   margin-top: auto;

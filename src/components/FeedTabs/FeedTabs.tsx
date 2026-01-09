@@ -43,6 +43,8 @@ type FeedEntry = {
   restaurantName: string | null;
   burgerName: string | null;
   photoUrl: string | null;
+  burgerOrigin: 'restaurant' | 'homemade' | null;
+  ingredients: string | null;
 };
 
 type SupabaseEntryRow = {
@@ -55,8 +57,10 @@ type SupabaseEntryRow = {
   additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
+  burger_origin?: 'restaurant' | 'homemade' | null;
   visibility?: string | null;
   photo_url: string | null;
+  homemade_ingredients?: string | null;
   restaurants: { name: string | null } | null;
   burgers: { name: string | null; meat_type: 'beef' | 'chicken' | 'vegan' | 'other' | null } | null;
 };
@@ -236,8 +240,10 @@ export function FeedTabs({
           additional_notes,
           restaurant_id,
           burger_id,
+          burger_origin,
           visibility,
           photo_url,
+          homemade_ingredients,
           restaurants ( name ),
           burgers ( name, meat_type )
         `
@@ -373,6 +379,8 @@ export function FeedTabs({
         restaurantName: entry.restaurants?.name ?? null,
         burgerName: entry.burgers?.name ?? null,
         photoUrl: entry.photo_url ?? null,
+        burgerOrigin: entry.burger_origin ?? null,
+        ingredients: entry.homemade_ingredients ?? null,
       };
     });
 

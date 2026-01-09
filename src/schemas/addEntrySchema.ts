@@ -4,7 +4,7 @@ import { MIN_DATE } from '../utils/datetime';
 export const addEntrySchema = z
   .object({
     datetime: z.string().min(1, 'Selecciona fecha y hora.'),
-    restaurant: z.string().trim().min(1, 'Escribe o selecciona un restaurante.'),
+    restaurant: z.string().trim(),
     price: z
       .string()
       .trim()
@@ -16,12 +16,20 @@ export const addEntrySchema = z
     rating: z
       .string()
       .trim()
+      .min(1, 'Selecciona una puntuacion.')
       .refine((val) => {
         const n = Number(val);
         return !Number.isNaN(n) && n >= 1 && n <= 5;
       }, 'La puntuacion debe estar entre 1 y 5.'),
     isBurger: z.boolean(),
     burger: z.string().trim(),
+    burgerOrigin: z.string().trim().optional().or(z.literal('')),
+    ingredients: z
+      .string()
+      .trim()
+      .max(200, 'Maximo 200 caracteres.')
+      .optional()
+      .or(z.literal('')),
     additionalNotes: z
       .string()
       .trim()
@@ -50,10 +58,31 @@ export const addEntrySchema = z
       }
     }
 
-    if (val.isBurger && !val.burger) {
+    if ((!val.isBurger || val.burgerOrigin === 'restaurant') && !val.restaurant) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Escribe o selecciona un restaurante.',
+      });
+    }
+
+    if (val.isBurger && val.burgerOrigin === 'restaurant' && !val.burger) {
       ctx.addIssue({
         code: 'custom',
         message: 'Escribe el nombre de la hamburguesa.',
+      });
+    }
+
+    if (val.isBurger && !val.burgerOrigin) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Selecciona si es casera o de restaurante.',
+      });
+    }
+
+    if (val.isBurger && val.burgerOrigin === 'homemade' && !val.ingredients) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Escribe los ingredientes.',
       });
     }
   });

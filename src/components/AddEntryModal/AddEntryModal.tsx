@@ -21,6 +21,7 @@ import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { cropImageFile } from '../../utils/cropImage';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
+type BurgerSource = 'restaurant' | 'homemade';
 
 type RestaurantOption = {
   id: string;
@@ -69,6 +70,8 @@ type AddEntryModalProps = {
     burgerName?: string | null;
     meatType?: MeatType | null;
     photoUrl?: string | null;
+    burgerOrigin?: BurgerSource | null;
+    ingredients?: string | null;
   };
 };
 
@@ -89,14 +92,17 @@ export function AddEntryModal({
 
   const [isBurger, setIsBurger] = useState(true);
   const [burgerType, setBurgerType] = useState<MeatType>('beef');
+  const [burgerSource, setBurgerSource] = useState<BurgerSource>('restaurant');
   const [burgerInput, setBurgerInput] = useState('');
   const [burgerSuggestions, setBurgerSuggestions] = useState<BurgerOption[]>([]);
   const [selectedBurger, setSelectedBurger] = useState<BurgerOption | null>(null);
+  const [ingredientsInput, setIngredientsInput] = useState('');
 
   const [priceInput, setPriceInput] = useState('');
-  const [ratingInput, setRatingInput] = useState('5');
+  const [ratingInput, setRatingInput] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
   const NOTES_LIMIT = 250;
+  const INGREDIENTS_LIMIT = 200;
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [photoCompressing, setPhotoCompressing] = useState(false);
@@ -125,23 +131,28 @@ export function AddEntryModal({
     if (mode === 'edit' && entry) {
       const date = new Date(entry.datetime);
       const iso = formatLocalDateTime(date); // yyyy-MM-ddTHH:mm
+      const isHomemade = entry.burgerOrigin === 'homemade';
       setDatetimeInput(iso);
-      setRestaurantInput(entry.restaurantName ?? '');
+      setRestaurantInput(isHomemade ? '' : entry.restaurantName ?? '');
       setRestaurantSuggestions([]);
       setSelectedRestaurant(
-        entry.restaurantId ? { id: entry.restaurantId, name: entry.restaurantName ?? '' } : null
+        isHomemade || !entry.restaurantId
+          ? null
+          : { id: entry.restaurantId, name: entry.restaurantName ?? '' }
       );
       setIsBurger(entry.is_burger);
       setBurgerType(entry.meatType ?? 'beef');
-      setBurgerInput(entry.burgerName ?? '');
+      setBurgerSource(entry.burgerOrigin ?? 'restaurant');
+      setBurgerInput(isHomemade ? '' : entry.burgerName ?? '');
       setBurgerSuggestions([]);
       setSelectedBurger(
-        entry.burgerId
-          ? { id: entry.burgerId, name: entry.burgerName ?? null, meat_type: entry.meatType ?? null }
-          : null
+        isHomemade || !entry.burgerId
+          ? null
+          : { id: entry.burgerId, name: entry.burgerName ?? null, meat_type: entry.meatType ?? null }
       );
+      setIngredientsInput(entry.ingredients ?? '');
       setPriceInput(entry.price != null ? String(entry.price) : '');
-      setRatingInput(entry.rating != null ? String(entry.rating) : '5');
+      setRatingInput(entry.rating != null ? String(entry.rating) : '');
     setAdditionalNotes(entry.additionalNotes ?? '');
     setPhotoFile(null);
     setPhotoPreview(entry.photoUrl ?? null);
@@ -157,11 +168,13 @@ export function AddEntryModal({
       setSelectedRestaurant(null);
       setIsBurger(true);
       setBurgerType('beef');
+      setBurgerSource('restaurant');
       setBurgerInput('');
       setBurgerSuggestions([]);
       setSelectedBurger(null);
+      setIngredientsInput('');
       setPriceInput('');
-    setRatingInput('5');
+    setRatingInput('');
     setAdditionalNotes('');
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -313,6 +326,8 @@ export function AddEntryModal({
       rating: ratingInput,
       isBurger,
       burger: burgerInput,
+      burgerOrigin: isBurger ? burgerSource : '',
+      ingredients: ingredientsInput,
       additionalNotes,
     });
 
@@ -327,6 +342,11 @@ export function AddEntryModal({
     const rating = Number(parsed.rating);
     const notes = (parsed.additionalNotes?.trim() ?? '').slice(0, NOTES_LIMIT);
     const additionalNotesValue = notes ? notes : null;
+    const burgerOriginValue = isBurger ? burgerSource : null;
+    const ingredientsValue =
+      isBurger && burgerSource === 'homemade'
+        ? (parsed.ingredients?.trim() ?? '').slice(0, INGREDIENTS_LIMIT) || null
+        : null;
 
     setFormLoading(true);
 
@@ -356,39 +376,43 @@ export function AddEntryModal({
       }
 
       // 1) Asegurar restaurante
-      let restaurantId = selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
+      let restaurantId: string | null = null;
 
-      if (!restaurantId) {
-        const { data, error } = await supabase
-          .from('restaurants')
-          .upsert(
-            {
-              name: trimmedRestaurant,
-              name_normalized: normalizedRestaurant,
-              name_compact: compactRestaurant,
-              is_chain: false,
-              created_by: session.user.id,
-            },
-            { onConflict: 'name_normalized' }
-          )
-          .select('id, name')
-          .single();
+      if (!isBurger || burgerSource === 'restaurant') {
+        restaurantId = selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
 
-        if (error || !data) {
-          throw error ?? new Error('No se pudo crear el restaurante');
+        if (!restaurantId) {
+          const { data, error } = await supabase
+            .from('restaurants')
+            .upsert(
+              {
+                name: trimmedRestaurant,
+                name_normalized: normalizedRestaurant,
+                name_compact: compactRestaurant,
+                is_chain: false,
+                created_by: session.user.id,
+              },
+              { onConflict: 'name_normalized' }
+            )
+            .select('id, name')
+            .single();
+
+          if (error || !data) {
+            throw error ?? new Error('No se pudo crear el restaurante');
+          }
+
+          restaurantId = data.id;
+          setSelectedRestaurant({ id: data.id, name: data.name });
         }
-
-        restaurantId = data.id;
-        setSelectedRestaurant({ id: data.id, name: data.name });
-      }
-      if (!restaurantId) {
-        throw new Error('No se pudo determinar el restaurante.');
+        if (!restaurantId) {
+          throw new Error('No se pudo determinar el restaurante.');
+        }
       }
 
       // 2) Asegurar hamburguesa (si corresponde)
       let burgerId: string | null = null;
 
-      if (isBurger) {
+      if (isBurger && burgerSource === 'restaurant') {
         if (selectedBurger?.id) {
           burgerId = selectedBurger.id;
         } else if (burgerInput.trim()) {
@@ -431,10 +455,12 @@ export function AddEntryModal({
             burger_id: burgerId,
             datetime: iso,
             is_burger: isBurger,
+            burger_origin: burgerOriginValue,
             rating,
             price,
             photo_url: photoUrl,
             additional_notes: additionalNotesValue,
+            homemade_ingredients: ingredientsValue,
           })
           .eq('id', entryId);
 
@@ -448,10 +474,12 @@ export function AddEntryModal({
           burger_id: burgerId,
           datetime: iso,
           is_burger: isBurger,
+          burger_origin: burgerOriginValue,
           rating,
           price,
           photo_url: photoUrl,
           additional_notes: additionalNotesValue,
+          homemade_ingredients: ingredientsValue,
         });
 
         if (insertError) {
@@ -478,9 +506,11 @@ export function AddEntryModal({
   const isSubmitDisabled =
     formLoading ||
     !datetimeInput ||
-    !restaurantInput.trim() ||
+    ((!isBurger || burgerSource === 'restaurant') && !restaurantInput.trim()) ||
     !priceInput.trim() ||
-    (isBurger && !burgerInput.trim());
+    !ratingInput.trim() ||
+    (isBurger && burgerSource === 'homemade' && !ingredientsInput.trim()) ||
+    (isBurger && burgerSource === 'restaurant' && !burgerInput.trim());
 
   if (!open) return null;
 
@@ -570,27 +600,6 @@ export function AddEntryModal({
               />
             </div>
 
-              <div className="bw-field">
-                <TextField
-                  id="bw-restaurant"
-                  label="Restaurante"
-                  value={restaurantInput}
-                  onChange={(e) => handleRestaurantChange(e.target.value)}
-                  placeholder="Jenkin's, Goiko, McDonalds..."
-                  autoComplete="off"
-                  fullWidth
-                />
-                {restaurantSuggestions.length > 0 && (
-                  <ul className="bw-suggestions">
-                    {restaurantSuggestions.map((r) => (
-                      <li key={r.id} onClick={() => selectRestaurant(r)}>
-                        {r.name}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
               <div className="bw-toggle-card">
                 <div className="bw-toggle-info">
                   <span className="bw-toggle-icon">
@@ -603,7 +612,17 @@ export function AddEntryModal({
                 </div>
                 <Switch
                   checked={isBurger}
-                  onChange={(e) => setIsBurger(e.target.checked)}
+                  onChange={(e) => {
+                    const nextValue = e.target.checked;
+                    setIsBurger(nextValue);
+                    if (!nextValue) {
+                      setBurgerSource('restaurant');
+                      setBurgerInput('');
+                      setBurgerSuggestions([]);
+                      setSelectedBurger(null);
+                      setIngredientsInput('');
+                    }
+                  }}
                   color="primary"
                   inputProps={{ 'aria-label': 'Es hamburguesa' }}
                 />
@@ -611,66 +630,152 @@ export function AddEntryModal({
 
               {isBurger && (
                 <>
-                  <div className="bw-field">
-                    <span className="bw-label">Tipo de hamburguesa</span>
-                    <div className="bw-meat-grid">
-                      {[
-                        {
-                          value: 'beef',
-                          label: 'Ternera',
-                          icon: <img src="/meat.png" alt="Carne" className="bw-meat-icon-img" />,
-                        },
-                        {
-                          value: 'chicken',
-                          label: 'Pollo',
-                          icon: <img src="/chicken-leg.png" alt="Pollo" className="bw-meat-icon-img" />,
-                        },
-                        {
-                          value: 'vegan',
-                          label: 'Vegana',
-                          icon: <img src="/plant.png" alt="Vegana" className="bw-meat-icon-img" />,
-                        },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          className={`bw-meat-card ${burgerType === opt.value ? 'is-active' : ''
-                            }`}
-                          onClick={() => setBurgerType(opt.value as MeatType)}
-                        >
-                          <span className="bw-meat-emoji">{opt.icon}</span>
-                          <span className="bw-meat-label">{opt.label}</span>
-                        </button>
-                      ))}
+                  <div className="bw-burger-type-block">
+                    <div className="bw-field">
+                      <span className="bw-label">Tipo de hamburguesa</span>
+                      <div className="bw-meat-grid">
+                        {[
+                          {
+                            value: 'beef',
+                            label: 'Ternera',
+                            icon: <img src="/meat.png" alt="Carne" className="bw-meat-icon-img" />,
+                          },
+                          {
+                            value: 'chicken',
+                            label: 'Pollo',
+                            icon: <img src="/chicken-leg.png" alt="Pollo" className="bw-meat-icon-img" />,
+                          },
+                          {
+                            value: 'vegan',
+                            label: 'Vegana',
+                            icon: <img src="/plant.png" alt="Vegana" className="bw-meat-icon-img" />,
+                          },
+                          {
+                            value: 'other',
+                            label: 'Otro',
+                            icon: <img src="/question-mark.png" alt="Otro" className="bw-meat-icon-img" />,
+                          },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`bw-meat-card ${burgerType === opt.value ? 'is-active' : ''}`}
+                            onClick={() => setBurgerType(opt.value as MeatType)}
+                          >
+                            <span className="bw-meat-emoji">{opt.icon}</span>
+                            <span className="bw-meat-label">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bw-field">
+                      <span className="bw-label">Origen</span>
+                      <div className="bw-meat-grid bw-source-grid">
+                        {[
+                          {
+                            value: 'homemade',
+                            label: 'Casera',
+                            icon: <img src="/homemade.png" alt="Casera" className="bw-meat-icon-img" />,
+                          },
+                          {
+                            value: 'restaurant',
+                            label: 'Restaurante',
+                            icon: <img src="/dollar.png" alt="Restaurante" className="bw-meat-icon-img" />,
+                          },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`bw-meat-card ${burgerSource === opt.value ? 'is-active' : ''}`}
+                            onClick={() => {
+                              setBurgerSource(opt.value as BurgerSource);
+                              if (opt.value === 'restaurant') {
+                                setIngredientsInput('');
+                              } else {
+                                setRestaurantInput('');
+                                setRestaurantSuggestions([]);
+                                setSelectedRestaurant(null);
+                                setBurgerInput('');
+                                setBurgerSuggestions([]);
+                                setSelectedBurger(null);
+                              }
+                            }}
+                          >
+                            <span className="bw-meat-emoji">{opt.icon}</span>
+                            <span className="bw-meat-label">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bw-field">
-                    <TextField
-                      id="bw-burger-name"
-                      label="Hamburguesa"
-                      value={burgerInput}
-                      onChange={(e) => handleBurgerChange(e.target.value)}
-                      placeholder="Emmy B, Valhalla..."
-                      autoComplete="off"
-                      fullWidth
-                    />
-                    {selectedRestaurant && burgerSuggestions.length > 0 && (
-                      <ul className="bw-suggestions">
-                        {burgerSuggestions.map((b) => (
-                          <li key={b.id} onClick={() => selectBurger(b)}>
-                            {b.name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {!selectedRestaurant && (
-                      <p className="bw-helper">
-                        Escribe el nombre. Si eliges un restaurante verás sugerencias.
-                      </p>
-                    )}
-                  </div>
+                  {burgerSource === 'homemade' && (
+                    <div className="bw-field">
+                      <TextField
+                        id="bw-ingredients"
+                        label="Ingredientes"
+                        value={ingredientsInput}
+                        onChange={(e) => setIngredientsInput(e.target.value)}
+                        placeholder="Carne, pan, queso, salsas..."
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        inputProps={{ maxLength: INGREDIENTS_LIMIT }}
+                      />
+                    </div>
+                  )}
                 </>
+              )}
+
+              {(!isBurger || burgerSource === 'restaurant') && (
+                <div className="bw-field">
+                  <TextField
+                    id="bw-restaurant"
+                    label="Restaurante"
+                    value={restaurantInput}
+                    onChange={(e) => handleRestaurantChange(e.target.value)}
+                    placeholder="Jenkin's, Goiko, McDonalds..."
+                    autoComplete="off"
+                    fullWidth
+                  />
+                  {restaurantSuggestions.length > 0 && (
+                    <ul className="bw-suggestions">
+                      {restaurantSuggestions.map((r) => (
+                        <li key={r.id} onClick={() => selectRestaurant(r)}>
+                          {r.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {isBurger && burgerSource === 'restaurant' && (
+                <div className="bw-field">
+                  <TextField
+                    id="bw-burger-name"
+                    label="Hamburguesa"
+                    value={burgerInput}
+                    onChange={(e) => handleBurgerChange(e.target.value)}
+                    placeholder="Emmy B, Valhalla..."
+                    autoComplete="off"
+                    fullWidth
+                  />
+                  {selectedRestaurant && burgerSuggestions.length > 0 && (
+                    <ul className="bw-suggestions">
+                      {burgerSuggestions.map((b) => (
+                        <li key={b.id} onClick={() => selectBurger(b)}>
+                          {b.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {!selectedRestaurant && (
+                    <p className="bw-helper">
+                      Escribe el nombre. Si eliges un restaurante veras sugerencias.
+                    </p>
+                  )}
+                </div>
               )}
 
               <div className="bw-field">
@@ -679,10 +784,10 @@ export function AddEntryModal({
                 </span>
                 <Rating
                   name="entry-rating"
-                  value={Number(ratingInput)}
+                  value={ratingInput ? Number(ratingInput) : null}
                   precision={0.5}
                   onChange={(_e, newValue) => {
-                    if (newValue) setRatingInput(String(newValue));
+                    setRatingInput(newValue ? String(newValue) : '');
                   }}
                   sx={{
                     color: colors.accent,

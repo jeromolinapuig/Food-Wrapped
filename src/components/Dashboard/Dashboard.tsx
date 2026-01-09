@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, LunchDining, Star } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -32,6 +32,7 @@ type DbEntryRow = {
   rating: number | null;
   price: number | null;
   is_burger: boolean;
+  burger_origin: 'restaurant' | 'homemade' | null;
   additional_notes: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
@@ -53,6 +54,8 @@ type EditEntry = {
   burgerName?: string | null;
   meatType?: MeatType | null;
   photoUrl?: string | null;
+  burgerOrigin?: 'restaurant' | 'homemade' | null;
+  ingredients?: string | null;
 };
 
 export function Dashboard({ session, theme }: DashboardProps) {
@@ -98,6 +101,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
         rating,
         price,
         is_burger,
+        burger_origin,
         additional_notes,
         restaurant_id,
         burger_id,
@@ -205,12 +209,14 @@ export function Dashboard({ session, theme }: DashboardProps) {
         totalBurgers: 0,
         averageRating: 0,
         favoriteRestaurant: '',
+        homemadeBurgers: 0,
         burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
       };
     }
 
     let totalSpent = 0;
     let burgerCount = 0;
+    let homemadeBurgers = 0;
     let ratingSum = 0;
     let ratingCount = 0;
 
@@ -219,7 +225,12 @@ export function Dashboard({ session, theme }: DashboardProps) {
 
     for (const e of entries) {
       if (e.price != null) totalSpent += e.price;
-      if (e.is_burger) burgerCount++;
+      if (e.is_burger && e.burger_origin === 'homemade') {
+        homemadeBurgers++;
+      }
+      if (e.is_burger && e.burger_origin !== 'homemade') {
+        burgerCount++;
+      }
 
       if (e.rating != null) {
         ratingSum += e.rating;
@@ -234,10 +245,12 @@ export function Dashboard({ session, theme }: DashboardProps) {
         );
       }
 
-      const meat = e.burger?.meat_type;
-      if (meat === 'beef') burgerTypes.beef++;
-      if (meat === 'chicken') burgerTypes.chicken++;
-      if (meat === 'vegan') burgerTypes.vegan++;
+      if (e.burger_origin !== 'homemade') {
+        const meat = e.burger?.meat_type;
+        if (meat === 'beef') burgerTypes.beef++;
+        if (meat === 'chicken') burgerTypes.chicken++;
+        if (meat === 'vegan') burgerTypes.vegan++;
+      }
     }
 
     let favoriteRestaurant = '';
@@ -256,6 +269,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
       totalBurgers: burgerCount,
       averageRating,
       favoriteRestaurant,
+      homemadeBurgers,
       burgerTypes,
     };
   }, [entries]);
@@ -356,28 +370,35 @@ export function Dashboard({ session, theme }: DashboardProps) {
             )}
           </section>
 
-          <section className="bw-card bw-burger-types">
-            <h2 className="bw-section-title">Tipos de hamburguesa</h2>
-            <div className="bw-burger-types-row">
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.beef}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.chicken}</span>
-              </div>
-              <div className="bw-burger-type">
-                <span className="bw-burger-type-emoji">
-                  <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
-                </span>
-                <span>{stats.burgerTypes.vegan}</span>
+          <section className="bw-dashboard-row">
+            <div className="bw-card bw-burger-types">
+              <h2 className="bw-section-title">Tipo</h2>
+              <div className="bw-burger-types-row">
+                <div className="bw-burger-type">
+                  <span className="bw-burger-type-emoji">
+                    <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                  </span>
+                  <span>{stats.burgerTypes.beef}</span>
+                </div>
+                <div className="bw-burger-type">
+                  <span className="bw-burger-type-emoji">
+                    <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                  </span>
+                  <span>{stats.burgerTypes.chicken}</span>
+                </div>
+                <div className="bw-burger-type">
+                  <span className="bw-burger-type-emoji">
+                    <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                  </span>
+                  <span>{stats.burgerTypes.vegan}</span>
+                </div>
               </div>
             </div>
+            <StatCard
+              icon={<House fontSize="small" />}
+              value={`${stats.homemadeBurgers}`}
+              label="Hamburguesas caseras"
+            />
           </section>
 
           <section className="bw-history">
@@ -419,6 +440,8 @@ export function Dashboard({ session, theme }: DashboardProps) {
                   burgerName: entry.burgerName,
                   meatType: entry.meatType,
                   photoUrl: entry.photoUrl,
+                  burgerOrigin: entry.burgerOrigin,
+                  ingredients: entry.ingredients,
                 })
               }
               onDeleteEntry={(entry) =>
@@ -435,6 +458,8 @@ export function Dashboard({ session, theme }: DashboardProps) {
                   burgerName: entry.burgerName,
                   meatType: entry.meatType,
                   photoUrl: entry.photoUrl,
+                  burgerOrigin: entry.burgerOrigin,
+                  ingredients: entry.ingredients,
                 })
               }
             />
