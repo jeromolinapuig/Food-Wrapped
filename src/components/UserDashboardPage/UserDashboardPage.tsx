@@ -134,15 +134,12 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       .from('entries')
       .select(
         `
-          id,
           datetime,
           rating,
           price,
           is_burger,
           burger_origin,
           meat_type,
-          restaurant_id,
-          burger_id,
           restaurant:restaurants ( name ),
           burger:burgers ( name, meat_type )
         `
@@ -166,12 +163,16 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     loadEntries();
   }, [loadEntries]);
 
-  useRevalidateOnFocus(() => {
-    loadProfile();
-    if (!privacyBlocked) {
-      loadEntries();
-    }
-  }, [loadEntries, loadProfile, privacyBlocked]);
+  useRevalidateOnFocus(
+    () => {
+      loadProfile();
+      if (!privacyBlocked) {
+        loadEntries();
+      }
+    },
+    [loadEntries, loadProfile, privacyBlocked],
+    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+  );
 
   const stats = useMemo(() => {
     if (!entries.length) {

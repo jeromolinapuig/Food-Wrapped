@@ -106,6 +106,7 @@ export function FeedTabs({
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const entriesRef = useRef<FeedEntry[]>([]);
   const cursorRef = useRef<{ datetime: string; id: string } | null>(null);
+  const lastRealtimeRef = useRef(0);
   const pageSize = 10;
   const [cursor, setCursor] = useState<{ datetime: string; id: string } | null>(null);
   const isUserFeed = Boolean(focusUserId);
@@ -243,7 +244,6 @@ export function FeedTabs({
           burger_id,
           meat_type,
           burger_origin,
-          visibility,
           photo_url,
           homemade_ingredients,
           restaurants ( name ),
@@ -625,6 +625,10 @@ export function FeedTabs({
           } else if (activeTab === 'global') {
             if (row?.visibility && row.visibility !== 'public') return;
           }
+          if (document.visibilityState !== 'visible') return;
+          const now = Date.now();
+          if (now - lastRealtimeRef.current < 60000) return;
+          lastRealtimeRef.current = now;
           loadEntries({ showLoading: false, skipCache: true });
         }
       )
@@ -635,12 +639,16 @@ export function FeedTabs({
     };
   }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
 
-  useRevalidateOnFocus(() => {
-    if (headerOnly) return;
-    setHasMore(true);
-    setCursor(null);
-    loadEntries({ showLoading: false, skipCache: true });
-  }, [headerOnly, loadEntries]);
+  useRevalidateOnFocus(
+    () => {
+      if (headerOnly) return;
+      setHasMore(true);
+      setCursor(null);
+      loadEntries({ showLoading: false, skipCache: true });
+    },
+    [headerOnly, loadEntries],
+    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+  );
 
   useEffect(() => {
     if (headerOnly) return;

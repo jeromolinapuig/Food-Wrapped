@@ -20,6 +20,10 @@
   margin-bottom: 12px;
 }
 
+:root[data-theme="dark"] .bw-group-invites-button {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 .bw-group-invites-button:active {
   transform: translateY(1px);
 }

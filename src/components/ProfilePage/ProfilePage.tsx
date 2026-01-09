@@ -209,7 +209,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
     setError(null);
     const previousUrl = profile?.avatar_url ?? null;
     try {
-      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.8 });
+      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.7 });
       const fileExt = compressed.name.split('.').pop();
       const filePath = `${session.user.id}/${Date.now()}.${fileExt ?? 'jpg'}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, compressed, { upsert: true });

@@ -77,10 +77,14 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
     };
   }, [loadInvites, location.pathname]);
 
-  useRevalidateOnFocus(() => {
-    loadProfile();
-    loadInvites();
-  }, [loadInvites, loadProfile]);
+  useRevalidateOnFocus(
+    () => {
+      loadProfile();
+      loadInvites();
+    },
+    [loadInvites, loadProfile],
+    { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
+  );
 
   return (
     <nav className="bw-bottom-nav" aria-label="Navegacion principal">

@@ -23,6 +23,12 @@
     background 0.25s ease, color 0.25s ease;
 }
 
+:root[data-theme="dark"] .bw-input,
+:root[data-theme="dark"] .bw-select,
+:root[data-theme="dark"] .bw-textarea {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 .bw-input:focus,
 .bw-select:focus,
 .bw-textarea:focus {

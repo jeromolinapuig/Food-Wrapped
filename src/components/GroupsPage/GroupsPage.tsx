@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Add, CheckCircle, ChevronRight, Close, Delete, PeopleOutline, RadioButtonUnchecked, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
@@ -73,6 +73,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const [manageGroupName, setManageGroupName] = useState<string | null>(null);
   const hasGroupsCache = groupsCache.hasCache;
   const hasInvitesCache = invitesCache.hasCache;
+  const lastRealtimeRef = useRef(0);
   const groupCount = groups.length;
   const hasGroupLimit = groupCount >= MAX_GROUPS;
 
@@ -309,18 +310,30 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     return () => window.clearTimeout(timeoutId);
   }, [hasInvitesCache, loadInvites, refreshKey]);
 
-  useRevalidateOnFocus(() => {
-    loadGroups({ showLoading: false, skipCache: true });
-    loadInvites({ showLoading: false, skipCache: true });
-  }, [loadGroups, loadInvites]);
+  useRevalidateOnFocus(
+    () => {
+      loadGroups({ showLoading: false, skipCache: true });
+      loadInvites({ showLoading: false, skipCache: true });
+    },
+    [loadGroups, loadInvites],
+    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+  );
 
   useEffect(() => {
+    const shouldSkip = () => {
+      if (document.visibilityState !== 'visible') return true;
+      const now = Date.now();
+      if (now - lastRealtimeRef.current < 60000) return true;
+      lastRealtimeRef.current = now;
+      return false;
+    };
     const channel = supabase
       .channel(`groups-rt-${session.user.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'group_invitations', filter: `invitee_id=eq.${session.user.id}` },
         () => {
+          if (shouldSkip()) return;
           loadInvites({ showLoading: false, skipCache: true });
         }
       )
@@ -328,6 +341,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'group_members', filter: `user_id=eq.${session.user.id}` },
         () => {
+          if (shouldSkip()) return;
           loadGroups({ showLoading: false, skipCache: true });
         }
       )
@@ -335,6 +349,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'group_members' },
         (payload) => {
+          if (shouldSkip()) return;
           if (!ownedGroupIds.length) return;
           const row = (payload.new ?? payload.old) as { group_id?: string } | null;
           const groupId = row?.group_id;
@@ -347,6 +362,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'groups', filter: `owner_id=eq.${session.user.id}` },
         () => {
+          if (shouldSkip()) return;
           loadGroups({ showLoading: false, skipCache: true });
         }
       )

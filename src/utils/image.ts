@@ -10,7 +10,7 @@ const fileNameToJpeg = (name: string) =>
 
 export async function compressImage(
   file: File,
-  { maxWidth = 1200, maxHeight = 1200, quality = 0.65, mimeType = 'image/jpeg' }: CompressOptions = {}
+  { maxWidth = 900, maxHeight = 900, quality = 0.6, mimeType = 'image/jpeg' }: CompressOptions = {}
 ): Promise<File> {
   const imageUrl = URL.createObjectURL(file);
   try {

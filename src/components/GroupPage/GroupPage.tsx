@@ -178,10 +178,14 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     loadEntries();
   }, [loadEntries]);
 
-  useRevalidateOnFocus(() => {
-    loadGroup();
-    loadEntries();
-  }, [loadEntries, loadGroup]);
+  useRevalidateOnFocus(
+    () => {
+      loadGroup();
+      loadEntries();
+    },
+    [loadEntries, loadGroup],
+    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+  );
 
   const stats = useMemo(() => {
     if (!entries.length) {

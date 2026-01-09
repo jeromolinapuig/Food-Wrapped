@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -70,6 +70,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
   const [mutating, setMutating] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<EditEntry | null>(null);
+  const lastRealtimeRef = useRef(0);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
@@ -97,17 +98,12 @@ export function Dashboard({ session, theme }: DashboardProps) {
       .from('entries')
       .select(
         `
-        id,
         datetime,
         rating,
         price,
         is_burger,
         burger_origin,
         meat_type,
-        additional_notes,
-        restaurant_id,
-        burger_id,
-        photo_url,
         restaurant:restaurants ( name ),
         burger:burgers ( name, meat_type )
       `
@@ -160,6 +156,10 @@ export function Dashboard({ session, theme }: DashboardProps) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
         () => {
+          if (document.visibilityState !== 'visible') return;
+          const now = Date.now();
+          if (now - lastRealtimeRef.current < 60000) return;
+          lastRealtimeRef.current = now;
           loadEntries({ showLoading: false });
         }
       )
@@ -184,9 +184,13 @@ export function Dashboard({ session, theme }: DashboardProps) {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  useRevalidateOnFocus(() => {
-    loadEntries({ showLoading: false });
-  }, [loadEntries]);
+  useRevalidateOnFocus(
+    () => {
+      loadEntries({ showLoading: false });
+    },
+    [loadEntries],
+    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+  );
 
   useEffect(() => {
     if (!showInstallBanner && !deleteEntry) return;
