@@ -29,12 +29,22 @@ export function AuthScreen() {
         throw new Error('El nombre de usuario no puede tener espacios.');
       }
       if (mode === 'signup') {
+        const trimmedUsername = username.trim();
+        const { data: existingUsers, error: existingError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', trimmedUsername)
+          .limit(1);
+        if (existingError) throw existingError;
+        if (existingUsers && existingUsers.length > 0) {
+          throw new Error('Ese nombre de usuario ya esta en uso.');
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              username: username.trim(),
+              username: trimmedUsername,
             },
           },
         });
