@@ -73,7 +73,7 @@ export function EntryCard({
           onClick={onPhotoClick}
           aria-label="Ver foto"
         >
-          <img src={photoUrl} alt={burgerName ?? restaurantName} />
+          <img src={photoUrl} alt={burgerName ?? restaurantName} loading="lazy" />
         </button>
       )}
 

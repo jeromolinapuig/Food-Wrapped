@@ -72,7 +72,7 @@ const renderStarString = (rating: number) => {
 
 const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string | null }) => {
   if (avatarUrl) {
-    return <img src={avatarUrl} alt={username} className="bw-avatar-image" />;
+    return <img src={avatarUrl} alt={username} className="bw-avatar-image" loading="lazy" />;
   }
 
   const initial = username?.[0]?.toUpperCase() ?? '?';
@@ -336,28 +336,24 @@ export function FeedTabs({
     }
 
     let mutualIds = new Set<string>();
-    if (!ignorePrivacy && userIds.length && currentUserId) {
-      const [{ data: outgoing }, { data: incoming }] = await Promise.all([
-        supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', currentUserId)
-          .in('following_id', userIds),
-        supabase
-          .from('follows')
-          .select('follower_id')
-          .eq('following_id', currentUserId)
-          .in('follower_id', userIds),
-      ]);
+    if (!ignorePrivacy && userIds.length && currentUserId && focusUserId !== currentUserId) {
+      const { data: follows } = await supabase
+        .from('follows')
+        .select('follower_id, following_id')
+        .or(
+          `and(follower_id.eq.${currentUserId},following_id.in.(${userIds.join(',')})),and(following_id.eq.${currentUserId},follower_id.in.(${userIds.join(',')}))`
+        );
       const outgoingIds = new Set(
-        (outgoing ?? []).map((row) => (row as { following_id: string }).following_id)
+        (follows ?? [])
+          .filter((row) => (row as { follower_id: string }).follower_id === currentUserId)
+          .map((row) => (row as { following_id: string }).following_id)
       );
       const incomingIds = new Set(
-        (incoming ?? []).map((row) => (row as { follower_id: string }).follower_id)
+        (follows ?? [])
+          .filter((row) => (row as { following_id: string }).following_id === currentUserId)
+          .map((row) => (row as { follower_id: string }).follower_id)
       );
-      mutualIds = new Set(
-        [...outgoingIds].filter((id) => incomingIds.has(id))
-      );
+      mutualIds = new Set([...outgoingIds].filter((id) => incomingIds.has(id)));
     }
 
     let mapped: FeedEntry[] = rows.map((entry) => {
@@ -468,6 +464,7 @@ export function FeedTabs({
   ]);
 
   useEffect(() => {
+    if (hideHeader) return;
     if (!focusUserId && !isCustomList) return;
     let cancelled = false;
     let usedCache = false;
@@ -549,7 +546,7 @@ export function FeedTabs({
     return () => {
       cancelled = true;
     };
-  }, [focusUserId, isCustomList, monthCacheKey, userIdsFilter]);
+  }, [focusUserId, hideHeader, isCustomList, monthCacheKey, userIdsFilter]);
 
   useEffect(() => {
     if (headerOnly) return;
@@ -795,7 +792,11 @@ export function FeedTabs({
                       className="bw-feed-photo"
                       onClick={() => setPhotoPreviewUrl(entry.photoUrl)}
                     >
-                      <img src={entry.photoUrl} alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'} />
+                      <img
+                        src={entry.photoUrl}
+                        alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'}
+                        loading="lazy"
+                      />
                     </button>
                   )}
 

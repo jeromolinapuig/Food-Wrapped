@@ -133,40 +133,26 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   }, [loadProfile, profileCacheKey, username]);
 
   const loadFollowCounts = useCallback(async () => {
-    const [
-      { data: followersRows, error: followersError },
-      { data: followingRows, error: followingError },
-    ] = await Promise.all([
-      supabase.from('follows').select('follower_id').eq('following_id', session.user.id),
-      supabase.from('follows').select('following_id').eq('follower_id', session.user.id),
-    ]);
+    const { data: followRows, error } = await supabase
+      .from('follows')
+      .select('follower_id, following_id')
+      .or(`following_id.eq.${session.user.id},follower_id.eq.${session.user.id}`);
 
-    if (followersError) {
-      console.error('Error cargando seguidores', followersError);
+    if (error) {
+      console.error('Error cargando follows', error);
+      return;
     }
 
-    if (followingError) {
-      console.error('Error cargando seguidos', followingError);
-    }
+    const followerIds = new Set<string>();
+    const followingIds = new Set<string>();
+    (followRows ?? []).forEach((row) => {
+      const typed = row as { follower_id: string; following_id: string };
+      if (typed.following_id === session.user.id) followerIds.add(typed.follower_id);
+      if (typed.follower_id === session.user.id) followingIds.add(typed.following_id);
+    });
 
-    const followerIds = Array.from(
-      new Set((followersRows ?? []).map((row) => (row as { follower_id: string }).follower_id))
-    );
-    const followingIds = Array.from(
-      new Set((followingRows ?? []).map((row) => (row as { following_id: string }).following_id))
-    );
-
-    const [{ data: followerProfiles }, { data: followingProfiles }] = await Promise.all([
-      followerIds.length
-        ? supabase.from('profiles').select('id').in('id', followerIds)
-        : Promise.resolve({ data: [] as { id: string }[] }),
-      followingIds.length
-        ? supabase.from('profiles').select('id').in('id', followingIds)
-        : Promise.resolve({ data: [] as { id: string }[] }),
-    ]);
-
-    const nextFollowers = (followerProfiles ?? []).length;
-    const nextFollowing = (followingProfiles ?? []).length;
+    const nextFollowers = followerIds.size;
+    const nextFollowing = followingIds.size;
 
     setFollowCounts({ followers: nextFollowers, following: nextFollowing });
 
@@ -186,7 +172,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   useRevalidateOnFocus(() => {
     loadProfile({ showLoading: false, skipCache: true });
     loadFollowCounts();
-  }, [loadFollowCounts, loadProfile]);
+  }, [loadFollowCounts, loadProfile], { minIntervalMs: 120000, maxStaleMs: 600000, debounceMs: 500 });
 
   useEffect(() => {
     const cachedCounts = sessionStorage.getItem(followCountsCacheKey);
