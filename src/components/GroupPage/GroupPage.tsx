@@ -50,6 +50,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [groupName, setGroupName] = useState<string | null>(null);
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
   const loadGroup = useCallback(async () => {
     setError(null);
+    setMembersLoaded(false);
     const { data: groupRow, error: groupError } = await supabase
       .from('groups')
       .select('id, name, owner_id')
@@ -75,6 +77,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       setGroupName(null);
       setMemberIds([]);
       setMembers([]);
+      setMembersLoaded(true);
       return;
     }
 
@@ -91,6 +94,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       setError('No se pudieron cargar los miembros.');
       setMemberIds([]);
       setMembers([]);
+      setMembersLoaded(true);
       return;
     }
 
@@ -104,6 +108,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
     if (!uniqueMemberIds.length) {
       setMembers([]);
+      setMembersLoaded(true);
       return;
     }
 
@@ -115,6 +120,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     if (profilesError) {
       setError('No se pudieron cargar los miembros.');
       setMembers([]);
+      setMembersLoaded(true);
       return;
     }
 
@@ -125,6 +131,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
     }));
     setMembers(mapped);
+    setMembersLoaded(true);
   }, [groupId]);
 
   useEffect(() => {
@@ -373,15 +380,21 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
             </div>
 
             {activeTab === 'posts' ? (
-              <FeedTabs
-                currentUserId={session.user.id}
-                userIdsFilter={groupUserIds}
-                ignorePrivacy
-                onCountChange={setPostsCount}
-                hideHeader
-                monthFilter={monthFilter}
-                onMonthFilterChange={setMonthFilter}
-              />
+              !membersLoaded ? (
+                <p className="bw-helper">Cargando posts del grupo...</p>
+              ) : memberIds.length === 0 ? (
+                <p className="bw-helper">Este grupo no tiene miembros.</p>
+              ) : (
+                <FeedTabs
+                  currentUserId={session.user.id}
+                  userIdsFilter={groupUserIds}
+                  ignorePrivacy
+                  onCountChange={setPostsCount}
+                  hideHeader
+                  monthFilter={monthFilter}
+                  onMonthFilterChange={setMonthFilter}
+                />
+              )
             ) : (
               <div className="bw-ranking-list">
                 {!rankingRows.length && (
