@@ -69,7 +69,7 @@ type SupabaseEntryRow = {
 
 const renderStarString = (rating: number) => {
   const safeRating = Math.max(0, Math.min(5, Math.round(rating)));
-  return '★★★★★☆☆☆☆☆'.slice(5 - safeRating, 10 - safeRating);
+  return '★'.repeat(safeRating);
 };
 
 const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string | null }) => {

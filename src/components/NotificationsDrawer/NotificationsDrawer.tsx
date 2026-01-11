@@ -229,7 +229,7 @@ export function NotificationsDrawer({
 
   return (
     <div className="bw-notify-backdrop" onClick={onClose}>
-      <aside className="bw-notify-drawer" onClick={(e) => e.stopPropagation()}>
+      <aside className="bw-notify-drawer" role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className="bw-notify-header">
           <div className="bw-notify-title">
             <Notifications fontSize="small" />
@@ -255,9 +255,13 @@ export function NotificationsDrawer({
                   const firstId = item.likerIds[0];
                   const firstName = formatHandle(firstId);
                   const restCount = Math.max(0, total - 1);
-                  const message = total <= 1
-                    ? `A ${firstName} le ha gustado tu post.`
-                    : `A ${firstName} y a ${restCount} persona${restCount === 1 ? '' : 's'} más les ha gustado tu post.`;
+                  let message = '';
+                  if (total <= 1) {
+                    message = `A ${firstName} le ha gustado tu post.`;
+                  } else {
+                    const plural = restCount === 1 ? '' : 's';
+                    message = `A ${firstName} y a ${restCount} persona${plural} más les ha gustado tu post.`;
+                  }
                   return (
                     <button
                       key={item.id}

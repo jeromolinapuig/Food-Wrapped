@@ -18,8 +18,8 @@ import './Dashboard.css';
 type DashboardProps = {
   session: Session;
   theme: 'light' | 'dark';
-  onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
+  onToggleTheme?: () => void;
+  onNavigate?: (page: 'feed' | 'groups' | 'profile' | 'dashboard') => void;
 };
 
 type BurgerTypeStats = {
@@ -63,7 +63,69 @@ type EditEntry = {
   ingredients?: string | null;
 };
 
-export function Dashboard({ session, theme }: DashboardProps) {
+function computeStats(entries: DbEntryRow[]) {
+  if (!entries.length) {
+    return {
+      totalSpent: 0,
+      totalBurgers: 0,
+      averageRating: 0,
+      favoriteRestaurant: '',
+      homemadeBurgers: 0,
+      burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
+    };
+  }
+
+  const init = {
+    totalSpent: 0,
+    burgerCount: 0,
+    homemadeBurgers: 0,
+    ratingSum: 0,
+    ratingCount: 0,
+    restaurantCounter: new Map<string, number>(),
+    burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
+  };
+
+  const acc = entries.reduce((a, e) => {
+    if (e.price != null) a.totalSpent += e.price;
+    if (e.is_burger) {
+      if (e.burger_origin === 'homemade') a.homemadeBurgers++;
+      else a.burgerCount++;
+      const meat = e.meat_type ?? e.burger?.meat_type;
+      if (meat === 'beef') a.burgerTypes.beef++;
+      if (meat === 'chicken') a.burgerTypes.chicken++;
+      if (meat === 'vegan') a.burgerTypes.vegan++;
+    }
+    if (e.rating != null) {
+      a.ratingSum += e.rating;
+      a.ratingCount++;
+    }
+    const rn = e.restaurant?.name;
+    if (rn) a.restaurantCounter.set(rn, (a.restaurantCounter.get(rn) ?? 0) + 1);
+    return a;
+  }, init);
+
+  let favoriteRestaurant = '';
+  let maxCount = 0;
+  acc.restaurantCounter.forEach((count, name) => {
+    if (count > maxCount) {
+      maxCount = count;
+      favoriteRestaurant = name;
+    }
+  });
+
+  const averageRating = acc.ratingCount ? acc.ratingSum / acc.ratingCount : 0;
+
+  return {
+    totalSpent: acc.totalSpent,
+    totalBurgers: acc.burgerCount,
+    averageRating,
+    favoriteRestaurant,
+    homemadeBurgers: acc.homemadeBurgers,
+    burgerTypes: acc.burgerTypes,
+  };
+}
+
+export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const lastSeenKey = `bw-notify-last-seen-${session.user.id}`;
@@ -72,7 +134,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [mutating, setMutating] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
@@ -287,7 +349,9 @@ export function Dashboard({ session, theme }: DashboardProps) {
       (invitesResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
     ].filter(Boolean) as string[];
 
-    const latest = timestamps.length ? timestamps.sort().at(-1) ?? null : null;
+    const latest = timestamps.length
+      ? [...timestamps].sort((a, b) => a.localeCompare(b)).at(-1) ?? null
+      : null;
     setNotificationsLatest(latest ?? null);
   }, [session.user.id]);
 
@@ -388,7 +452,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
   useEffect(() => {
     if (!notificationsOpen) return;
     const nextSeen = notificationsLatest ?? new Date().toISOString();
-    setNotificationsLastSeen(nextSeen);
+      setNotificationsLastSeen(nextSeen);
     window.localStorage.setItem(lastSeenKey, nextSeen);
   }, [lastSeenKey, notificationsLatest, notificationsOpen]);
 
@@ -403,77 +467,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
   };
 
   // --- Stats calculadas ---
-  const stats = useMemo(() => {
-    if (!entries.length) {
-      return {
-        totalSpent: 0,
-        totalBurgers: 0,
-        averageRating: 0,
-        favoriteRestaurant: '',
-        homemadeBurgers: 0,
-        burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
-      };
-    }
-
-    let totalSpent = 0;
-    let burgerCount = 0;
-    let homemadeBurgers = 0;
-    let ratingSum = 0;
-    let ratingCount = 0;
-
-    const restaurantCounter = new Map<string, number>();
-    const burgerTypes: BurgerTypeStats = { beef: 0, chicken: 0, vegan: 0 };
-
-    for (const e of entries) {
-      if (e.price != null) totalSpent += e.price;
-      if (e.is_burger && e.burger_origin === 'homemade') {
-        homemadeBurgers++;
-      }
-      if (e.is_burger && e.burger_origin !== 'homemade') {
-        burgerCount++;
-      }
-
-      if (e.rating != null) {
-        ratingSum += e.rating;
-        ratingCount++;
-      }
-
-      const restaurantName = e.restaurant?.name;
-      if (restaurantName) {
-        restaurantCounter.set(
-          restaurantName,
-          (restaurantCounter.get(restaurantName) ?? 0) + 1
-        );
-      }
-
-      if (e.is_burger) {
-        const meat = e.meat_type ?? e.burger?.meat_type;
-        if (meat === 'beef') burgerTypes.beef++;
-        if (meat === 'chicken') burgerTypes.chicken++;
-        if (meat === 'vegan') burgerTypes.vegan++;
-      }
-    }
-
-    let favoriteRestaurant = '';
-    let maxCount = 0;
-    restaurantCounter.forEach((count, name) => {
-      if (count > maxCount) {
-        maxCount = count;
-        favoriteRestaurant = name;
-      }
-    });
-
-    const averageRating = ratingCount ? ratingSum / ratingCount : 0;
-
-    return {
-      totalSpent,
-      totalBurgers: burgerCount,
-      averageRating,
-      favoriteRestaurant,
-      homemadeBurgers,
-      burgerTypes,
-    };
-  }, [entries]);
+  const stats = useMemo(() => computeStats(entries), [entries]);
 
   const activeHistoryError = error ?? savedError;
   const hasUnreadNotifications = Boolean(
@@ -536,7 +530,11 @@ export function Dashboard({ session, theme }: DashboardProps) {
               aria-label="Abrir notificaciones"
             >
               <Notifications />
-              {hasUnreadNotifications && <span className="bw-notify-dot" />}
+              {notificationsCount > 0 ? (
+                <span className="bw-notify-count">{notificationsCount}</span>
+              ) : (
+                hasUnreadNotifications && <span className="bw-notify-dot" />
+              )}
             </button>
           </div>
 
@@ -566,8 +564,8 @@ export function Dashboard({ session, theme }: DashboardProps) {
         <main className="bw-main">
           <section className="bw-stats-grid">
             {loading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
-                <div className="bw-stat-card bw-skeleton" key={idx}>
+              [1, 2, 3, 4].map((id) => (
+                <div className="bw-stat-card bw-skeleton" key={id}>
                   <div className="bw-skeleton-line bw-skeleton-short" />
                   <div className="bw-skeleton-line" />
                   <div className="bw-skeleton-line bw-skeleton-short" />
@@ -711,7 +709,13 @@ export function Dashboard({ session, theme }: DashboardProps) {
       />
 
       {deleteEntry && (
-        <div className="bw-confirm-backdrop" onClick={() => (!mutating ? setDeleteEntry(null) : null)}>
+        <div
+          className="bw-confirm-backdrop"
+          onClick={() => {
+            if (mutating) return;
+            setDeleteEntry(null);
+          }}
+        >
           <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="bw-confirm-title">Eliminar entrada</h3>
             <p className="bw-confirm-text">

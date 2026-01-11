@@ -55,11 +55,10 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [error, setError] = useState<string | null>(null);
   const [groupMissing, setGroupMissing] = useState(false);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'posts' | 'ranking'>('posts');
-  const [rankingMetric, setRankingMetric] = useState<'spent' | 'count'>('spent');
+  const [rankingMetric] = useState<'spent' | 'count'>('spent');
   const groupUserIds = memberIds.length ? memberIds : null;
-  const hideGroupFilter = !groupUserIds;
 
   const loadGroup = useCallback(async () => {
     setError(null);
@@ -70,7 +69,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       .single();
 
     if (groupError || !groupRow) {
-      const notFound = groupError?.code === 'PGRST116' || groupError?.status === 406;
+      const notFound = groupError?.code === 'PGRST116' || (groupError as any)?.status === 406;
       setGroupMissing(notFound);
       setError(notFound ? null : 'No se pudo cargar el grupo.');
       setGroupName(null);
@@ -129,7 +128,14 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   }, [groupId]);
 
   useEffect(() => {
-    loadGroup();
+    let cancelled = false;
+    (async () => {
+      if (cancelled) return;
+      await loadGroup();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [loadGroup]);
 
   const loadEntries = useCallback(async () => {
@@ -186,7 +192,14 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   }, [groupMissing, memberIds]);
 
   useEffect(() => {
-    loadEntries();
+    let cancelled = false;
+    (async () => {
+      if (cancelled) return;
+      await loadEntries();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [loadEntries]);
 
   useRevalidateOnFocus(
@@ -337,55 +350,26 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
           {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
 
           <section className="bw-history">
-            <div className="bw-section-header bw-group-section-header">
-              <div className="bw-group-tabs">
-                <button
-                  type="button"
-                  className={`bw-group-tab ${activeTab === 'posts' ? 'is-active' : ''}`}
-                  onClick={() => setActiveTab('posts')}
-                >
-                  Posts ({postsCount})
-                </button>
-                <button
-                  type="button"
-                  className={`bw-group-tab ${activeTab === 'ranking' ? 'is-active' : ''}`}
-                  onClick={() => setActiveTab('ranking')}
-                >
-                  Ranking
-                </button>
+            <div className="bw-section-header">
+              <h2 className="bw-section-title">Posts ({postsCount})</h2>
+              <div className="bw-section-right">
+                <div className="bw-group-tabs">
+                  <button
+                    type="button"
+                    className={`bw-group-tab ${activeTab === 'posts' ? 'is-active' : ''}`}
+                    onClick={() => setActiveTab('posts')}
+                  >
+                    Posts
+                  </button>
+                  <button
+                    type="button"
+                    className={`bw-group-tab ${activeTab === 'ranking' ? 'is-active' : ''}`}
+                    onClick={() => setActiveTab('ranking')}
+                  >
+                    Ranking
+                  </button>
+                </div>
               </div>
-              {activeTab === 'posts' && (
-                <div className="bw-section-right">
-                  <FeedTabs
-                    currentUserId={session.user.id}
-                    userIdsFilter={groupUserIds}
-                    ignorePrivacy
-                    onCountChange={setPostsCount}
-                    headerOnly
-                    hideHeader={hideGroupFilter}
-                    monthFilter={monthFilter}
-                    onMonthFilterChange={setMonthFilter}
-                  />
-                </div>
-              )}
-              {activeTab === 'ranking' && (
-                <div className="bw-ranking-toggle">
-                  <button
-                    type="button"
-                    className={`bw-ranking-toggle-btn ${rankingMetric === 'spent' ? 'is-active' : ''}`}
-                    onClick={() => setRankingMetric('spent')}
-                  >
-                    Gastos
-                  </button>
-                  <button
-                    type="button"
-                    className={`bw-ranking-toggle-btn ${rankingMetric === 'count' ? 'is-active' : ''}`}
-                    onClick={() => setRankingMetric('count')}
-                  >
-                    Cantidad
-                  </button>
-                </div>
-              )}
             </div>
 
             {activeTab === 'posts' ? (
