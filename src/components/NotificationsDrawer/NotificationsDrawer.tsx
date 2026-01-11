@@ -91,6 +91,7 @@ export function NotificationsDrawer({
             .from('entry_likes')
             .select('entry_id, user_id, created_at')
             .in('entry_id', entryIds)
+            .neq('user_id', currentUserId)
             .order('created_at', { ascending: false })
             .limit(200)
         : Promise.resolve({ data: [], error: null }),
@@ -120,6 +121,7 @@ export function NotificationsDrawer({
     (likesResponse.data ?? []).forEach((row) => {
       const typed = row as { entry_id: string; user_id: string; created_at: string | null };
       if (!typed.entry_id || !typed.user_id) return;
+      if (typed.user_id === currentUserId) return;
       likerSet.add(typed.user_id);
       const existing = likesByEntry.get(typed.entry_id);
       if (!existing) {
@@ -215,6 +217,12 @@ export function NotificationsDrawer({
       void loadNotifications();
     });
   }, [loadNotifications, open]);
+
+  useEffect(() => {
+    startTransition(() => {
+      void loadNotifications();
+    });
+  }, [loadNotifications]);
 
   useEffect(() => {
     onCountChange?.(items.length);

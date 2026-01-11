@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
-import { Bookmark, BookmarkBorder, Close, Delete, Edit, Favorite, FavoriteBorder } from '@mui/icons-material';
+import {
+  Bookmark,
+  BookmarkBorder,
+  Close,
+  Delete,
+  Edit,
+  Favorite,
+  FavoriteBorder,
+  Star,
+  StarBorder,
+  StarHalf,
+} from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
@@ -67,10 +78,11 @@ type SupabaseEntryRow = {
   burgers: { name: string | null; meat_type: 'beef' | 'chicken' | 'vegan' | 'other' | null } | null;
 };
 
-const renderStarString = (rating: number) => {
-  const safeRating = Math.max(0, Math.min(5, Math.round(rating)));
-  return '★'.repeat(safeRating);
-};
+const renderStars = (rating: number) =>
+  Array.from({ length: 5 }, (_v, i) => ({
+    filled: rating >= i + 1,
+    half: rating >= i + 0.5 && rating < i + 1,
+  }));
 
 const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string | null }) => {
   if (avatarUrl) {
@@ -911,7 +923,7 @@ export function FeedTabs({
             const isSelf = entry.userId === currentUserId;
             const shouldDisableProfileClick = isSelf || isUserFeed;
             const name = isSelf ? 'Tú' : entry.displayName || entry.username;
-            const stars = renderStarString(entry.rating);
+            const stars = renderStars(entry.rating);
             const canEdit = showOwnerActions && isSelf;
             const isHomemade = entry.burgerOrigin === 'homemade';
             const restaurantLabel = isHomemade
@@ -989,57 +1001,70 @@ export function FeedTabs({
                   )}
 
                   <div className="bw-feed-footer">
-                    <div className="bw-feed-footer-left">
-                      <div className="bw-feed-rating">
-                        <span className="bw-feed-stars">{stars}</span>
-                        <span className="bw-feed-rating-number">
-                          {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
-                        </span>
-                      </div>
-                      <div className="bw-feed-actions">
-                        <button
-                          type="button"
-                          className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
-                          onClick={() => handleToggleLike(entry.id)}
-                          disabled={isLikePending}
-                          aria-pressed={reactions.liked}
-                          title={reactions.liked ? 'Quitar like' : 'Dar like'}
-                        >
-                          {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
-                          <span className="bw-feed-action-count">{reactions.likeCount}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
-                          onClick={() => handleToggleSave(entry.id)}
-                          disabled={isSavePending}
-                          aria-pressed={reactions.saved}
-                          title={reactions.saved ? 'Quitar guardado' : 'Guardar post'}
-                        >
-                          {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="bw-feed-footer-right">
-                      <div className="bw-feed-price">{'\u20AC'} {entry.price.toFixed(2)}</div>
-                      {canEdit && (
-                        <div className="bw-history-actions">
-                          <button
-                            className="bw-icon-button"
-                            title="Editar entrada"
-                            onClick={() => onEditEntry?.(entry)}
+                    <div className="bw-feed-rating">
+                      <span className="bw-feed-stars">
+                        {stars.map((star, idx) => (
+                          <span
+                            key={idx}
+                            className={`bw-history-star ${
+                              star.filled ? 'is-filled' : star.half ? 'is-half' : 'is-empty'
+                            }`}
                           >
-                            <Edit fontSize="small" />
+                            {star.filled ? <Star fontSize="small" /> : star.half ? <StarHalf fontSize="small" /> : <StarBorder fontSize="small" />}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="bw-feed-rating-number">
+                        {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
+                      </span>
+                    </div>
+                    <div className="bw-feed-footer-row">
+                      <div className="bw-feed-footer-left">
+                        <div className="bw-feed-actions">
+                          <button
+                            type="button"
+                            className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
+                            onClick={() => handleToggleLike(entry.id)}
+                            disabled={isLikePending}
+                            aria-pressed={reactions.liked}
+                            title={reactions.liked ? 'Quitar like' : 'Dar like'}
+                          >
+                            {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                            <span className="bw-feed-action-count">{reactions.likeCount}</span>
                           </button>
                           <button
-                            className="bw-icon-button bw-icon-danger"
-                            title="Eliminar entrada"
-                            onClick={() => onDeleteEntry?.(entry)}
+                            type="button"
+                            className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
+                            onClick={() => handleToggleSave(entry.id)}
+                            disabled={isSavePending}
+                            aria-pressed={reactions.saved}
+                            title={reactions.saved ? 'Quitar guardado' : 'Guardar post'}
                           >
-                            <Delete fontSize="small" />
+                            {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
                           </button>
                         </div>
-                      )}
+                      </div>
+                      <div className="bw-feed-footer-right">
+                        <div className="bw-feed-price">{'\u20AC'} {entry.price.toFixed(2)}</div>
+                        {canEdit && (
+                          <div className="bw-history-actions">
+                            <button
+                              className="bw-icon-button"
+                              title="Editar entrada"
+                              onClick={() => onEditEntry?.(entry)}
+                            >
+                              <Edit fontSize="small" />
+                            </button>
+                            <button
+                              className="bw-icon-button bw-icon-danger"
+                              title="Eliminar entrada"
+                              onClick={() => onDeleteEntry?.(entry)}
+                            >
+                              <Delete fontSize="small" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

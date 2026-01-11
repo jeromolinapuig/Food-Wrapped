@@ -115,6 +115,7 @@
 .bw-history-price {
   font-weight: 700;
   font-size: 18px;
+  white-space: nowrap;
 }
 
 .bw-history-actions {

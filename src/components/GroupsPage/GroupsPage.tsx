@@ -1170,7 +1170,7 @@ function CreateGroupModal({
             <input
               type="search"
               className="bw-input"
-              placeholder="Buscar por username..."
+              placeholder="Buscar por nombre de usuario..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

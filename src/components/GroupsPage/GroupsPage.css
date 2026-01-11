@@ -183,6 +183,11 @@
   flex: 1;
 }
 
+.bw-modal-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .bw-group-modal-actions {
   display: flex;
   justify-content: center;

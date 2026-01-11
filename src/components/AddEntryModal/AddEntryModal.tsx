@@ -599,7 +599,7 @@ export function AddEntryModal({
                       size="small"
                       disabled={photoCompressing || formLoading}
                     >
-                      A+¦adir foto
+                      Añadir foto
                       <input
                         type="file"
                         accept="image/*"
@@ -630,7 +630,7 @@ export function AddEntryModal({
                     <LunchDining fontSize="small" />
                   </span>
                   <div>
-                    <div className="bw-toggle-title">-+Es una hamburguesa?</div>
+                    <div className="bw-toggle-title">¿Es una hamburguesa?</div>
                     <div className="bw-toggle-subtitle">Activa para elegir el tipo</div>
                   </div>
                 </div>
@@ -796,7 +796,7 @@ export function AddEntryModal({
                   )}
                   {!selectedRestaurant && (
                     <p className="bw-helper">
-                      Escribe el nombre. Si eliges un restaurante veras sugerencias.
+                      Escribe el nombre. Si eliges un restaurante verás sugerencias.
                     </p>
                   )}
                 </div>
@@ -804,7 +804,7 @@ export function AddEntryModal({
 
               <div className="bw-field">
                 <span className="bw-label" style={{ marginBottom: 6 }}>
-                  Puntuaci+¦n
+                  Puntuación
                 </span>
                 <Rating
                   name="entry-rating"
@@ -827,7 +827,7 @@ export function AddEntryModal({
               <div className="bw-field">
                 <TextField
                   id="bw-price"
-                  label="Precio por persona (Ôé¼)"
+                  label="Precio por persona (€)"
                   type="number"
                   inputProps={{ step: 0.01, min: 0 }}
                   value={priceInput}
@@ -842,7 +842,7 @@ export function AddEntryModal({
               label="Comentarios adicionales"
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Salsa especial, punto de la carne, con qui+®n fuiste..."
+              placeholder="Salsa especial, punto de la carne, con quién fuiste..."
               fullWidth
               multiline
               minRows={3}

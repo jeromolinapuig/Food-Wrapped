@@ -142,7 +142,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const lastRealtimeRef = useRef(0);
   const [savedError, setSavedError] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notificationsCount, setNotificationsCount] = useState(0);
   const [notificationsLatest, setNotificationsLatest] = useState<string | null>(null);
   const [notificationsLastSeen, setNotificationsLastSeen] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -326,6 +325,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             .from('entry_likes')
             .select('created_at')
             .in('entry_id', entryIds)
+            .neq('user_id', session.user.id)
             .order('created_at', { ascending: false })
             .limit(1)
         : Promise.resolve({ data: [], error: null }),
@@ -530,11 +530,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               aria-label="Abrir notificaciones"
             >
               <Notifications />
-              {notificationsCount > 0 ? (
-                <span className="bw-notify-count">{notificationsCount}</span>
-              ) : (
-                hasUnreadNotifications && <span className="bw-notify-dot" />
-              )}
+              {hasUnreadNotifications && <span className="bw-notify-dot" />}
             </button>
           </div>
 
@@ -573,12 +569,12 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               ))
             ) : (
               <>
-                <StatCard
-                  icon={<Euro fontSize="small" />}
-                  value={`${stats.totalSpent.toFixed(2)}\u20AC`}
-                  label="Total gastado"
-                />
                 <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                <StatCard
+                  icon={<House fontSize="small" />}
+                  value={`${stats.homemadeBurgers}`}
+                  label="Hamburguesas caseras"
+                />
                 <StatCard
                   icon={<Star fontSize="small" />}
                   value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
@@ -614,9 +610,9 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               </div>
             </div>
             <StatCard
-              icon={<House fontSize="small" />}
-              value={`${stats.homemadeBurgers}`}
-              label="Hamburguesas caseras"
+              icon={<Euro fontSize="small" />}
+              value={`${stats.totalSpent.toFixed(2)}\u20AC`}
+              label="Total gastado"
             />
           </section>
 
@@ -757,7 +753,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         onOpenEntry={handleOpenPost}
         onOpenProfile={(userId) => setProfileModalUserId(userId)}
         onOpenInvites={() => setIsInvitesOpen(true)}
-        onCountChange={setNotificationsCount}
         onLatestChange={setNotificationsLatest}
       />
 
