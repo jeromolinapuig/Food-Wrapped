@@ -284,7 +284,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                   <>
                     <StatCard
                       icon={<Euro fontSize="small" />}
-                      value={`${stats.totalSpent.toFixed(2)}€`}
+                      value={`${stats.totalSpent.toFixed(2)}\u20AC`}
                       label="Total gastado"
                     />
                     <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />

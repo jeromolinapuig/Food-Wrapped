@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Cropper, { type Area } from 'react-easy-crop';
+import { BookmarksOutlined } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { TopMenu } from '../TopMenu/TopMenu';
@@ -23,11 +25,11 @@ type ProfilePageProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
   onOpenUserDashboard: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
 export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
+  const navigate = useNavigate();
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -382,6 +384,16 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
 
         <main className="bw-main">
           <section className="bw-card bw-profile-card">
+            <button
+              type="button"
+              className="bw-icon-button bw-profile-saved-button"
+              onClick={() => {
+                navigate('/saved');
+              }}
+              aria-label="Ver posts guardados"
+            >
+              <BookmarksOutlined fontSize="small" />
+            </button>
             <div className="bw-profile-header">
               <div className="bw-avatar bw-avatar-lg">
                 {currentAvatar ? (

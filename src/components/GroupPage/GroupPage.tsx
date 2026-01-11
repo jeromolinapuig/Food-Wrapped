@@ -53,6 +53,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [groupMissing, setGroupMissing] = useState(false);
   const [postsCount, setPostsCount] = useState(0);
   const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
   const [activeTab, setActiveTab] = useState<'posts' | 'ranking'>('posts');
@@ -69,13 +70,16 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       .single();
 
     if (groupError || !groupRow) {
-      setError('No se pudo cargar el grupo.');
+      const notFound = groupError?.code === 'PGRST116' || groupError?.status === 406;
+      setGroupMissing(notFound);
+      setError(notFound ? null : 'No se pudo cargar el grupo.');
       setGroupName(null);
       setMemberIds([]);
       setMembers([]);
       return;
     }
 
+    setGroupMissing(false);
     setGroupName((groupRow as { name: string }).name);
     const ownerId = (groupRow as { owner_id: string }).owner_id;
 
@@ -132,6 +136,13 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     setLoading(true);
     setError(null);
 
+    if (groupMissing) {
+      setEntries([]);
+      setPostsCount(0);
+      setLoading(false);
+      return;
+    }
+
     if (!memberIds.length) {
       setEntries([]);
       setPostsCount(0);
@@ -172,7 +183,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     }
 
     setLoading(false);
-  }, [memberIds]);
+  }, [groupMissing, memberIds]);
 
   useEffect(() => {
     loadEntries();
@@ -298,6 +309,10 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
         </header>
 
         <main className="bw-main">
+          {groupMissing ? (
+            <div className="bw-card bw-private-card">Este grupo ya no existe.</div>
+          ) : (
+            <>
           <section className="bw-stats-grid">
             {loading ? (
               Array.from({ length: 2 }).map((_, idx) => (
@@ -311,7 +326,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
               <>
                 <StatCard
                   icon={<Euro fontSize="small" />}
-                  value={`${stats.totalSpent.toFixed(2)}€`}
+                  value={`${stats.totalSpent.toFixed(2)}\u20AC`}
                   label="Total gastado"
                 />
                 <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
@@ -392,7 +407,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   const label = member.displayName || member.username || 'usuario';
                   const value =
                     rankingMetric === 'spent'
-                      ? `${member.totalSpent.toFixed(2)}€`
+                      ? `${member.totalSpent.toFixed(2)}\u20AC`
                       : `${member.totalCount}`;
                   return (
                     <div className="bw-ranking-item" key={member.id}>
@@ -414,7 +429,10 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
               </div>
             )}
           </section>
-        </main>
+        
+            </>
+          )}
+</main>
       </div>
     </div>
   );

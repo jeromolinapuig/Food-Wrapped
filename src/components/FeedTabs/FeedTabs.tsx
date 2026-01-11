@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
-import { Close, Delete, Edit } from '@mui/icons-material';
+import { Bookmark, BookmarkBorder, Close, Delete, Edit, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
@@ -15,6 +15,7 @@ type FeedTabsProps = {
   onOpenProfile?: (userId: string) => void;
   focusUserId?: string | null;
   userIdsFilter?: string[] | null;
+  entryIdsFilter?: string[] | null;
   ignorePrivacy?: boolean;
   onCountChange?: (count: number) => void;
   hideHeader?: boolean;
@@ -86,6 +87,7 @@ export function FeedTabs({
   onOpenProfile,
   focusUserId,
   userIdsFilter,
+  entryIdsFilter,
   ignorePrivacy = false,
   onCountChange,
   hideHeader = false,
@@ -103,6 +105,9 @@ export function FeedTabs({
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [entryReactions, setEntryReactions] = useState<Record<string, { likeCount: number; liked: boolean; saved: boolean }>>({});
+  const [pendingLikes, setPendingLikes] = useState<Record<string, boolean>>({});
+  const [pendingSaves, setPendingSaves] = useState<Record<string, boolean>>({});
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const entriesRef = useRef<FeedEntry[]>([]);
   const cursorRef = useRef<{ datetime: string; id: string } | null>(null);
@@ -110,22 +115,30 @@ export function FeedTabs({
   const pageSize = 10;
   const [cursor, setCursor] = useState<{ datetime: string; id: string } | null>(null);
   const isUserFeed = Boolean(focusUserId);
-  const isCustomList = Boolean(userIdsFilter?.length);
+  const hasEntryFilter = entryIdsFilter !== undefined && entryIdsFilter !== null;
+  const isCustomList = Boolean(userIdsFilter?.length) || hasEntryFilter;
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const [internalMonthFilter, setInternalMonthFilter] = useState<'all' | string>('all');
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
+  const entryIdsKey = useMemo(() => {
+    if (!hasEntryFilter) return '';
+    if (!entryIdsFilter?.length) return 'empty';
+    return [...entryIdsFilter].sort().join('|');
+  }, [entryIdsFilter, hasEntryFilter]);
   const userIdsKey = useMemo(() => {
     if (!userIdsFilter?.length) return '';
     return [...userIdsFilter].sort().join('|');
   }, [userIdsFilter]);
   const monthCacheKey = focusUserId
     ? `bw-feed-months-${focusUserId}`
-    : isCustomList
-      ? `bw-feed-months-group-${userIdsKey}`
-      : null;
-  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}`;
+    : entryIdsKey
+      ? `bw-feed-months-entries-${entryIdsKey}`
+      : isCustomList
+        ? `bw-feed-months-group-${userIdsKey}`
+        : null;
+  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}`;
 
   useEffect(() => {
     entriesRef.current = entries;
@@ -180,8 +193,23 @@ export function FeedTabs({
     setError(null);
 
     let userIdsForQuery: string[] | null = null;
+    let entryIdsForQuery: string[] | null = null;
 
-    if (isCustomList && userIdsFilter?.length) {
+    if (hasEntryFilter) {
+      if (!entryIdsFilter?.length) {
+        if (!append) {
+          setEntries([]);
+          setCursor(null);
+          setHasMore(false);
+        }
+        onCountChange?.(0);
+        if (!append) setLoading(false);
+        if (append) setLoadingMore(false);
+        setPrivacyBlocked(false);
+        return;
+      }
+      entryIdsForQuery = entryIdsFilter;
+    } else if (isCustomList && userIdsFilter?.length) {
       userIdsForQuery = userIdsFilter;
     } else if (isCustomList) {
       if (!append) {
@@ -259,7 +287,9 @@ export function FeedTabs({
       query = query.or(`datetime.lt.${appendCursor.datetime},and(datetime.eq.${appendCursor.datetime},id.lt.${appendCursor.id})`);
     }
 
-    if (isCustomList && userIdsForQuery) {
+    if (entryIdsForQuery) {
+      query = query.eq('visibility', 'public').in('id', entryIdsForQuery);
+    } else if (isCustomList && userIdsForQuery) {
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
     } else if (focusUserId) {
       query = query.eq('visibility', 'public').eq('user_id', focusUserId);
@@ -457,7 +487,9 @@ export function FeedTabs({
     currentUserId,
     effectiveMonthFilter,
     entriesCacheKey,
+    entryIdsFilter,
     focusUserId,
+    hasEntryFilter,
     ignorePrivacy,
     isCustomList,
     onCountChange,
@@ -468,6 +500,10 @@ export function FeedTabs({
   useEffect(() => {
     if (hideHeader) return;
     if (!focusUserId && !isCustomList) return;
+    if (hasEntryFilter && !entryIdsFilter?.length) {
+      setMonthOptions([{ value: 'all', label: 'Todo' }]);
+      return;
+    }
     let cancelled = false;
     let usedCache = false;
 
@@ -502,7 +538,9 @@ export function FeedTabs({
         .order('datetime', { ascending: false })
         .limit(500);
 
-      if (focusUserId) {
+      if (entryIdsFilter?.length) {
+        query = query.in('id', entryIdsFilter);
+      } else if (focusUserId) {
         query = query.eq('user_id', focusUserId);
       } else if (isCustomList && userIdsFilter?.length) {
         query = query.in('user_id', userIdsFilter);
@@ -548,7 +586,7 @@ export function FeedTabs({
     return () => {
       cancelled = true;
     };
-  }, [focusUserId, hideHeader, isCustomList, monthCacheKey, userIdsFilter]);
+  }, [entryIdsFilter, focusUserId, hasEntryFilter, hideHeader, isCustomList, monthCacheKey, userIdsFilter]);
 
   useEffect(() => {
     if (headerOnly) return;
@@ -674,9 +712,122 @@ export function FeedTabs({
     return lockBodyScroll();
   }, [photoPreviewUrl]);
 
+  const loadEntryReactions = useCallback(async (entryIds: string[]) => {
+    if (!entryIds.length) {
+      setEntryReactions({});
+      return;
+    }
+
+    const [likesResponse, savedResponse] = await Promise.all([
+      supabase
+        .from('entry_likes')
+        .select('entry_id, user_id')
+        .in('entry_id', entryIds),
+      supabase
+        .from('entry_bookmarks')
+        .select('entry_id')
+        .eq('user_id', currentUserId)
+        .in('entry_id', entryIds),
+    ]);
+
+    if (likesResponse.error || savedResponse.error) {
+      console.error('Error loading reactions', likesResponse.error ?? savedResponse.error);
+      return;
+    }
+
+    const likeCounts: Record<string, number> = {};
+    const likedByMe = new Set<string>();
+    (likesResponse.data ?? []).forEach((row) => {
+      const typed = row as { entry_id: string; user_id: string };
+      likeCounts[typed.entry_id] = (likeCounts[typed.entry_id] ?? 0) + 1;
+      if (typed.user_id === currentUserId) {
+        likedByMe.add(typed.entry_id);
+      }
+    });
+
+    const savedIds = new Set(
+      (savedResponse.data ?? []).map((row) => (row as { entry_id: string }).entry_id)
+    );
+
+    const next: Record<string, { likeCount: number; liked: boolean; saved: boolean }> = {};
+    entryIds.forEach((id) => {
+      next[id] = {
+        likeCount: likeCounts[id] ?? 0,
+        liked: likedByMe.has(id),
+        saved: savedIds.has(id),
+      };
+    });
+    setEntryReactions(next);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (headerOnly) return;
+    const entryIds = entries.map((entry) => entry.id);
+    loadEntryReactions(entryIds);
+  }, [entries, headerOnly, loadEntryReactions]);
+
+  const handleToggleLike = async (entryId: string) => {
+    if (pendingLikes[entryId]) return;
+    const current = entryReactions[entryId] ?? { likeCount: 0, liked: false, saved: false };
+    const nextLiked = !current.liked;
+    const nextCount = Math.max(0, current.likeCount + (nextLiked ? 1 : -1));
+
+    setEntryReactions((prev) => ({
+      ...prev,
+      [entryId]: { ...current, liked: nextLiked, likeCount: nextCount },
+    }));
+    setPendingLikes((prev) => ({ ...prev, [entryId]: true }));
+
+    const { error } = nextLiked
+      ? await supabase.from('entry_likes').insert({ entry_id: entryId, user_id: currentUserId })
+      : await supabase.from('entry_likes').delete().match({ entry_id: entryId, user_id: currentUserId });
+
+    if (error) {
+      console.error('Error toggling like', error);
+      setEntryReactions((prev) => ({ ...prev, [entryId]: current }));
+    }
+
+    setPendingLikes((prev) => {
+      const copy = { ...prev };
+      delete copy[entryId];
+      return copy;
+    });
+  };
+
+  const handleToggleSave = async (entryId: string) => {
+    if (pendingSaves[entryId]) return;
+    const current = entryReactions[entryId] ?? { likeCount: 0, liked: false, saved: false };
+    const nextSaved = !current.saved;
+
+    setEntryReactions((prev) => ({
+      ...prev,
+      [entryId]: { ...current, saved: nextSaved },
+    }));
+    setPendingSaves((prev) => ({ ...prev, [entryId]: true }));
+
+    const { error } = nextSaved
+      ? await supabase.from('entry_bookmarks').insert({ entry_id: entryId, user_id: currentUserId })
+      : await supabase.from('entry_bookmarks').delete().match({ entry_id: entryId, user_id: currentUserId });
+
+    if (error) {
+      console.error('Error toggling bookmark', error);
+      setEntryReactions((prev) => ({ ...prev, [entryId]: current }));
+    } else {
+      window.dispatchEvent(new CustomEvent('bw-bookmarks-updated'));
+    }
+
+    setPendingSaves((prev) => {
+      const copy = { ...prev };
+      delete copy[entryId];
+      return copy;
+    });
+  };
+
   const renderPlaceholderText = () => {
     if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas publicas en este mes.';
     if (isUserFeed) return 'Este usuario no tiene comidas publicas todavia.';
+    if (hasEntryFilter && effectiveMonthFilter !== 'all') return 'No tienes posts guardados en este mes.';
+    if (hasEntryFilter) return 'No tienes posts guardados.';
     if (isCustomList && effectiveMonthFilter !== 'all') return 'Este grupo no tiene comidas publicas en este mes.';
     if (isCustomList) return 'Este grupo no tiene comidas publicas todavia.';
     if (privacyBlocked) return 'Este perfil es privado.';
@@ -764,6 +915,9 @@ export function FeedTabs({
             const restaurantLabel = isHomemade
               ? 'Casera'
               : entry.restaurantName ?? 'Restaurante';
+            const reactions = entryReactions[entry.id] ?? { likeCount: 0, liked: false, saved: false };
+            const isLikePending = Boolean(pendingLikes[entry.id]);
+            const isSavePending = Boolean(pendingSaves[entry.id]);
 
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
@@ -833,14 +987,39 @@ export function FeedTabs({
                   )}
 
                   <div className="bw-feed-footer">
-                    <div className="bw-feed-rating">
-                      <span className="bw-feed-stars">{stars}</span>
-                      <span className="bw-feed-rating-number">
-                        {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
-                      </span>
+                    <div className="bw-feed-footer-left">
+                      <div className="bw-feed-rating">
+                        <span className="bw-feed-stars">{stars}</span>
+                        <span className="bw-feed-rating-number">
+                          {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
+                        </span>
+                      </div>
+                      <div className="bw-feed-actions">
+                        <button
+                          type="button"
+                          className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
+                          onClick={() => handleToggleLike(entry.id)}
+                          disabled={isLikePending}
+                          aria-pressed={reactions.liked}
+                          title={reactions.liked ? 'Quitar like' : 'Dar like'}
+                        >
+                          {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                          <span className="bw-feed-action-count">{reactions.likeCount}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
+                          onClick={() => handleToggleSave(entry.id)}
+                          disabled={isSavePending}
+                          aria-pressed={reactions.saved}
+                          title={reactions.saved ? 'Quitar guardado' : 'Guardar post'}
+                        >
+                          {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="bw-feed-footer-right">
-                      <div className="bw-feed-price">€ {entry.price.toFixed(2)}</div>
+                      <div className="bw-feed-price">{'\u20AC'} {entry.price.toFixed(2)}</div>
                       {canEdit && (
                         <div className="bw-history-actions">
                           <button

@@ -1,10 +1,14 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LunchDining, Notifications, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
+import { GroupInvitesModal, type GroupInvite } from '../GroupInvitesModal/GroupInvitesModal';
+import { NotificationsDrawer } from '../NotificationsDrawer/NotificationsDrawer';
 import { StatCard } from '../StatCard/StatCard';
+import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
@@ -60,6 +64,9 @@ type EditEntry = {
 };
 
 export function Dashboard({ session, theme }: DashboardProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastSeenKey = `bw-notify-last-seen-${session.user.id}`;
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +78,21 @@ export function Dashboard({ session, theme }: DashboardProps) {
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<EditEntry | null>(null);
   const lastRealtimeRef = useRef(0);
+  const [savedError, setSavedError] = useState<string | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [notificationsLatest, setNotificationsLatest] = useState<string | null>(null);
+  const [notificationsLastSeen, setNotificationsLastSeen] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(lastSeenKey);
+  });
+  const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
+  const [isInvitesOpen, setIsInvitesOpen] = useState(false);
+  const [invites, setInvites] = useState<GroupInvite[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(false);
+  const [invitesError, setInvitesError] = useState<string | null>(null);
+  const [groupCount, setGroupCount] = useState(0);
+  const maxGroups = 6;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
@@ -128,6 +150,146 @@ export function Dashboard({ session, theme }: DashboardProps) {
 
     setLoading(false);
   }, [cacheKey, session.user.id]);
+
+  const loadSavedEntries = useCallback(async () => {
+    const { error: savedError } = await supabase
+      .from('entry_bookmarks')
+      .select('entry_id')
+      .eq('user_id', session.user.id)
+      .limit(1);
+
+    if (savedError) {
+      setSavedError(savedError.message);
+      return;
+    }
+    setSavedError(null);
+  }, [session.user.id]);
+
+  const loadInvites = useCallback(async () => {
+    setInvitesLoading(true);
+    setInvitesError(null);
+
+    const { data: inviteRows, error: inviteError } = await supabase
+      .from('group_invitations')
+      .select('id, group_id, inviter_id')
+      .eq('invitee_id', session.user.id);
+
+    if (inviteError) {
+      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvites([]);
+      setInvitesLoading(false);
+      return;
+    }
+
+    const baseInvites = (inviteRows ?? []) as { id: string; group_id: string; inviter_id: string }[];
+
+    if (!baseInvites.length) {
+      setInvites([]);
+      setInvitesLoading(false);
+      return;
+    }
+
+    const groupIds = Array.from(new Set(baseInvites.map((row) => row.group_id)));
+    const inviterIds = Array.from(new Set(baseInvites.map((row) => row.inviter_id)));
+
+    const [{ data: groupsData, error: groupsError }, { data: profilesData, error: profilesError }] = await Promise.all([
+      supabase.from('groups').select('id, name').in('id', groupIds),
+      supabase.from('profiles').select('id, username, display_name').in('id', inviterIds),
+    ]);
+
+    if (groupsError || profilesError) {
+      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvitesLoading(false);
+      return;
+    }
+
+    const groupMap = new Map<string, string>();
+    (groupsData ?? []).forEach((group) => {
+      groupMap.set((group as { id: string }).id, (group as { name: string }).name);
+    });
+
+    const inviterMap = new Map<string, { username: string | null; displayName: string | null }>();
+    (profilesData ?? []).forEach((profile) => {
+      inviterMap.set((profile as { id: string }).id, {
+        username: (profile as { username: string | null }).username,
+        displayName: (profile as { display_name: string | null }).display_name,
+      });
+    });
+
+    const mapped = baseInvites.map((row) => {
+      const inviter = inviterMap.get(row.inviter_id);
+      return {
+        id: row.id,
+        groupId: row.group_id,
+        groupName: groupMap.get(row.group_id) ?? null,
+        inviterId: row.inviter_id,
+        inviterUsername: inviter?.username ?? null,
+        inviterDisplayName: inviter?.displayName ?? null,
+      };
+    });
+
+    setInvites(mapped);
+    setInvitesLoading(false);
+  }, [session.user.id]);
+
+  const loadGroupCount = useCallback(async () => {
+    const [{ data: ownedGroups }, { data: memberRows }] = await Promise.all([
+      supabase.from('groups').select('id').eq('owner_id', session.user.id),
+      supabase.from('group_members').select('group_id').eq('user_id', session.user.id),
+    ]);
+    const ownedIds = (ownedGroups ?? []).map((row) => (row as { id: string }).id);
+    const memberIds = (memberRows ?? []).map((row) => (row as { group_id: string }).group_id);
+    const unique = new Set([...ownedIds, ...memberIds]);
+    setGroupCount(unique.size);
+  }, [session.user.id]);
+
+  const loadNotificationsMeta = useCallback(async () => {
+    const { data: entryRows, error: entryError } = await supabase
+      .from('entries')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .order('datetime', { ascending: false })
+      .limit(200);
+
+    if (entryError) {
+      console.error('Error loading notification entries', entryError);
+      return;
+    }
+
+    const entryIds = (entryRows ?? []).map((row) => (row as { id: string }).id);
+
+    const [likesResponse, followsResponse, invitesResponse] = await Promise.all([
+      entryIds.length
+        ? supabase
+            .from('entry_likes')
+            .select('created_at')
+            .in('entry_id', entryIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+        : Promise.resolve({ data: [], error: null }),
+      supabase
+        .from('follows')
+        .select('created_at')
+        .eq('following_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1),
+      supabase
+        .from('group_invitations')
+        .select('created_at')
+        .eq('invitee_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1),
+    ]);
+
+    const timestamps = [
+      (likesResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
+      (followsResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
+      (invitesResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
+    ].filter(Boolean) as string[];
+
+    const latest = timestamps.length ? timestamps.sort().at(-1) ?? null : null;
+    setNotificationsLatest(latest ?? null);
+  }, [session.user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,15 +349,48 @@ export function Dashboard({ session, theme }: DashboardProps) {
   useRevalidateOnFocus(
     () => {
       loadEntries({ showLoading: false });
+      loadInvites();
+      loadGroupCount();
+      loadNotificationsMeta();
     },
-    [loadEntries],
+    [loadEntries, loadGroupCount, loadInvites, loadNotificationsMeta],
     { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
   );
+
+  useEffect(() => {
+    loadSavedEntries();
+  }, [loadSavedEntries]);
+
+  useEffect(() => {
+    const handleInvitesUpdated = () => {
+      loadInvites();
+      loadGroupCount();
+    };
+    window.addEventListener('bw-invites-updated', handleInvitesUpdated);
+    return () => window.removeEventListener('bw-invites-updated', handleInvitesUpdated);
+  }, [loadGroupCount, loadInvites]);
 
   useEffect(() => {
     if (!showInstallBanner && !deleteEntry) return;
     return lockBodyScroll();
   }, [deleteEntry, showInstallBanner]);
+
+  useEffect(() => {
+    if (!isInvitesOpen) return;
+    loadInvites();
+    loadGroupCount();
+  }, [isInvitesOpen, loadGroupCount, loadInvites]);
+
+  useEffect(() => {
+    loadNotificationsMeta();
+  }, [loadNotificationsMeta]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const nextSeen = notificationsLatest ?? new Date().toISOString();
+    setNotificationsLastSeen(nextSeen);
+    window.localStorage.setItem(lastSeenKey, nextSeen);
+  }, [lastSeenKey, notificationsLatest, notificationsOpen]);
 
 
   const handleInstallClick = async () => {
@@ -280,6 +475,15 @@ export function Dashboard({ session, theme }: DashboardProps) {
     };
   }, [entries]);
 
+  const activeHistoryError = error ?? savedError;
+  const hasUnreadNotifications = Boolean(
+    notificationsLatest && (!notificationsLastSeen || notificationsLatest > notificationsLastSeen)
+  );
+
+  const handleOpenPost = (entryId: string) => {
+    navigate(`/posts/${entryId}`, { state: { returnTo: location.pathname } });
+  };
+
   const handleEntrySaved = async () => {
     await loadEntries();
     setRefreshFeedKey((prev) => prev + 1);
@@ -324,6 +528,17 @@ export function Dashboard({ session, theme }: DashboardProps) {
               Tu año 2026 en hamburguesas - {username ?? session.user.email}
             </p>
           </div>
+          <div className="bw-header-actions">
+            <button
+              type="button"
+              className="bw-icon-button bw-notify-button"
+              onClick={() => setNotificationsOpen(true)}
+              aria-label="Abrir notificaciones"
+            >
+              <Notifications />
+              {hasUnreadNotifications && <span className="bw-notify-dot" />}
+            </button>
+          </div>
 
         </header>
 
@@ -362,7 +577,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
               <>
                 <StatCard
                   icon={<Euro fontSize="small" />}
-                  value={`${stats.totalSpent.toFixed(2)}€`}
+                  value={`${stats.totalSpent.toFixed(2)}\u20AC`}
                   label="Total gastado"
                 />
                 <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
@@ -422,7 +637,7 @@ export function Dashboard({ session, theme }: DashboardProps) {
                 />
               </div>
             </div>
-            {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
+            {activeHistoryError && <p style={{ color: 'red', fontSize: 12 }}>{activeHistoryError}</p>}
             <FeedTabs
               currentUserId={session.user.id}
               focusUserId={session.user.id}
@@ -531,6 +746,36 @@ export function Dashboard({ session, theme }: DashboardProps) {
         </div>
       )}
 
+      <NotificationsDrawer
+        open={notificationsOpen}
+        currentUserId={session.user.id}
+        onClose={() => setNotificationsOpen(false)}
+        onOpenEntry={handleOpenPost}
+        onOpenProfile={(userId) => setProfileModalUserId(userId)}
+        onOpenInvites={() => setIsInvitesOpen(true)}
+        onCountChange={setNotificationsCount}
+        onLatestChange={setNotificationsLatest}
+      />
+
+      <UserProfileModal
+        open={Boolean(profileModalUserId)}
+        userId={profileModalUserId}
+        session={session}
+        onClose={() => setProfileModalUserId(null)}
+      />
+
+      {isInvitesOpen && (
+        <GroupInvitesModal
+          currentUserId={session.user.id}
+          currentGroupCount={groupCount}
+          maxGroups={maxGroups}
+          invites={invites}
+          loading={invitesLoading}
+          error={invitesError}
+          onClose={() => setIsInvitesOpen(false)}
+          onChanged={() => { loadInvites(); loadGroupCount(); }}
+        />
+      )}
 
 
     </div>

@@ -9,6 +9,8 @@ import { GroupsPage } from './components/GroupsPage/GroupsPage';
 import { GroupPage } from './components/GroupPage/GroupPage';
 import { ProfilePage } from './components/ProfilePage/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
+import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
+import { PostPage } from './components/PostPage/PostPage';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -17,6 +19,7 @@ type FeedReturnPage = 'dashboard' | 'feed' | 'profile';
 type FocusUser = { id: string; username: string | null; displayName: string | null };
 type FeedLocationState = { openProfileUserId?: string | null };
 type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: string | null };
+type PostLocationState = { returnTo?: string };
 
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -161,6 +164,36 @@ function App() {
     );
   };
 
+  const PostRoute = () => {
+    const { entryId } = useParams();
+    const routeLocation = useLocation();
+    const routeNavigate = useNavigate();
+    const routeState = routeLocation.state as PostLocationState | null;
+    const returnTo = routeState?.returnTo ?? '/';
+
+    if (!entryId) {
+      return <Navigate to="/" replace />;
+    }
+
+    return (
+      <PostPage
+        session={session}
+        entryId={entryId}
+        onBack={() => routeNavigate(returnTo)}
+      />
+    );
+  };
+
+  const SavedPostsRoute = () => {
+    const routeNavigate = useNavigate();
+    return (
+      <SavedPostsPage
+        session={session}
+        onBack={() => routeNavigate('/profile')}
+      />
+    );
+  };
+
   return (
     <>
       <Routes>
@@ -199,7 +232,6 @@ function App() {
               session={session}
               theme={theme}
               onToggleTheme={toggleTheme}
-              onNavigate={handleNavigate}
               onOpenUserDashboard={(user) =>
                 handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
               }
@@ -228,6 +260,8 @@ function App() {
           }
         />
         <Route path="/users/:userId" element={<UserDashboardRoute />} />
+        <Route path="/posts/:entryId" element={<PostRoute />} />
+        <Route path="/saved" element={<SavedPostsRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav session={session} />

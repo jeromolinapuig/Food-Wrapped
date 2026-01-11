@@ -93,7 +93,7 @@ export function EntryCard({
       </div>
 
       <div className="bw-history-footer">
-        <div className="bw-history-price">€ {price != null ? price.toFixed(2) : '-'}</div>
+        <div className="bw-history-price">{'\u20AC'} {price != null ? price.toFixed(2) : '-'}</div>
         <div className="bw-history-actions">
           <button
             className="bw-icon-button"

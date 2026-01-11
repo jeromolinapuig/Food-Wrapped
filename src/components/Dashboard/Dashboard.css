@@ -43,6 +43,28 @@
 .bw-section-right {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.bw-header-actions {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.bw-notify-button {
+  position: relative;
+}
+
+.bw-notify-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #e74c3c;
+  border: 2px solid var(--bw-card-bg);
 }
 
 .bw-burger-types-row {
@@ -75,6 +97,7 @@
 .bw-history {
   margin-bottom: 16px;
 }
+
 
 .bw-fab-wrapper {
   position: sticky;
