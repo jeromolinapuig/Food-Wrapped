@@ -156,7 +156,7 @@
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(171, 171, 171, 0.2);
   border-radius: 999px;
   transition: background 0.2s ease;
 }
