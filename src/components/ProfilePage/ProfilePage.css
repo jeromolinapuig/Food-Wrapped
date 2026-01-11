@@ -179,7 +179,7 @@
   transform: translateX(20px);
 }
 
-@media (max-width: 360px) {
+@media (max-width: 390px) {
   .bw-privacy-toggle {
     flex-direction: column;
     align-items: flex-start;
