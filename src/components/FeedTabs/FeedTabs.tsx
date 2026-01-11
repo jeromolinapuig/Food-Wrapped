@@ -501,7 +501,7 @@ export function FeedTabs({
     if (hideHeader) return;
     if (!focusUserId && !isCustomList) return;
     if (hasEntryFilter && !entryIdsFilter?.length) {
-      setMonthOptions([{ value: 'all', label: 'Todo' }]);
+      startTransition(() => setMonthOptions([{ value: 'all', label: 'Todo' }]));
       return;
     }
     let cancelled = false;
@@ -763,7 +763,9 @@ export function FeedTabs({
   useEffect(() => {
     if (headerOnly) return;
     const entryIds = entries.map((entry) => entry.id);
-    loadEntryReactions(entryIds);
+    startTransition(() => {
+      void loadEntryReactions(entryIds);
+    });
   }, [entries, headerOnly, loadEntryReactions]);
 
   const handleToggleLike = async (entryId: string) => {

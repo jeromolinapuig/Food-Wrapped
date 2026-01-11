@@ -69,7 +69,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       .single();
 
     if (groupError || !groupRow) {
-      const notFound = groupError?.code === 'PGRST116' || (groupError as any)?.status === 406;
+      const notFound = groupError?.code === 'PGRST116' || ((groupError as unknown as { status?: number })?.status === 406);
       setGroupMissing(notFound);
       setError(notFound ? null : 'No se pudo cargar el grupo.');
       setGroupName(null);

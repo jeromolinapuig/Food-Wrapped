@@ -71,7 +71,9 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   }, [userId]);
 
   useEffect(() => {
-    loadProfile();
+    startTransition(() => {
+      void loadProfile();
+    });
   }, [loadProfile]);
 
   useEffect(() => {
@@ -160,7 +162,9 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   }, [privacyBlocked, userId]);
 
   useEffect(() => {
-    loadEntries();
+    startTransition(() => {
+      void loadEntries();
+    });
   }, [loadEntries]);
 
   useRevalidateOnFocus(

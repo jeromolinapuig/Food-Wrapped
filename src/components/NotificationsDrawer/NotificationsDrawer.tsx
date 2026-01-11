@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { Favorite, GroupAdd, Notifications, PersonAdd } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
@@ -211,7 +211,9 @@ export function NotificationsDrawer({
 
   useEffect(() => {
     if (!open) return;
-    loadNotifications();
+    startTransition(() => {
+      void loadNotifications();
+    });
   }, [loadNotifications, open]);
 
   useEffect(() => {

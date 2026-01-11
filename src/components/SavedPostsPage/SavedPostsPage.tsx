@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -42,7 +42,9 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
   }, [session.user.id]);
 
   useEffect(() => {
-    loadSavedEntries();
+    startTransition(() => {
+      void loadSavedEntries();
+    });
   }, [loadSavedEntries]);
 
   useEffect(() => {
