@@ -5,6 +5,11 @@ import { supabase } from '../../lib/supabaseClient';
 import { CheckCircleOutline, GroupAdd, Search, SyncAlt, Clear } from '@mui/icons-material';
 import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { AppShell } from '../common/AppShell';
+import { BackButton } from '../common/BackButton';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { PageHeader } from '../common/PageHeader';
+import { UserCard } from '../common/UserCard';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './FeedPage.css';
@@ -250,26 +255,17 @@ export function FeedPage({
   const shouldHideFeed = trimmedTerm.length >= 2 && !effectiveFocusedUser;
 
   return (
-    <div className="bw-app-root">
-      <div className="bw-shell">
-        <header className="bw-header">
-          <div className="bw-header-icon">
-            <img src="/logo.png" alt="Burger Wrapped" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Feed</h1>
-            <p className="bw-subtitle">Descubre burgers y conecta con más gente.</p>
-          </div>
-
-        </header>
+    <AppShell>
+        <PageHeader
+          title="Feed"
+          subtitle="Descubre burgers y conecta con más gente."
+        />
 
         <main className="bw-main">
           {effectiveFocusedUser ? (
             <div className="bw-feed-focus">
               <div className="bw-feed-focus-left">
-                <button
-                  type="button"
-                  className="bw-back-button"
+                <BackButton
                   onClick={() => {
                     setFocusedFeedUser(null);
                     onFocusedUserChange?.(null);
@@ -278,12 +274,8 @@ export function FeedPage({
                       return;
                     }
                   }}
-                  aria-label="Volver al feed general"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-                  </svg>
-                </button>
+                  ariaLabel="Volver al feed general"
+                />
                 <div className="bw-feed-focus-text">
                   <div className="bw-feed-focus-name">Posts de @{effectiveFocusedUser.username ?? 'usuario'}</div>
                 </div>
@@ -354,60 +346,47 @@ export function FeedPage({
                 const isOutgoing = Boolean(outgoingId);
                 const isIncoming = Boolean(incomingId);
                 return (
-                  <div className="bw-user-card" key={user.id}>
-                    <button
-                      type="button"
-                      className="bw-user-info bw-user-info-btn"
-                      onClick={() => setProfileModalUserId(user.id)}
-                    >
-                      <div className="bw-avatar bw-avatar-sm">
-                        {user.avatar_url ? (
-                          <img src={user.avatar_url} alt={user.username ?? ''} className="bw-avatar-image" />
-                        ) : (
-                          <div className="bw-avatar-placeholder">
-                            {(user.username ?? '?').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <div className="bw-user-name">@{user.username ?? 'usuario'}</div>
-                        {isMutual ? (
-                          <div className="bw-user-meta">Os seguís mutuamente</div>
-                        ) : isIncoming ? (
-                          <div className="bw-user-meta">Te sigue</div>
-                        ) : null}
-                        {user.bio && <div className="bw-user-bio">{user.bio}</div>}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
-                      onClick={() => {
-                        if (isMutual || isOutgoing) {
-                          setConfirmAction({ user, action: 'cancel' });
-                        } else {
-                          handleFollow(user);
+                  <UserCard
+                    key={user.id}
+                    handle={user.username ?? 'usuario'}
+                    avatarUrl={user.avatar_url}
+                    avatarAlt={user.username ?? ''}
+                    avatarInitial={(user.username ?? '?').charAt(0).toUpperCase()}
+                    meta={isMutual ? 'Os segu?s mutuamente' : isIncoming ? 'Te sigue' : null}
+                    bio={user.bio}
+                    infoButton
+                    onInfoClick={() => setProfileModalUserId(user.id)}
+                    action={(
+                      <button
+                        type="button"
+                        className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
+                        onClick={() => {
+                          if (isMutual || isOutgoing) {
+                            setConfirmAction({ user, action: 'cancel' });
+                          } else {
+                            handleFollow(user);
+                          }
+                        }}
+                        title={
+                          isMutual
+                            ? 'Ya se siguen mutuamente'
+                            : isOutgoing
+                              ? 'Dejar de seguir'
+                              : isIncoming
+                                ? 'Seguir de vuelta'
+                                : 'Seguir'
                         }
-                      }}
-                      title={
-                        isMutual
-                          ? 'Ya se siguen mutuamente'
-                          : isOutgoing
-                            ? 'Dejar de seguir'
-                            : isIncoming
-                              ? 'Seguir de vuelta'
-                              : 'Seguir'
-                      }
-                    >
-                      {isMutual ? (
-                        <SyncAlt fontSize="small" />
-                      ) : isOutgoing ? (
-                        <CheckCircleOutline fontSize="small" />
-                      ) : (
-                        <GroupAdd fontSize="small" />
-                      )}
-                    </button>
-                  </div>
+                      >
+                        {isMutual ? (
+                          <SyncAlt fontSize="small" />
+                        ) : isOutgoing ? (
+                          <CheckCircleOutline fontSize="small" />
+                        ) : (
+                          <GroupAdd fontSize="small" />
+                        )}
+                      </button>
+                    )}
+                  />
                 );
               })}
             </div>
@@ -425,7 +404,6 @@ export function FeedPage({
             />
           </div>
         </main>
-      </div>
       <UserProfileModal
         open={Boolean(openProfileUserId ?? profileModalUserId)}
         userId={openProfileUserId ?? profileModalUserId}
@@ -452,25 +430,26 @@ export function FeedPage({
         }}
         onViewPosts={(user) => handleViewPosts(user)}
       />
-      {confirmAction && (
-        <div className="bw-modal-backdrop" onClick={handleCancelModal}>
-          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="bw-confirm-title">
-              {confirmAction.action === 'request'
-                ? `¿Estás seguro que quieres seguir a @${confirmAction.user.username ?? 'usuario'}?`
-                : `¿Estás seguro que quieres dejar de seguir a @${confirmAction.user.username ?? 'usuario'}?`}
-            </h3>
-            <div className="bw-confirm-actions">
-              <button className="bw-btn bw-btn-ghost" onClick={handleCancelModal}>
-                No
-              </button>
-              <button className="bw-btn bw-btn-primary" onClick={handleConfirm}>
-                Sí
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        onClose={handleCancelModal}
+        backdropClassName="bw-modal-backdrop"
+        title={
+          confirmAction?.action === 'request'
+            ? `¿Estás seguro que quieres seguir a @${confirmAction.user.username ?? 'usuario'}?`
+            : `¿Estás seguro que quieres dejar de seguir a @${confirmAction?.user.username ?? 'usuario'}?`
+        }
+        actions={(
+          <>
+            <button className="bw-btn bw-btn-ghost" onClick={handleCancelModal}>
+              No
+            </button>
+            <button className="bw-btn bw-btn-primary" onClick={handleConfirm}>
+              Sí
+            </button>
+          </>
+        )}
+      />
+    </AppShell>
   );
 }

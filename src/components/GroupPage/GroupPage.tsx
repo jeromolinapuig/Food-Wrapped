@@ -3,7 +3,11 @@ import type { Session } from '@supabase/supabase-js';
 import { Euro, LunchDining } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
+import { AppShell } from '../common/AppShell';
+import { BackButton } from '../common/BackButton';
+import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
+import type { GroupMember } from '../../types/groups';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
@@ -29,13 +33,6 @@ type DbEntryRow = {
   burger_id: string | null;
   restaurant: { name: string } | null;
   burger: { name: string | null; meat_type: MeatType | null } | null;
-};
-
-type GroupMember = {
-  id: string;
-  username: string | null;
-  displayName: string | null;
-  avatarUrl: string | null;
 };
 
 type GroupPageProps = {
@@ -310,23 +307,13 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const title = groupName ?? 'Grupo';
 
   return (
-    <div className="bw-app-root">
-      <div className="bw-shell">
-        <header className="bw-header">
-          <button type="button" className="bw-back-button" onClick={onBack} aria-label="Volver">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-            </svg>
-          </button>
-          <div className="bw-header-icon">
-            <img src="/logo.png" alt="Burger Wrapped" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Burger Wrapped</h1>
-            <p className="bw-subtitle">Resumen de {title}</p>
-          </div>
-
-        </header>
+    <AppShell>
+        <PageHeader
+          title="Burger Wrapped"
+          subtitle={`Resumen de ${title}`}
+          logoAlt="Burger Wrapped"
+          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+        />
 
         <main className="bw-main">
           {groupMissing ? (
@@ -430,7 +417,6 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
             </>
           )}
 </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }

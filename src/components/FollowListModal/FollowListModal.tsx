@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ModalBase } from '../common/ModalBase';
+import { UserCard } from '../common/UserCard';
 import '../../styles/shared.css';
 import './FollowListModal.css';
 import '../UserProfileModal/UserProfileModal.css';
@@ -240,8 +243,8 @@ export function FollowListModal({
   };
 
   return (
-    <div className="bw-modal-backdrop" onClick={onClose}>
-      <div className="bw-modal bw-user-profile-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      <ModalBase onClose={onClose} modalClassName="bw-modal bw-user-profile-modal">
         <div className="bw-modal-header" style={{ justifyContent: 'space-between' }}>
           <div className="bw-modal-title" style={{ margin: 0 }}>
             {title} ({items.length})
@@ -312,70 +315,56 @@ export function FollowListModal({
                     ? 'Lo sigues'
                     : '';
               return (
-                <div className="bw-user-card" key={item.id}>
-                  <div className="bw-user-info">
-                    <div className="bw-avatar bw-avatar-sm">
-                      {item.avatarUrl ? (
-                        <img src={item.avatarUrl} alt={item.username ?? ''} className="bw-avatar-image" />
-                      ) : (
-                        <div className="bw-avatar-placeholder">
-                          {(item.username ?? '?').charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="bw-user-name">@{item.username ?? 'usuario'}</div>
-                      {metaText && <div className="bw-user-meta">{metaText}</div>}
-                      {item.bio && <div className="bw-user-bio">{item.bio}</div>}
-                      {onViewPosts && (
-                        <button
-                          type="button"
-                          className="bw-link-button bw-link-inline"
-                          onClick={() => onViewPosts({ id: item.id, username: item.username, displayName: item.displayName })}
-                          style={{ marginTop: 4 }}
-                        >
-                          Ver sus estadísticas
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`bw-user-action ${item.isOutgoing ? 'is-following' : ''} ${item.isIncoming && item.isOutgoing ? 'is-accepted' : ''}`}
-                    onClick={() => handleToggleFollow(item.id)}
-                    disabled={actioningId === item.id}
-                    title={item.isOutgoing ? 'Dejar de seguir' : 'Seguir'}
-                  >
-                    {item.isOutgoing ? <CheckCircleOutline fontSize="small" /> : <GroupAdd fontSize="small" />}
-                  </button>
-                </div>
+                <UserCard
+              key={item.id}
+              handle={item.username ?? 'usuario'}
+              avatarUrl={item.avatarUrl}
+              avatarAlt={item.username ?? ''}
+              avatarInitial={(item.username ?? '?').charAt(0).toUpperCase()}
+              meta={metaText || null}
+              bio={item.bio}
+              infoExtra={onViewPosts ? (
+                <button
+                  type="button"
+                  className="bw-link-button bw-link-inline"
+                  onClick={() => onViewPosts({ id: item.id, username: item.username, displayName: item.displayName })}
+                  style={{ marginTop: 4 }}
+                >
+                  Ver sus estadisticas
+                </button>
+              ) : null}
+              action={(
+                <button
+                  type="button"
+                  className={`bw-user-action ${item.isOutgoing ? 'is-following' : ''} ${item.isIncoming && item.isOutgoing ? 'is-accepted' : ''}`}
+                  onClick={() => handleToggleFollow(item.id)}
+                  disabled={actioningId === item.id}
+                  title={item.isOutgoing ? 'Dejar de seguir' : 'Seguir'}
+                >
+                  {item.isOutgoing ? <CheckCircleOutline fontSize="small" /> : <GroupAdd fontSize="small" />}
+                </button>
+              )}
+            />
               );
             })}
           </div>
         )}
-      </div>
-
-      {confirmUnfollow && (
-        <div
-          className="bw-confirm-backdrop"
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirmUnfollow(null);
-          }}
-        >
-          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="bw-confirm-title">¿Estás seguro que quieres dejar de seguir a @{confirmUnfollow.username ?? 'usuario'}?</h3>
-            <div className="bw-confirm-actions">
-              <button className="bw-btn bw-btn-ghost" onClick={() => setConfirmUnfollow(null)} disabled={actioningId === confirmUnfollow.id}>
-                Cancelar
-              </button>
-              <button className="bw-btn bw-btn-primary" onClick={handleConfirmUnfollow} disabled={actioningId === confirmUnfollow.id}>
-                Dejar de seguir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </ModalBase>
+      <ConfirmDialog
+        open={Boolean(confirmUnfollow)}
+        onClose={() => setConfirmUnfollow(null)}
+        title={confirmUnfollow ? `¿Estás seguro que quieres dejar de seguir a @${confirmUnfollow.username ?? 'usuario'}?` : ''}
+        actions={(
+          <>
+            <button className="bw-btn bw-btn-ghost" onClick={() => setConfirmUnfollow(null)} disabled={actioningId === confirmUnfollow?.id}>
+              Cancelar
+            </button>
+            <button className="bw-btn bw-btn-primary" onClick={handleConfirmUnfollow} disabled={actioningId === confirmUnfollow?.id}>
+              Dejar de seguir
+            </button>
+          </>
+        )}
+      />
+    </>
   );
 }

@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState, startTransition } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
+import { AppShell } from '../common/AppShell';
+import { BackButton } from '../common/BackButton';
+import { PageHeader } from '../common/PageHeader';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 
@@ -54,22 +57,12 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
   }, [loadSavedEntries]);
 
   return (
-    <div className="bw-app-root">
-      <div className="bw-shell">
-        <header className="bw-header">
-          <button type="button" className="bw-back-button" onClick={onBack} aria-label="Volver">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-            </svg>
-          </button>
-          <div className="bw-header-icon">
-            <img src="/logo.png" alt="Burger Wrapped" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Posts guardados</h1>
-            <p className="bw-subtitle">Tus publicaciones guardadas.</p>
-          </div>
-        </header>
+    <AppShell>
+        <PageHeader
+          title="Posts guardados"
+          subtitle="Tus publicaciones guardadas."
+          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+        />
 
         <main className="bw-main">
           {loading && <p className="bw-helper">Cargando guardados...</p>}
@@ -80,7 +73,6 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
             hideHeader
           />
         </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }

@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Close } from '@mui/icons-material';
+import type { GroupInvite } from '../../types/groups';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ModalBase } from '../common/ModalBase';
 import '../../styles/shared.css';
 import '../GroupsPage/GroupsPage.css';
 
-export type GroupInvite = {
-  id: string;
-  groupId: string;
-  groupName: string | null;
-  inviterId: string;
-  inviterUsername: string | null;
-  inviterDisplayName: string | null;
-};
+export type { GroupInvite } from '../../types/groups';
 
 type GroupInvitesModalProps = {
   currentUserId: string;
@@ -95,8 +91,8 @@ export function GroupInvitesModal({
   };
 
   return (
-    <div className="bw-modal-backdrop" onClick={onClose}>
-      <div className="bw-modal bw-group-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      <ModalBase onClose={onClose} modalClassName="bw-modal bw-group-modal">
         <div className="bw-modal-header">
           <div>
             <h2 className="bw-modal-title">
@@ -151,37 +147,36 @@ export function GroupInvitesModal({
             </div>
           )}
         </div>
-      </div>
-
-      {confirmAction && (
-        <div className="bw-confirm-backdrop" onClick={(e) => e.stopPropagation()}>
-          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="bw-confirm-title">
-              {confirmAction.action === 'accept'
-                ? '¿Estas seguro que quieres aceptar la invitacion?'
-                : '¿Estas seguro que quieres rechazar la invitacion?'}
-            </h3>
-            <div className="bw-confirm-actions">
-              <button
-                className="bw-btn bw-btn-ghost"
-                type="button"
-                onClick={() => setConfirmAction(null)}
-                disabled={mutating}
-              >
-                Cancelar
-              </button>
-              <button
-                className="bw-btn bw-btn-primary"
-                type="button"
-                onClick={handleConfirm}
-                disabled={mutating}
-              >
-                {mutating ? 'Procesando...' : 'Confirmar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </ModalBase>
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        onClose={() => setConfirmAction(null)}
+        title={
+          confirmAction?.action === 'accept'
+            ? '¿Estás seguro que quieres aceptar la invitacion?'
+            : '¿Estás seguro que quieres rechazar la invitacion?'
+        }
+        actions={(
+          <>
+            <button
+              className="bw-btn bw-btn-ghost"
+              type="button"
+              onClick={() => setConfirmAction(null)}
+              disabled={mutating}
+            >
+              Cancelar
+            </button>
+            <button
+              className="bw-btn bw-btn-primary"
+              type="button"
+              onClick={handleConfirm}
+              disabled={mutating}
+            >
+              {mutating ? 'Procesando...' : 'Confirmar'}
+            </button>
+          </>
+        )}
+      />
+    </>
   );
 }

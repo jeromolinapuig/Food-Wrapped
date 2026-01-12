@@ -5,6 +5,8 @@ import { BookmarksOutlined } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { TopMenu } from '../TopMenu/TopMenu';
+import { AppShell } from '../common/AppShell';
+import { PageHeader } from '../common/PageHeader';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { cropImageFile } from '../../utils/cropImage';
 import { compressImage } from '../../utils/image';
@@ -368,19 +370,13 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   };
 
   return (
-    <div className="bw-app-root">
-      <div className="bw-shell">
-        <header className="bw-header">
-          <div className="bw-header-icon">
-            <img src="/logo.png" alt="Burger Wrapped" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Mi perfil</h1>
-            <p className="bw-subtitle">Edita tus datos del perfil.</p>
-          </div>
-
-          <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
-        </header>
+    <AppShell>
+        <PageHeader
+          title="Mi perfil"
+          subtitle="Edita tus datos del perfil."
+          logoAlt="Burger Wrapped"
+          actions={<TopMenu theme={theme} onToggleTheme={onToggleTheme} />}
+        />
 
         <main className="bw-main">
           <section className="bw-card bw-profile-card">
@@ -505,7 +501,6 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
             </div>
           </section>
         </main>
-      </div>
 
       {saving && (
         <div className="bw-loader-overlay">
@@ -549,7 +544,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   );
 }
 

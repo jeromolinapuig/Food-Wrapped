@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { ModalBase } from '../common/ModalBase';
 import '../../styles/shared.css';
 import '../ProfilePage/ProfilePage.css';
 import './UserProfileModal.css';
@@ -161,8 +162,7 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
   };
 
   return (
-    <div className="bw-modal-backdrop" onClick={onClose}>
-      <div className="bw-modal bw-user-profile-modal" onClick={(e) => e.stopPropagation()}>
+    <ModalBase onClose={onClose} modalClassName="bw-modal bw-user-profile-modal">
         <div className="bw-modal-header" style={{ justifyContent: 'space-between' }}>
           <div className="bw-modal-title" style={{ margin: 0 }}>Perfil</div>
           <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
@@ -230,7 +230,6 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </ModalBase>
   );
 }

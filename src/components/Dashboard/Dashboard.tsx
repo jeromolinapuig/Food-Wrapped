@@ -5,12 +5,16 @@ import { EmojiEvents, Euro, House, LunchDining, Notifications, Star } from '@mui
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
-import { GroupInvitesModal, type GroupInvite } from '../GroupInvitesModal/GroupInvitesModal';
+import type { GroupInvite } from '../../types/groups';
+import { GroupInvitesModal } from '../GroupInvitesModal/GroupInvitesModal';
 import { NotificationsDrawer } from '../NotificationsDrawer/NotificationsDrawer';
 import { StatCard } from '../StatCard/StatCard';
 import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { AppShell } from '../common/AppShell';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { PageHeader } from '../common/PageHeader';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -510,19 +514,12 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   };
 
   return (
-    <div className="bw-app-root">
-      <div className="bw-shell">
-        <header className="bw-header">
-          <div className="bw-header-icon">
-            <img src="/logo.png" alt="Burger Wrapped" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Burger Wrapped</h1>
-            <p className="bw-subtitle">
-              Tu año 2026 en hamburguesas - {username ?? session.user.email}
-            </p>
-          </div>
-          <div className="bw-header-actions">
+    <AppShell>
+        <PageHeader
+          title="Burger Wrapped"
+          subtitle={`Tu año 2026 en hamburguesas - ${username ?? session.user.email}`}
+          logoAlt="Burger Wrapped"
+          actions={(
             <button
               type="button"
               className="bw-icon-button bw-notify-button"
@@ -532,9 +529,8 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               <Notifications />
               {hasUnreadNotifications && <span className="bw-notify-dot" />}
             </button>
-          </div>
-
-        </header>
+          )}
+        />
 
         {showInstallBanner && (
           <div className="bw-install-modal">
@@ -692,7 +688,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             <span className="bw-fab-label">Añadir</span>
           </button>
         </div>
-      </div>
 
       <AddEntryModal
         open={isAddModalOpen}
@@ -704,47 +699,46 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         entry={editingEntry ?? undefined}
       />
 
-      {deleteEntry && (
-        <div
-          className="bw-confirm-backdrop"
-          onClick={() => {
-            if (mutating) return;
-            setDeleteEntry(null);
-          }}
-        >
-          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="bw-confirm-title">Eliminar entrada</h3>
-            <p className="bw-confirm-text">
-              ¿Seguro que deseas eliminar la entrada del{' '}
-              {new Date(deleteEntry.datetime).toLocaleString('es-ES', {
-                day: 'numeric',
-                month: 'long',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-              {' '}en {deleteEntry.restaurantName ?? 'restaurante desconocido'}?
-            </p>
-            <div className="bw-confirm-actions">
-              <button
-                className="bw-btn bw-btn-ghost"
-                type="button"
-                onClick={() => setDeleteEntry(null)}
-                disabled={mutating}
-              >
-                Cancelar
-              </button>
-              <button
-                className="bw-btn bw-btn-danger"
-                type="button"
-                onClick={handleDeleteEntry}
-                disabled={mutating}
-              >
-                {mutating ? 'Eliminando...' : 'Eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={Boolean(deleteEntry)}
+        onClose={() => {
+          if (mutating) return;
+          setDeleteEntry(null);
+        }}
+        title="Eliminar entrada"
+        message={deleteEntry ? (
+          <>
+            ¿Seguro que deseas eliminar la entrada del{' '}
+            {new Date(deleteEntry.datetime).toLocaleString('es-ES', {
+              day: 'numeric',
+              month: 'long',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+            {' '}en {deleteEntry.restaurantName ?? 'restaurante desconocido'}?
+          </>
+        ) : null}
+        actions={(
+          <>
+            <button
+              className="bw-btn bw-btn-ghost"
+              type="button"
+              onClick={() => setDeleteEntry(null)}
+              disabled={mutating}
+            >
+              Cancelar
+            </button>
+            <button
+              className="bw-btn bw-btn-danger"
+              type="button"
+              onClick={handleDeleteEntry}
+              disabled={mutating}
+            >
+              {mutating ? 'Eliminando...' : 'Eliminar'}
+            </button>
+          </>
+        )}
+      />
 
       <NotificationsDrawer
         open={notificationsOpen}
@@ -777,7 +771,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       )}
 
 
-    </div>
+    </AppShell>
   );
 }
 
