@@ -22,11 +22,11 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   const userId = session?.user.id ?? null;
 
   const activeKey = useMemo(() => {
-    if (location.pathname === '/' || location.pathname.startsWith('/feed')) return 'feed';
+    if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
+    if (location.pathname.startsWith('/feed')) return 'feed';
     if (location.pathname.startsWith('/groups')) return 'groups';
     if (location.pathname.startsWith('/profile')) return 'profile';
-    if (location.pathname.startsWith('/home')) return 'home';
-    return 'feed';
+    return 'home';
   }, [location.pathname]);
 
   const loadProfile = useCallback(async () => {
@@ -99,7 +99,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}
-        onClick={() => navigate('/home')}
+        onClick={() => navigate('/')}
         aria-label="Inicio"
       >
         <span className="bw-bottom-nav-icon"><Home /></span>
@@ -108,7 +108,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'feed' ? 'is-active' : ''}`}
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/feed')}
         aria-label="Feed"
       >
         <span className="bw-bottom-nav-icon"><DynamicFeed /></span>

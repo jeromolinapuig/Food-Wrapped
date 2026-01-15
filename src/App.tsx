@@ -7,6 +7,7 @@ import { Dashboard } from './components/Dashboard/Dashboard';
 import { FeedPage } from './components/FeedPage/FeedPage';
 import { GroupsPage } from './components/GroupsPage/GroupsPage';
 import { GroupPage } from './components/GroupPage/GroupPage';
+import { LandingPage } from './components/LandingPage/LandingPage';
 import { ProfilePage } from './components/ProfilePage/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
@@ -14,12 +15,7 @@ import { PostPage } from './components/PostPage/PostPage';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
-import {
-  DashboardPlaceholder,
-  FeedPlaceholder,
-  GroupsPlaceholder,
-  ProfilePlaceholder,
-} from './components/common/LockedPlaceholders';
+import { FeedPlaceholder, GroupsPlaceholder, ProfilePlaceholder } from './components/common/LockedPlaceholders';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -122,7 +118,7 @@ function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   useEffect(() => {
-    if (location.pathname !== '/feed' && location.pathname !== '/') return;
+    if (location.pathname !== '/feed') return;
     const state = location.state as FeedLocationState | null;
     if (!state?.openProfileUserId) return;
     setFeedOpenProfileUserId(state.openProfileUserId);
@@ -138,7 +134,7 @@ function App() {
   }
 
   const handleNavigate = (page: 'dashboard' | 'feed' | 'profile' | 'groups') => {
-    const path = page === 'dashboard' ? '/home' : page === 'feed' ? '/' : `/${page}`;
+    const path = page === 'dashboard' ? '/' : page === 'feed' ? '/feed' : `/${page}`;
     navigate(path);
   };
 
@@ -223,21 +219,21 @@ function App() {
         <Route
           path="/"
           element={
-            <FeedPage
-              session={session}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-              onNavigate={handleNavigate}
-              focusedUser={feedFocusUser}
-              onFocusedUserChange={(user) => setFeedFocusUser(user)}
-              returnPage="feed"
-              openProfileUserId={feedOpenProfileUserId}
-              onProfileModalConsumed={() => setFeedOpenProfileUserId(null)}
-              onOpenUserDashboard={handleOpenUserDashboard}
-              onRequireLogin={handleLogin}
-              lockedPreview={<FeedPlaceholder />}
-            />
+            session ? (
+              <Dashboard
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onNavigate={handleNavigate}
+              />
+            ) : (
+              <LandingPage onLogin={handleLogin} />
+            )
           }
+        />
+        <Route
+          path="/home"
+          element={<Navigate to="/" replace />}
         />
         <Route
           path="/feed"
@@ -256,26 +252,6 @@ function App() {
               onRequireLogin={handleLogin}
               lockedPreview={<FeedPlaceholder />}
             />
-          }
-        />
-        <Route
-          path="/home"
-          element={
-            session ? (
-              <Dashboard
-                session={session}
-                theme={theme}
-                onToggleTheme={toggleTheme}
-                onNavigate={handleNavigate}
-              />
-            ) : (
-              <LockedPage
-                title="Burger Wrapped"
-                subtitle="Tu año 2026 en hamburguesas."
-                onLogin={handleLogin}
-                preview={<DashboardPlaceholder />}
-              />
-            )
           }
         />
         <Route
