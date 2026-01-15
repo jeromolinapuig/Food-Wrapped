@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://burger-wrapped.molinap.com/</loc>
+    <loc>https://burger-wrapped.es/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://burger-wrapped.molinap.com/home</loc>
+    <loc>https://burger-wrapped.es/home</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://burger-wrapped.molinap.com/profile</loc>
+    <loc>https://burger-wrapped.es/profile</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://burger-wrapped.molinap.com/groups</loc>
+    <loc>https://burger-wrapped.es/groups</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

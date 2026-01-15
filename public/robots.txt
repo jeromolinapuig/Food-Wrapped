@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://burger-wrapped.molinap.com/sitemap.xml
+Sitemap: https://burger-wrapped.es/sitemap.xml
