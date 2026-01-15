@@ -1,10 +1,13 @@
 import { type FormEvent, useState } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Close from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import './AuthScreen.css';
 
 export function AuthScreen() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,6 +82,14 @@ export function AuthScreen() {
       <div className="auth-blob auth-blob-2" />
 
       <div className="auth-card">
+        <button
+          type="button"
+          className="auth-close"
+          aria-label="Cerrar"
+          onClick={() => navigate('/')}
+        >
+          <Close fontSize="small" />
+        </button>
         <div className="auth-brand">
           <div className="auth-logo">
             <img src="/logo.png" alt="Burger Wrapped" />

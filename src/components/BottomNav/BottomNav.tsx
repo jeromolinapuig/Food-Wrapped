@@ -1,4 +1,4 @@
-import { DynamicFeed, Groups, Home } from '@mui/icons-material';
+import { DynamicFeed, Groups, Home, PersonOutline } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,24 +8,29 @@ import './BottomNav.css';
 import '../../styles/shared.css';
 
 type BottomNavProps = {
-  session: Session;
+  session: Session | null;
+  onRequireLogin?: () => void;
 };
 
-export function BottomNav({ session }: Readonly<BottomNavProps>) {
+export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<string>('?');
   const [inviteCount, setInviteCount] = useState(0);
+  const isGuest = !session;
+  const userId = session?.user.id ?? null;
 
   const activeKey = useMemo(() => {
-    if (location.pathname.startsWith('/feed')) return 'feed';
+    if (location.pathname === '/' || location.pathname.startsWith('/feed')) return 'feed';
     if (location.pathname.startsWith('/groups')) return 'groups';
     if (location.pathname.startsWith('/profile')) return 'profile';
-    return 'home';
+    if (location.pathname.startsWith('/home')) return 'home';
+    return 'feed';
   }, [location.pathname]);
 
   const loadProfile = useCallback(async () => {
+    if (!session) return;
     const { data, error } = await supabase
       .from('profiles')
       .select('avatar_url, username, display_name')
@@ -42,7 +47,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
     const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
     setAvatarUrl(profile.avatar_url);
     setInitial(base.charAt(0).toUpperCase());
-  }, [session.user.email, session.user.id]);
+  }, [session]);
 
   useEffect(() => {
     startTransition(() => {
@@ -51,10 +56,11 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
   }, [loadProfile]);
 
   const loadInvites = useCallback(async () => {
+    if (!userId) return;
     const { count, error } = await supabase
       .from('group_invitations')
       .select('id', { count: 'exact', head: true })
-      .eq('invitee_id', session.user.id);
+      .eq('invitee_id', userId);
 
     if (error) {
       setInviteCount(0);
@@ -62,7 +68,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
     }
 
     setInviteCount(count ?? 0);
-  }, [session.user.id]);
+  }, [userId]);
 
   useEffect(() => {
     startTransition(() => {
@@ -86,12 +92,14 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
     { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
   );
 
+  const handleClick = (path: string) => navigate(path);
+
   return (
     <nav className="bw-bottom-nav" aria-label="Navegacion principal">
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/home')}
         aria-label="Inicio"
       >
         <span className="bw-bottom-nav-icon"><Home /></span>
@@ -100,7 +108,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'feed' ? 'is-active' : ''}`}
-        onClick={() => navigate('/feed')}
+        onClick={() => navigate('/')}
         aria-label="Feed"
       >
         <span className="bw-bottom-nav-icon"><DynamicFeed /></span>
@@ -109,7 +117,7 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'groups' ? 'is-active' : ''}`}
-        onClick={() => navigate('/groups')}
+        onClick={() => handleClick('/groups')}
         aria-label="Grupos"
       >
         <span className="bw-bottom-nav-icon">
@@ -121,13 +129,27 @@ export function BottomNav({ session }: Readonly<BottomNavProps>) {
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}
-        onClick={() => navigate('/profile')}
+        onClick={() => {
+          if (isGuest) {
+            onRequireLogin?.();
+            return;
+          }
+          handleClick('/profile');
+        }}
         aria-label="Mi perfil"
       >
         <span className="bw-bottom-nav-avatar">
-          {avatarUrl ? <img src={avatarUrl} alt="Mi perfil" /> : <span className="bw-bottom-nav-initial">{initial}</span>}
+          {isGuest ? (
+            <span className="bw-bottom-nav-icon">
+              <PersonOutline />
+            </span>
+          ) : avatarUrl ? (
+            <img src={avatarUrl} alt="Mi perfil" />
+          ) : (
+            <span className="bw-bottom-nav-initial">{initial}</span>
+          )}
         </span>
-        <span className="bw-bottom-nav-label"></span>
+        <span className="bw-bottom-nav-label">{isGuest ? 'Invitado' : ''}</span>
       </button>
     </nav>
   );

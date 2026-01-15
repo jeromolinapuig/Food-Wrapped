@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition, type ReactNode } from 'react';
 import {
   Bookmark,
   BookmarkBorder,
@@ -14,6 +14,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { LockedContent } from '../common/LoginOverlay';
 import '../../styles/shared.css';
 import './FeedTabs.css';
 import '../EntryCard/EntryCard.css';
@@ -21,7 +22,9 @@ import '../EntryCard/EntryCard.css';
 type FeedTab = 'following' | 'global';
 
 type FeedTabsProps = {
-  currentUserId: string;
+  currentUserId: string | null;
+  isReadOnly?: boolean;
+  onRequireLogin?: () => void;
   refreshKey?: number;
   onOpenProfile?: (userId: string) => void;
   focusUserId?: string | null;
@@ -36,6 +39,7 @@ type FeedTabsProps = {
   showOwnerActions?: boolean;
   onEditEntry?: (entry: FeedEntry) => void;
   onDeleteEntry?: (entry: FeedEntry) => void;
+  lockedPreview?: ReactNode;
 };
 
 type FeedEntry = {
@@ -95,6 +99,8 @@ const Avatar = ({ username, avatarUrl }: { username: string; avatarUrl: string |
 
 export function FeedTabs({
   currentUserId,
+  isReadOnly = false,
+  onRequireLogin,
   refreshKey = 0,
   onOpenProfile,
   focusUserId,
@@ -109,6 +115,7 @@ export function FeedTabs({
   showOwnerActions = false,
   onEditEntry,
   onDeleteEntry,
+  lockedPreview,
 }: Readonly<FeedTabsProps>) {
   const [activeTab, setActiveTab] = useState<FeedTab>('global');
   const [entries, setEntries] = useState<FeedEntry[]>([]);
@@ -132,6 +139,9 @@ export function FeedTabs({
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const [internalMonthFilter, setInternalMonthFilter] = useState<'all' | string>('all');
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([{ value: 'all', label: 'Todo' }]);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const viewerId = currentUserId ?? null;
+  const viewerKey = viewerId ?? 'guest';
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
   const entryIdsKey = useMemo(() => {
@@ -150,7 +160,7 @@ export function FeedTabs({
       : isCustomList
         ? `bw-feed-months-group-${userIdsKey}`
         : null;
-  const entriesCacheKey = `bw-feed-entries-${currentUserId}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}`;
+  const entriesCacheKey = `bw-feed-entries-${viewerKey}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}`;
 
   useEffect(() => {
     entriesRef.current = entries;
@@ -165,7 +175,7 @@ export function FeedTabs({
       setPrivacyBlocked(false);
       return;
     }
-    if (focusUserId === currentUserId) {
+    if (focusUserId === viewerId) {
       setPrivacyBlocked(false);
       return;
     }
@@ -179,23 +189,27 @@ export function FeedTabs({
       setPrivacyBlocked(false);
       return;
     }
+    if (!viewerId) {
+      setPrivacyBlocked(true);
+      return;
+    }
     const [{ data: out }, { data: inc }] = await Promise.all([
       supabase
         .from('follows')
         .select('following_id')
-        .eq('follower_id', currentUserId)
+        .eq('follower_id', viewerId)
         .eq('following_id', focusUserId)
         .limit(1),
       supabase
         .from('follows')
         .select('follower_id')
-        .eq('following_id', currentUserId)
+        .eq('following_id', viewerId)
         .eq('follower_id', focusUserId)
         .limit(1),
     ]);
     const isMutual = Boolean((out ?? []).length && (inc ?? []).length);
     setPrivacyBlocked(!isMutual);
-  }, [currentUserId, focusUserId, ignorePrivacy]);
+  }, [focusUserId, ignorePrivacy, viewerId]);
 
   const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean; append?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -203,6 +217,17 @@ export function FeedTabs({
     if (showLoading && !append) setLoading(true);
     if (append) setLoadingMore(true);
     setError(null);
+
+    if (isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
+      setEntries([]);
+      setCursor(null);
+      setHasMore(false);
+      onCountChange?.(0);
+      setPrivacyBlocked(false);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
+      return;
+    }
 
     let userIdsForQuery: string[] | null = null;
     let entryIdsForQuery: string[] | null = null;
@@ -237,35 +262,39 @@ export function FeedTabs({
     } else if (focusUserId) {
       userIdsForQuery = [focusUserId];
     } else if (activeTab === 'following') {
-      const { data: followsData, error: followsError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', currentUserId);
+      if (!viewerId) {
+        userIdsForQuery = [];
+      } else {
+        const { data: followsData, error: followsError } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', viewerId);
 
-      if (followsError) {
-        setError(followsError.message);
-        if (!append) {
-          setEntries([]);
-          setCursor(null);
-          setHasMore(false);
+        if (followsError) {
+          setError(followsError.message);
+          if (!append) {
+            setEntries([]);
+            setCursor(null);
+            setHasMore(false);
+          }
+          onCountChange?.(0);
+          if (!append) setLoading(false);
+          if (append) setLoadingMore(false);
+          return;
         }
-        onCountChange?.(0);
-        if (!append) setLoading(false);
-        if (append) setLoadingMore(false);
-        return;
-      }
 
-      userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
-      if (!userIdsForQuery.length) {
-        if (!append) {
-          setEntries([]);
-          setCursor(null);
-          setHasMore(false);
+        userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
+        if (!userIdsForQuery.length) {
+          if (!append) {
+            setEntries([]);
+            setCursor(null);
+            setHasMore(false);
+          }
+          onCountChange?.(0);
+          if (!append) setLoading(false);
+          if (append) setLoadingMore(false);
+          return;
         }
-        onCountChange?.(0);
-        if (!append) setLoading(false);
-        if (append) setLoadingMore(false);
-        return;
       }
     }
 
@@ -380,21 +409,21 @@ export function FeedTabs({
     }
 
     let mutualIds = new Set<string>();
-    if (!ignorePrivacy && userIds.length && currentUserId && focusUserId !== currentUserId) {
+    if (!ignorePrivacy && userIds.length && viewerId && focusUserId !== viewerId) {
       const { data: follows } = await supabase
         .from('follows')
         .select('follower_id, following_id')
         .or(
-          `and(follower_id.eq.${currentUserId},following_id.in.(${userIds.join(',')})),and(following_id.eq.${currentUserId},follower_id.in.(${userIds.join(',')}))`
+          `and(follower_id.eq.${viewerId},following_id.in.(${userIds.join(',')})),and(following_id.eq.${viewerId},follower_id.in.(${userIds.join(',')}))`
         );
       const outgoingIds = new Set(
         (follows ?? [])
-          .filter((row) => (row as { follower_id: string }).follower_id === currentUserId)
+          .filter((row) => (row as { follower_id: string }).follower_id === viewerId)
           .map((row) => (row as { following_id: string }).following_id)
       );
       const incomingIds = new Set(
         (follows ?? [])
-          .filter((row) => (row as { following_id: string }).following_id === currentUserId)
+          .filter((row) => (row as { following_id: string }).following_id === viewerId)
           .map((row) => (row as { follower_id: string }).follower_id)
       );
       mutualIds = new Set([...outgoingIds].filter((id) => incomingIds.has(id)));
@@ -426,7 +455,7 @@ export function FeedTabs({
 
     if (!ignorePrivacy) {
       mapped = mapped.filter((entry) => {
-        if (entry.userId === currentUserId) return true;
+        if (entry.userId === viewerId) return true;
         const profile = profileMap[entry.userId];
         if (!profile?.is_private) return true;
         return mutualIds.has(entry.userId);
@@ -437,24 +466,24 @@ export function FeedTabs({
       const focusProfile = profileMap[focusUserId];
       const isPrivate = Boolean(focusProfile?.is_private);
       let isMutual = mutualIds.has(focusUserId);
-      if (isPrivate && !isMutual && focusUserId !== currentUserId) {
+      if (isPrivate && !isMutual && focusUserId !== viewerId) {
         const [{ data: out }, { data: inc }] = await Promise.all([
           supabase
             .from('follows')
             .select('following_id')
-            .eq('follower_id', currentUserId)
+            .eq('follower_id', viewerId)
             .eq('following_id', focusUserId)
             .limit(1),
           supabase
             .from('follows')
             .select('follower_id')
-            .eq('following_id', currentUserId)
+            .eq('following_id', viewerId ?? '')
             .eq('follower_id', focusUserId)
             .limit(1),
         ]);
         isMutual = Boolean((out ?? []).length && (inc ?? []).length);
       }
-      const canSee = focusUserId === currentUserId || isMutual || !isPrivate;
+      const canSee = focusUserId === viewerId || isMutual || !isPrivate;
       if (!canSee) {
         if (!append) {
           setEntries([]);
@@ -496,13 +525,14 @@ export function FeedTabs({
     if (append) setLoadingMore(false);
   }, [
     activeTab,
-    currentUserId,
+    viewerId,
     effectiveMonthFilter,
     entriesCacheKey,
     entryIdsFilter,
     focusUserId,
     hasEntryFilter,
     ignorePrivacy,
+    isReadOnly,
     isCustomList,
     onCountChange,
     pageSize,
@@ -660,7 +690,7 @@ export function FeedTabs({
   useEffect(() => {
     if (headerOnly) return;
     const channel = supabase
-      .channel(`feed-entries-${currentUserId}`)
+      .channel(`feed-entries-${viewerKey}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
@@ -687,7 +717,7 @@ export function FeedTabs({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, currentUserId, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter]);
+  }, [activeTab, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter, viewerKey]);
 
   useRevalidateOnFocus(
     () => {
@@ -735,11 +765,13 @@ export function FeedTabs({
         .from('entry_likes')
         .select('entry_id, user_id')
         .in('entry_id', entryIds),
-      supabase
-        .from('entry_bookmarks')
-        .select('entry_id')
-        .eq('user_id', currentUserId)
-        .in('entry_id', entryIds),
+      viewerId
+        ? supabase
+            .from('entry_bookmarks')
+            .select('entry_id')
+            .eq('user_id', viewerId)
+            .in('entry_id', entryIds)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     if (likesResponse.error || savedResponse.error) {
@@ -752,7 +784,7 @@ export function FeedTabs({
     (likesResponse.data ?? []).forEach((row) => {
       const typed = row as { entry_id: string; user_id: string };
       likeCounts[typed.entry_id] = (likeCounts[typed.entry_id] ?? 0) + 1;
-      if (typed.user_id === currentUserId) {
+      if (viewerId && typed.user_id === viewerId) {
         likedByMe.add(typed.entry_id);
       }
     });
@@ -770,7 +802,7 @@ export function FeedTabs({
       };
     });
     setEntryReactions(next);
-  }, [currentUserId]);
+  }, [viewerId]);
 
   useEffect(() => {
     if (headerOnly) return;
@@ -781,6 +813,10 @@ export function FeedTabs({
   }, [entries, headerOnly, loadEntryReactions]);
 
   const handleToggleLike = async (entryId: string) => {
+    if (isReadOnly || !viewerId) {
+      onRequireLogin?.();
+      return;
+    }
     if (pendingLikes[entryId]) return;
     const current = entryReactions[entryId] ?? { likeCount: 0, liked: false, saved: false };
     const nextLiked = !current.liked;
@@ -793,8 +829,8 @@ export function FeedTabs({
     setPendingLikes((prev) => ({ ...prev, [entryId]: true }));
 
     const { error } = nextLiked
-      ? await supabase.from('entry_likes').insert({ entry_id: entryId, user_id: currentUserId })
-      : await supabase.from('entry_likes').delete().match({ entry_id: entryId, user_id: currentUserId });
+      ? await supabase.from('entry_likes').insert({ entry_id: entryId, user_id: viewerId })
+      : await supabase.from('entry_likes').delete().match({ entry_id: entryId, user_id: viewerId });
 
     if (error) {
       console.error('Error toggling like', error);
@@ -809,6 +845,10 @@ export function FeedTabs({
   };
 
   const handleToggleSave = async (entryId: string) => {
+    if (isReadOnly || !viewerId) {
+      onRequireLogin?.();
+      return;
+    }
     if (pendingSaves[entryId]) return;
     const current = entryReactions[entryId] ?? { likeCount: 0, liked: false, saved: false };
     const nextSaved = !current.saved;
@@ -820,8 +860,8 @@ export function FeedTabs({
     setPendingSaves((prev) => ({ ...prev, [entryId]: true }));
 
     const { error } = nextSaved
-      ? await supabase.from('entry_bookmarks').insert({ entry_id: entryId, user_id: currentUserId })
-      : await supabase.from('entry_bookmarks').delete().match({ entry_id: entryId, user_id: currentUserId });
+      ? await supabase.from('entry_bookmarks').insert({ entry_id: entryId, user_id: viewerId })
+      : await supabase.from('entry_bookmarks').delete().match({ entry_id: entryId, user_id: viewerId });
 
     if (error) {
       console.error('Error toggling bookmark', error);
@@ -845,9 +885,28 @@ export function FeedTabs({
     if (isCustomList && effectiveMonthFilter !== 'all') return 'Este grupo no tiene comidas publicas en este mes.';
     if (isCustomList) return 'Este grupo no tiene comidas publicas todavia.';
     if (privacyBlocked) return 'Este perfil es privado.';
+    if (isReadOnly && activeTab === 'following') return 'Inicia sesión para ver a quienes sigues.';
     if (activeTab === 'following') return 'No hay entradas publicas de la gente a la que sigues.';
     return 'No hay comidas todavia en este feed.';
   };
+
+  const renderLockedFeedPreview = () =>
+    lockedPreview ?? (
+      <div className="bw-locked-placeholder">
+        <div className="bw-locked-row">
+          <div className="bw-locked-pill" />
+          <div className="bw-locked-pill" />
+        </div>
+        <div className="bw-locked-list">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div className="bw-locked-list-item" key={`locked-feed-${i}`} />
+          ))}
+        </div>
+      </div>
+    );
+
+  const shouldLockFollowing =
+    isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter;
 
   return (
     <section className="bw-feed">
@@ -857,19 +916,33 @@ export function FeedTabs({
             <button
               type="button"
               className={`bw-feed-tab ${activeTab === 'following' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('following')}
+              onClick={() => {
+                if (isReadOnly) {
+                  setAuthNotice('Inicia sesión para ver el feed de la gente a la que sigues.');
+                } else {
+                  setAuthNotice(null);
+                }
+                setActiveTab('following');
+              }}
             >
               Siguiendo
             </button>
             <button
               type="button"
               className={`bw-feed-tab ${activeTab === 'global' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('global')}
+              onClick={() => {
+                setAuthNotice(null);
+                setActiveTab('global');
+              }}
             >
               Global
             </button>
           </div>
         </div>
+      )}
+
+      {authNotice && !hideHeader && (
+        <p className="bw-helper" style={{ textAlign: 'center', marginTop: -6 }}>{authNotice}</p>
       )}
 
       {!hideHeader && (isUserFeed || isCustomList) && (
@@ -891,7 +964,16 @@ export function FeedTabs({
         </div>
       )}
 
-      {headerOnly && !hideHeader ? null : (
+      {headerOnly && !hideHeader ? null : shouldLockFollowing ? (
+        <LockedContent
+          title="Inicia sesión para ver a quienes sigues"
+          message="Entra con tu cuenta para ver el feed de la gente a la que sigues."
+          actionLabel="Iniciar sesión"
+          onLogin={onRequireLogin ?? (() => {})}
+          preview={renderLockedFeedPreview()}
+          blurAmount={10}
+        />
+      ) : (
       <div className="bw-history-list">
         {loading && (
           <>
@@ -920,7 +1002,7 @@ export function FeedTabs({
               hour: '2-digit',
               minute: '2-digit',
             });
-            const isSelf = entry.userId === currentUserId;
+            const isSelf = viewerId ? entry.userId === viewerId : false;
             const shouldDisableProfileClick = isSelf || isUserFeed;
             const name = isSelf ? 'Tú' : entry.displayName || entry.username;
             const stars = renderStars(entry.rating);
@@ -932,6 +1014,9 @@ export function FeedTabs({
             const reactions = entryReactions[entry.id] ?? { likeCount: 0, liked: false, saved: false };
             const isLikePending = Boolean(pendingLikes[entry.id]);
             const isSavePending = Boolean(pendingSaves[entry.id]);
+            const likeDisabled = isReadOnly || isLikePending;
+            const saveDisabled = isReadOnly || isSavePending;
+            const actionLockLabel = isReadOnly ? 'Inicia sesión para usar esta acción' : undefined;
 
             return (
               <article className="bw-history-card bw-feed-entry" key={entry.id}>
@@ -1025,9 +1110,9 @@ export function FeedTabs({
                             type="button"
                             className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
                             onClick={() => handleToggleLike(entry.id)}
-                            disabled={isLikePending}
+                            disabled={likeDisabled}
                             aria-pressed={reactions.liked}
-                            title={reactions.liked ? 'Quitar like' : 'Dar like'}
+                            title={actionLockLabel ?? (reactions.liked ? 'Quitar like' : 'Dar like')}
                           >
                             {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
                             <span className="bw-feed-action-count">{reactions.likeCount}</span>
@@ -1036,9 +1121,9 @@ export function FeedTabs({
                             type="button"
                             className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
                             onClick={() => handleToggleSave(entry.id)}
-                            disabled={isSavePending}
+                            disabled={saveDisabled}
                             aria-pressed={reactions.saved}
-                            title={reactions.saved ? 'Quitar guardado' : 'Guardar post'}
+                            title={actionLockLabel ?? (reactions.saved ? 'Quitar guardado' : 'Guardar post')}
                           >
                             {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
                           </button>

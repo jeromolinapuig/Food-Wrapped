@@ -11,10 +11,11 @@ import './UserProfileModal.css';
 type UserProfileModalProps = {
   open: boolean;
   userId: string | null;
-  session: Session;
+  session: Session | null;
   onClose: () => void;
   onFollowChange?: (userId: string, isFollowing: boolean) => void;
   onViewPosts?: (user: { id: string; username: string | null; displayName: string | null }) => void;
+  onRequireLogin?: () => void;
 };
 
 type PublicProfile = {
@@ -26,7 +27,15 @@ type PublicProfile = {
   is_private?: boolean | null;
 };
 
-export function UserProfileModal({ open, userId, session, onClose, onFollowChange, onViewPosts }: Readonly<UserProfileModalProps>) {
+export function UserProfileModal({
+  open,
+  userId,
+  session,
+  onClose,
+  onFollowChange,
+  onViewPosts,
+  onRequireLogin,
+}: Readonly<UserProfileModalProps>) {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +53,30 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
 
   useEffect(() => {
     if (!shouldShow || !userId) return;
+    if (!session) {
+      let cancelled = false;
+      const loadProfile = async () => {
+        setLoading(true);
+        setError(null);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url, bio, is_private')
+          .eq('id', userId)
+          .single();
+        if (cancelled) return;
+        if (error) {
+          setError(error.message);
+          setProfile(null);
+        } else {
+          setProfile(data as PublicProfile);
+        }
+        setLoading(false);
+      };
+      loadProfile();
+      return () => {
+        cancelled = true;
+      };
+    }
     if (userId === session.user.id) {
       onClose();
       return;
@@ -108,10 +141,14 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
     return () => {
       cancelled = true;
     };
-  }, [shouldShow, userId, session.user.id, onClose]);
+  }, [shouldShow, userId, session?.user.id, onClose, session]);
 
   const handleToggleFollow = async () => {
     if (!userId || saving) return;
+    if (!session) {
+      onRequireLogin?.();
+      return;
+    }
     const currentUserId = session.user.id;
 
     if (isFollowing) {
@@ -209,24 +246,30 @@ export function UserProfileModal({ open, userId, session, onClose, onFollowChang
             </div>
 
             <div className="bw-profile-actions" style={{ justifyContent: 'center', gap: 6, flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={`bw-btn bw-btn-primary ${isFollowing ? 'bw-btn-muted' : ''}`}
-                onClick={handleToggleFollow}
-                disabled={saving}
-              >
-                {isFollowing ? (
-                  <>
-                    <CheckCircleOutline fontSize="small" />
-                    Dejar de seguir
-                  </>
-                ) : (
-                  <>
-                    <GroupAdd fontSize="small" />
-                    Seguir
-                  </>
-                )}
-              </button>
+              {session ? (
+                <button
+                  type="button"
+                  className={`bw-btn bw-btn-primary ${isFollowing ? 'bw-btn-muted' : ''}`}
+                  onClick={handleToggleFollow}
+                  disabled={saving}
+                >
+                  {isFollowing ? (
+                    <>
+                      <CheckCircleOutline fontSize="small" />
+                      Dejar de seguir
+                    </>
+                  ) : (
+                    <>
+                      <GroupAdd fontSize="small" />
+                      Seguir
+                    </>
+                  )}
+                </button>
+              ) : (
+                <p className="bw-helper" style={{ margin: 0, textAlign: 'center' }}>
+                  Inicia sesión para seguir a esta persona.
+                </p>
+              )}
             </div>
           </div>
         )}

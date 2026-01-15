@@ -36,7 +36,7 @@ type DbEntryRow = {
 };
 
 type UserDashboardPageProps = {
-  session: Session;
+  session: Session | null;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
@@ -52,6 +52,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
   const [profile, setProfile] = useState<{ username: string | null; displayName: string | null; isPrivate?: boolean | null } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
+  const viewerId = session?.user.id ?? null;
 
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
@@ -81,13 +82,17 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
 
   useEffect(() => {
     if (!profile) return;
-    if (userId === session.user.id) {
+    if (!profile.isPrivate) {
       startTransition(() => {
         setPrivacyBlocked(false);
       });
       return;
     }
-    if (!profile.isPrivate) {
+    if (!viewerId) {
+      startTransition(() => setPrivacyBlocked(true));
+      return;
+    }
+    if (userId === viewerId) {
       startTransition(() => {
         setPrivacyBlocked(false);
       });
@@ -99,13 +104,13 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
         supabase
           .from('follows')
           .select('following_id')
-          .eq('follower_id', session.user.id)
+          .eq('follower_id', viewerId)
           .eq('following_id', userId)
           .limit(1),
         supabase
           .from('follows')
           .select('follower_id')
-          .eq('following_id', session.user.id)
+          .eq('following_id', viewerId)
           .eq('follower_id', userId)
           .limit(1),
       ]);
@@ -117,7 +122,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     return () => {
       cancelled = true;
     };
-  }, [profile, session.user.id, userId]);
+  }, [profile, userId, viewerId]);
 
   const loadEntries = useCallback(async () => {
     if (privacyBlocked) {
@@ -135,7 +140,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     const from = '2026-01-01';
     const to = '2027-01-01';
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('entries')
       .select(
         `
@@ -154,6 +159,12 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       .eq('user_id', userId)
       .order('datetime', { ascending: false });
 
+    if (viewerId !== userId) {
+      query = query.eq('visibility', 'public');
+    }
+
+    const { data, error } = await query;
+
     if (error) {
       setError(error.message);
       setEntries([]);
@@ -162,7 +173,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     }
 
     setLoading(false);
-  }, [privacyBlocked, userId]);
+  }, [privacyBlocked, userId, viewerId]);
 
   useEffect(() => {
     startTransition(() => {
@@ -333,7 +344,8 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                   <h2 className="bw-section-title">Posts ({postsCount})</h2>
                   <div className="bw-section-right">
                   <FeedTabs
-                    currentUserId={session.user.id}
+                    currentUserId={viewerId}
+                    isReadOnly={!viewerId}
                     focusUserId={userId}
                     onCountChange={setPostsCount}
                     headerOnly
@@ -343,7 +355,8 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                 </div>
               </div>
               <FeedTabs
-                currentUserId={session.user.id}
+                currentUserId={viewerId}
+                isReadOnly={!viewerId}
                 focusUserId={userId}
                 onCountChange={setPostsCount}
                 hideHeader

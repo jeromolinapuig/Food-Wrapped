@@ -16,7 +16,7 @@ import './FeedPage.css';
 import '../FollowListModal/FollowListModal.css';
 
 type FeedPageProps = {
-  session: Session;
+  session: Session | null;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
@@ -29,6 +29,8 @@ type FeedPageProps = {
     user: { id: string; username: string | null; displayName: string | null },
     options?: { returnPage?: 'dashboard' | 'feed' | 'profile'; returnProfileUserId?: string | null }
   ) => void;
+  onRequireLogin: () => void;
+  lockedPreview?: React.ReactNode;
 };
 
 type SearchUser = {
@@ -48,6 +50,8 @@ export function FeedPage({
   openProfileUserId,
   onProfileModalConsumed,
   onOpenUserDashboard,
+  onRequireLogin,
+  lockedPreview,
 }: Readonly<FeedPageProps>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
@@ -62,7 +66,9 @@ export function FeedPage({
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
   const [userMonthFilter, setUserMonthFilter] = useState<'all' | string>('all');
-  const followsCacheKey = `bw-feed-follows-${session.user.id}`;
+  const currentUserId = session?.user.id ?? null;
+  const followsCacheKey = currentUserId ? `bw-feed-follows-${currentUserId}` : null;
+  const isGuest = !session;
 
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
 
@@ -72,6 +78,7 @@ export function FeedPage({
   }, [confirmAction]);
 
   useEffect(() => {
+    if (!followsCacheKey || !currentUserId) return;
     const cached = sessionStorage.getItem(followsCacheKey);
     if (cached) {
       try {
@@ -94,7 +101,7 @@ export function FeedPage({
       const { data, error } = await supabase
         .from('follows')
         .select('id, follower_id, following_id')
-        .or(`follower_id.eq.${session.user.id},following_id.eq.${session.user.id}`);
+        .or(`follower_id.eq.${currentUserId},following_id.eq.${currentUserId}`);
       if (error) {
         console.error('Error loading follows', error);
         return;
@@ -106,10 +113,10 @@ export function FeedPage({
         const followerId = row.follower_id;
         const followingId = row.following_id;
         const id = row.id;
-        if (followerId === session.user.id) {
+        if (followerId === currentUserId) {
           newFollowing[followingId] = id;
         }
-        if (followingId === session.user.id) {
+        if (followingId === currentUserId) {
           newFollowers[followerId] = id;
         }
       });
@@ -126,10 +133,10 @@ export function FeedPage({
       }
     };
     loadFollows();
-  }, [followsCacheKey, session.user.id]);
+  }, [currentUserId, followsCacheKey]);
 
   useEffect(() => {
-    if (!followsLoaded) return;
+    if (!followsLoaded || !followsCacheKey) return;
     try {
       sessionStorage.setItem(
         followsCacheKey,
@@ -149,12 +156,17 @@ export function FeedPage({
       }
       setSearchLoading(true);
       setSearchError(null);
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url, bio')
         .ilike('username', `%${trimmedTerm}%`)
-        .neq('id', session.user.id)
         .limit(10);
+
+      if (currentUserId) {
+        query = query.neq('id', currentUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         setSearchError(error.message);
@@ -167,10 +179,13 @@ export function FeedPage({
 
     const t = window.setTimeout(doSearch, 250);
     return () => window.clearTimeout(t);
-  }, [trimmedTerm, session.user.id]);
+  }, [currentUserId, trimmedTerm]);
 
   const handleFollow = async (user: SearchUser) => {
-    const currentUserId = session.user.id;
+    if (!currentUserId) {
+      onRequireLogin();
+      return;
+    }
     const targetUserId = user.id;
     if (followingIds[targetUserId]) return;
 
@@ -212,7 +227,11 @@ export function FeedPage({
     }
 
     // cancel (unfollow)
-    const currentUserId = session.user.id;
+    if (!currentUserId) {
+      onRequireLogin();
+      setConfirmAction(null);
+      return;
+    }
     const targetUserId = user.id;
     const followId = followingIds[targetUserId];
     if (!followId) {
@@ -282,7 +301,10 @@ export function FeedPage({
               </div>
               <div className="bw-feed-focus-right">
                 <FeedTabs
-                  currentUserId={session.user.id}
+                  currentUserId={currentUserId}
+                  isReadOnly={isGuest}
+                  onRequireLogin={onRequireLogin}
+                  lockedPreview={lockedPreview}
                   focusUserId={effectiveFocusedUser.id}
                   headerOnly
                   monthFilter={userMonthFilter}
@@ -345,6 +367,36 @@ export function FeedPage({
                 const isMutual = Boolean(outgoingId && incomingId);
                 const isOutgoing = Boolean(outgoingId);
                 const isIncoming = Boolean(incomingId);
+                const actionButton = isGuest ? null : (
+                  <button
+                    type="button"
+                    className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
+                    onClick={() => {
+                      if (isMutual || isOutgoing) {
+                        setConfirmAction({ user, action: 'cancel' });
+                      } else {
+                        handleFollow(user);
+                      }
+                    }}
+                    title={
+                      isMutual
+                        ? 'Ya se siguen mutuamente'
+                        : isOutgoing
+                          ? 'Dejar de seguir'
+                          : isIncoming
+                            ? 'Seguir de vuelta'
+                            : 'Seguir'
+                    }
+                  >
+                    {isMutual ? (
+                      <SyncAlt fontSize="small" />
+                    ) : isOutgoing ? (
+                      <CheckCircleOutline fontSize="small" />
+                    ) : (
+                      <GroupAdd fontSize="small" />
+                    )}
+                  </button>
+                );
                 return (
                   <UserCard
                     key={user.id}
@@ -356,36 +408,7 @@ export function FeedPage({
                     bio={user.bio}
                     infoButton
                     onInfoClick={() => setProfileModalUserId(user.id)}
-                    action={(
-                      <button
-                        type="button"
-                        className={`bw-user-action ${isMutual ? 'is-accepted' : ''} ${isOutgoing && !isMutual ? 'is-following' : ''}`}
-                        onClick={() => {
-                          if (isMutual || isOutgoing) {
-                            setConfirmAction({ user, action: 'cancel' });
-                          } else {
-                            handleFollow(user);
-                          }
-                        }}
-                        title={
-                          isMutual
-                            ? 'Ya se siguen mutuamente'
-                            : isOutgoing
-                              ? 'Dejar de seguir'
-                              : isIncoming
-                                ? 'Seguir de vuelta'
-                                : 'Seguir'
-                        }
-                      >
-                        {isMutual ? (
-                          <SyncAlt fontSize="small" />
-                        ) : isOutgoing ? (
-                          <CheckCircleOutline fontSize="small" />
-                        ) : (
-                          <GroupAdd fontSize="small" />
-                        )}
-                      </button>
-                    )}
+                    action={actionButton}
                   />
                 );
               })}
@@ -394,7 +417,10 @@ export function FeedPage({
 
           <div className={shouldHideFeed ? 'bw-feed-hidden' : ''}>
             <FeedTabs
-              currentUserId={session.user.id}
+              currentUserId={currentUserId}
+              isReadOnly={isGuest}
+              onRequireLogin={onRequireLogin}
+              lockedPreview={lockedPreview}
               refreshKey={refreshFeedKey}
               onOpenProfile={(userId) => setProfileModalUserId(userId)}
               focusUserId={effectiveFocusedUser?.id ?? null}
@@ -415,7 +441,9 @@ export function FeedPage({
             setProfileModalUserId(null);
           }
         }}
+        onRequireLogin={onRequireLogin}
         onFollowChange={(targetId, isNowFollowing) => {
+          if (isGuest) return;
           setFollowingIds((prev) => {
             const copy = { ...prev };
             if (isNowFollowing) {

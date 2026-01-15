@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen/AuthScreen';
@@ -11,6 +11,15 @@ import { ProfilePage } from './components/ProfilePage/ProfilePage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
+import { AppShell } from './components/common/AppShell';
+import { PageHeader } from './components/common/PageHeader';
+import { LockedContent } from './components/common/LoginOverlay';
+import {
+  DashboardPlaceholder,
+  FeedPlaceholder,
+  GroupsPlaceholder,
+  ProfilePlaceholder,
+} from './components/common/LockedPlaceholders';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -32,6 +41,7 @@ function App() {
   });
   const location = useLocation();
   const navigate = useNavigate();
+  const isLoginRoute = location.pathname === '/login';
 
   // Aplicar tema al <html> y guardar
   useEffect(() => {
@@ -97,11 +107,11 @@ function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   useEffect(() => {
-    if (location.pathname !== '/feed') return;
+    if (location.pathname !== '/feed' && location.pathname !== '/') return;
     const state = location.state as FeedLocationState | null;
     if (!state?.openProfileUserId) return;
     setFeedOpenProfileUserId(state.openProfileUserId);
-    navigate('/feed', { replace: true, state: {} });
+    navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate]);
 
   if (session === undefined) {
@@ -112,14 +122,12 @@ function App() {
     );
   }
 
-  if (!session) {
-    return <AuthScreen />;
-  }
-
   const handleNavigate = (page: 'dashboard' | 'feed' | 'profile' | 'groups') => {
-    const path = page === 'dashboard' ? '/' : `/${page}`;
+    const path = page === 'dashboard' ? '/home' : page === 'feed' ? '/' : `/${page}`;
     navigate(path);
   };
+
+  const handleLogin = () => navigate('/login');
 
   const handleOpenUserDashboard = (
     user: { id: string; username: string | null; displayName: string | null },
@@ -200,11 +208,19 @@ function App() {
         <Route
           path="/"
           element={
-            <Dashboard
+            <FeedPage
               session={session}
               theme={theme}
               onToggleTheme={toggleTheme}
               onNavigate={handleNavigate}
+              focusedUser={feedFocusUser}
+              onFocusedUserChange={(user) => setFeedFocusUser(user)}
+              returnPage="feed"
+              openProfileUserId={feedOpenProfileUserId}
+              onProfileModalConsumed={() => setFeedOpenProfileUserId(null)}
+              onOpenUserDashboard={handleOpenUserDashboard}
+              onRequireLogin={handleLogin}
+              lockedPreview={<FeedPlaceholder />}
             />
           }
         />
@@ -222,49 +238,117 @@ function App() {
               openProfileUserId={feedOpenProfileUserId}
               onProfileModalConsumed={() => setFeedOpenProfileUserId(null)}
               onOpenUserDashboard={handleOpenUserDashboard}
+              onRequireLogin={handleLogin}
+              lockedPreview={<FeedPlaceholder />}
             />
+          }
+        />
+        <Route
+          path="/home"
+          element={
+            session ? (
+              <Dashboard
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onNavigate={handleNavigate}
+              />
+            ) : (
+              <LockedPage
+                title="Burger Wrapped"
+                subtitle="Tu año 2026 en hamburguesas."
+                onLogin={handleLogin}
+                preview={<DashboardPlaceholder />}
+              />
+            )
           }
         />
         <Route
           path="/profile"
           element={
-            <ProfilePage
-              session={session}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-              onOpenUserDashboard={(user) =>
-                handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
-              }
-            />
+            session ? (
+              <ProfilePage
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onOpenUserDashboard={(user) =>
+                  handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
+                }
+              />
+            ) : (
+              <LockedPage
+                title="Mi perfil"
+                subtitle="Inicia sesión para editar tu perfil y ver tus estadísticas."
+                onLogin={handleLogin}
+                preview={<ProfilePlaceholder />}
+              />
+            )
           }
         />
         <Route
           path="/groups"
           element={
-            <GroupsPage
-              session={session}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-              onNavigate={handleNavigate}
-            />
+            session ? (
+              <GroupsPage
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onNavigate={handleNavigate}
+              />
+            ) : (
+              <LockedPage
+                title="Grupos"
+                subtitle="Crea grupos y visualiza rankings con tus amigos."
+                onLogin={handleLogin}
+                preview={<GroupsPlaceholder />}
+              />
+            )
           }
         />
         <Route
           path="/groups/:groupId"
           element={
-            <GroupRoute
-              session={session}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-            />
+            session ? (
+              <GroupRoute
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+              />
+            ) : (
+              <LockedPage
+                title="Grupo"
+                subtitle="Inicia sesión para ver el grupo."
+                onLogin={handleLogin}
+                preview={<GroupsPlaceholder />}
+              />
+            )
           }
         />
         <Route path="/users/:userId" element={<UserDashboardRoute />} />
         <Route path="/posts/:entryId" element={<PostRoute />} />
-        <Route path="/saved" element={<SavedPostsRoute />} />
+        <Route
+          path="/saved"
+          element={
+            session ? (
+              <SavedPostsRoute />
+            ) : (
+              <LockedPage
+                title="Guardados"
+                subtitle="Inicia sesión para ver tus posts guardados."
+                onLogin={handleLogin}
+                preview={<FeedPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={session ? <Navigate to="/" replace /> : <AuthScreen />}
+        />
+        <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <BottomNav session={session} />
+      {!isLoginRoute && <BottomNav session={session} onRequireLogin={handleLogin} />}
     </>
   );
 }
@@ -295,3 +379,47 @@ function GroupRoute({ session, theme, onToggleTheme }: GroupRouteProps) {
 }
 
 export default App;
+
+type LockedPageProps = {
+  title: string;
+  subtitle: string;
+  onLogin: () => void;
+  preview?: ReactNode;
+};
+
+function LockedPage({ title, subtitle, onLogin, preview }: Readonly<LockedPageProps>) {
+  const fallbackPreview = preview ?? (
+    <div className="bw-locked-placeholder">
+      <div className="bw-locked-row">
+        <div className="bw-locked-pill" />
+        <div className="bw-locked-pill" />
+        <div className="bw-locked-pill" />
+      </div>
+      <div className="bw-locked-grid">
+        <div className="bw-locked-card-skeleton" />
+        <div className="bw-locked-card-skeleton" />
+        <div className="bw-locked-card-skeleton" />
+        <div className="bw-locked-card-skeleton" />
+      </div>
+      <div className="bw-locked-list">
+        <div className="bw-locked-list-item" />
+        <div className="bw-locked-list-item" />
+        <div className="bw-locked-list-item" />
+      </div>
+    </div>
+  );
+
+  return (
+    <AppShell>
+      <PageHeader title={title} subtitle={subtitle} />
+      <main className="bw-main">
+        <LockedContent
+          title="Inicia sesión para ver esta sección"
+          actionLabel="Iniciar sesión"
+          onLogin={onLogin}
+          preview={fallbackPreview}
+        />
+      </main>
+    </AppShell>
+  );
+}

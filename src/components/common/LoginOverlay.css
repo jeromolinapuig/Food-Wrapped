@@ -1,0 +1,110 @@
+.bw-locked-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  width: 100%;
+  min-height: 60vh;
+}
+
+.bw-locked-blur {
+  pointer-events: none;
+  opacity: 0.75;
+  transform: translateZ(0);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.bw-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(18, 18, 24, 0.6), rgba(18, 18, 24, 0.35));
+  color: #fff;
+  backdrop-filter: blur(4px);
+  text-align: center;
+  z-index: 1;
+}
+
+.bw-locked-card {
+  background: rgba(14, 14, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 18px;
+  max-width: 420px;
+  width: min(90vw, 420px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.bw-locked-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin: 0 0 4px;
+}
+
+.bw-locked-title {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.bw-locked-message {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+  opacity: 0.9;
+}
+
+.bw-locked-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.bw-locked-placeholder {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bw-locked-row {
+  display: flex;
+  gap: 10px;
+}
+
+.bw-locked-pill {
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+}
+
+.bw-locked-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.bw-locked-card-skeleton {
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+}
+
+.bw-locked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bw-locked-list-item {
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+}

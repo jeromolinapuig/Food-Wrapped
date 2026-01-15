@@ -71,5 +71,9 @@ export const useRevalidateOnFocus = (
         window.clearTimeout(debounceTimer.current);
       }
     };
+  // We intentionally spread `deps` into this effect's dependency list because
+  // callers pass an array of reactive values. The rule can't statically
+  // verify safety here, so disable it for this line.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounceMs, maxStaleMs, minIntervalMs, ...deps]);
 };

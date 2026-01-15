@@ -7,12 +7,13 @@ import '../../styles/layout.css';
 import '../../styles/shared.css';
 
 type PostPageProps = {
-  session: Session;
+  session: Session | null;
   entryId: string;
   onBack: () => void;
 };
 
 export function PostPage({ session, entryId, onBack }: Readonly<PostPageProps>) {
+  const currentUserId = session?.user.id ?? null;
   return (
     <AppShell>
         <PageHeader
@@ -23,7 +24,8 @@ export function PostPage({ session, entryId, onBack }: Readonly<PostPageProps>) 
 
         <main className="bw-main">
           <FeedTabs
-            currentUserId={session.user.id}
+            currentUserId={currentUserId}
+            isReadOnly={!currentUserId}
             entryIdsFilter={[entryId]}
             hideHeader
           />

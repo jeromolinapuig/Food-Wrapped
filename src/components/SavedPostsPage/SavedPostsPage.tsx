@@ -9,7 +9,7 @@ import '../../styles/layout.css';
 import '../../styles/shared.css';
 
 type SavedPostsPageProps = {
-  session: Session;
+  session: Session | null;
   onBack: () => void;
 };
 
@@ -17,8 +17,15 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
   const [savedEntryIds, setSavedEntryIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const currentUserId = session?.user.id ?? null;
 
   const loadSavedEntries = useCallback(async () => {
+    if (!session) {
+      setSavedEntryIds([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     const { data, error: savedError } = await supabase
@@ -42,7 +49,7 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
     );
     setSavedEntryIds(ids);
     setLoading(false);
-  }, [session.user.id]);
+  }, [session]);
 
   useEffect(() => {
     startTransition(() => {
@@ -67,11 +74,15 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
         <main className="bw-main">
           {loading && <p className="bw-helper">Cargando guardados...</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
-          <FeedTabs
-            currentUserId={session.user.id}
-            entryIdsFilter={savedEntryIds}
-            hideHeader
-          />
+          {session && currentUserId ? (
+            <FeedTabs
+              currentUserId={currentUserId}
+              entryIdsFilter={savedEntryIds}
+              hideHeader
+            />
+          ) : (
+            <p className="bw-helper">Inicia sesión para ver tus posts guardados.</p>
+          )}
         </main>
     </AppShell>
   );
