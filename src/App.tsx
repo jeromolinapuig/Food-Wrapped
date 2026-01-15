@@ -50,6 +50,21 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
+    const ensureRobotsMeta = () => {
+      let tag = document.querySelector('meta[name="robots"]');
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', 'robots');
+        document.head.appendChild(tag);
+      }
+      return tag;
+    };
+    const tag = ensureRobotsMeta();
+    const value = isLoginRoute ? 'noindex, nofollow' : 'index, follow';
+    tag.setAttribute('content', value);
+  }, [isLoginRoute]);
+
+  useEffect(() => {
     const isLegacyAuthPayload = (value: string | null) => {
       if (!value) return false;
       try {
