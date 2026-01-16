@@ -55,7 +55,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [postsCount, setPostsCount] = useState(0);
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'posts' | 'ranking'>('posts');
-  const [rankingMetric] = useState<'spent' | 'count'>('spent');
+  const [rankingMetric, setRankingMetric] = useState<'spent' | 'burgers'>('spent');
   const groupUserIds = memberIds.length ? memberIds : null;
 
   const loadGroup = useCallback(async () => {
@@ -275,36 +275,46 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   }, [entries]);
 
   const rankingRows = useMemo(() => {
-    const base = new Map<string, { spent: number; count: number }>();
+    const base = new Map<string, { spent: number; burgers: number }>();
     members.forEach((member) => {
-      base.set(member.id, { spent: 0, count: 0 });
+      base.set(member.id, { spent: 0, burgers: 0 });
     });
 
     entries.forEach((entry) => {
-      const current = base.get(entry.user_id) ?? { spent: 0, count: 0 };
+      const current = base.get(entry.user_id) ?? { spent: 0, burgers: 0 };
       current.spent += entry.price ?? 0;
-      current.count += 1;
+      if (entry.is_burger) {
+        current.burgers += 1;
+      }
       base.set(entry.user_id, current);
     });
 
     const rows = members.map((member) => {
-      const totals = base.get(member.id) ?? { spent: 0, count: 0 };
+      const totals = base.get(member.id) ?? { spent: 0, burgers: 0 };
       return {
         ...member,
         totalSpent: totals.spent,
-        totalCount: totals.count,
+        totalBurgers: totals.burgers,
       };
     });
 
     rows.sort((a, b) => {
       if (rankingMetric === 'spent') return b.totalSpent - a.totalSpent;
-      return b.totalCount - a.totalCount;
+      return b.totalBurgers - a.totalBurgers;
     });
 
     return rows;
   }, [entries, members, rankingMetric]);
 
   const title = groupName ?? 'Grupo';
+  const sectionTitle = activeTab === 'posts' ? `Posts (${postsCount})` : 'Ranking';
+  const handleSelectRanking = useCallback(
+    (metric: 'spent' | 'burgers') => {
+      setRankingMetric(metric);
+      setActiveTab('ranking');
+    },
+    []
+  );
 
   return (
     <AppShell>
@@ -335,8 +345,16 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   icon={<Euro fontSize="small" />}
                   value={`${stats.totalSpent.toFixed(2)}\u20AC`}
                   label="Total gastado"
+                  onClick={() => handleSelectRanking('spent')}
+                  isActive={activeTab === 'ranking' && rankingMetric === 'spent'}
                 />
-                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                <StatCard
+                  icon={<LunchDining fontSize="small" />}
+                  value={`${stats.totalBurgers}`}
+                  label="Hamburguesas"
+                  onClick={() => handleSelectRanking('burgers')}
+                  isActive={activeTab === 'ranking' && rankingMetric === 'burgers'}
+                />
               </>
             )}
           </section>
@@ -345,7 +363,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
           <section className="bw-history">
             <div className="bw-section-header">
-              <h2 className="bw-section-title">Posts ({postsCount})</h2>
+              <h2 className="bw-section-title">{sectionTitle}</h2>
               <div className="bw-section-right">
                 <div className="bw-group-tabs">
                   <button
@@ -392,7 +410,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   const value =
                     rankingMetric === 'spent'
                       ? `${member.totalSpent.toFixed(2)}\u20AC`
-                      : `${member.totalCount}`;
+                      : `${member.totalBurgers}`;
                   return (
                     <div className="bw-ranking-item" key={member.id}>
                       <div className="bw-ranking-left">

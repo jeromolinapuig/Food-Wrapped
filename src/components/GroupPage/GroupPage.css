@@ -31,33 +31,6 @@
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
 }
 
-.bw-ranking-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bw-card-bg);
-  padding: 4px;
-  border-radius: 999px;
-}
-
-.bw-ranking-toggle-btn {
-  border: none;
-  background: transparent;
-  color: var(--bw-text-muted);
-  font-weight: 700;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.bw-ranking-toggle-btn.is-active {
-  background: var(--bw-surface);
-  color: var(--bw-text);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-}
-
 .bw-ranking-list {
   display: flex;
   flex-direction: column;
