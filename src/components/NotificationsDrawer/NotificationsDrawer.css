@@ -91,6 +91,11 @@
   color: #3498db;
 }
 
+.bw-notify-comment {
+  background: rgba(241, 196, 15, 0.16);
+  color: #f1c40f;
+}
+
 .bw-notify-text {
   font-size: 13px;
   line-height: 1.4;

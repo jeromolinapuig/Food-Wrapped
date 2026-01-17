@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
-import { Favorite, GroupAdd, Notifications, PersonAdd } from '@mui/icons-material';
+import { ChatBubbleOutline, Favorite, GroupAdd, Notifications, PersonAdd } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import '../../styles/shared.css';
@@ -22,6 +22,13 @@ type NotificationItem =
       type: 'like';
       entryId: string;
       likerIds: string[];
+      createdAt: string | null;
+    }
+  | {
+      id: string;
+      type: 'comment';
+      entryId: string;
+      commenterIds: string[];
       createdAt: string | null;
     }
   | {
@@ -85,10 +92,19 @@ export function NotificationsDrawer({
 
     const entryIds = (entryRows ?? []).map((row) => (row as { id: string }).id);
 
-    const [likesResponse, followsResponse, invitesResponse] = await Promise.all([
+    const [likesResponse, commentsResponse, followsResponse, invitesResponse] = await Promise.all([
       entryIds.length
         ? supabase
             .from('entry_likes')
+            .select('entry_id, user_id, created_at')
+            .in('entry_id', entryIds)
+            .neq('user_id', currentUserId)
+            .order('created_at', { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+      entryIds.length
+        ? supabase
+            .from('entry_comments')
             .select('entry_id, user_id, created_at')
             .in('entry_id', entryIds)
             .neq('user_id', currentUserId)
@@ -109,8 +125,11 @@ export function NotificationsDrawer({
         .limit(50),
     ]);
 
-    if (likesResponse.error || followsResponse.error || invitesResponse.error) {
-      console.error('Error loading notifications', likesResponse.error ?? followsResponse.error ?? invitesResponse.error);
+    if (likesResponse.error || commentsResponse.error || followsResponse.error || invitesResponse.error) {
+      console.error(
+        'Error loading notifications',
+        likesResponse.error ?? commentsResponse.error ?? followsResponse.error ?? invitesResponse.error
+      );
       setError('No se pudieron cargar las notificaciones.');
       setLoading(false);
       return;
@@ -136,13 +155,33 @@ export function NotificationsDrawer({
       }
     });
 
+    const commentsByEntry = new Map<string, { commenterIds: string[]; createdAt: string | null }>();
+    const commenterSet = new Set<string>();
+    (commentsResponse.data ?? []).forEach((row) => {
+      const typed = row as { entry_id: string; user_id: string; created_at: string | null };
+      if (!typed.entry_id || !typed.user_id) return;
+      if (typed.user_id === currentUserId) return;
+      commenterSet.add(typed.user_id);
+      const existing = commentsByEntry.get(typed.entry_id);
+      if (!existing) {
+        commentsByEntry.set(typed.entry_id, { commenterIds: [typed.user_id], createdAt: typed.created_at ?? null });
+        return;
+      }
+      if (!existing.commenterIds.includes(typed.user_id)) {
+        existing.commenterIds.push(typed.user_id);
+      }
+      if (typed.created_at && (!existing.createdAt || typed.created_at > existing.createdAt)) {
+        existing.createdAt = typed.created_at;
+      }
+    });
+
     const followRows = (followsResponse.data ?? []) as { follower_id: string; created_at: string | null }[];
     const followerIds = followRows.map((row) => row.follower_id);
     const inviteRows = (invitesResponse.data ?? []) as { id: string; inviter_id: string; group_id: string; created_at: string | null }[];
     const inviterIds = inviteRows.map((row) => row.inviter_id);
     const groupIds = inviteRows.map((row) => row.group_id);
 
-    const userIds = Array.from(new Set([...likerSet, ...followerIds, ...inviterIds].filter(Boolean)));
+    const userIds = Array.from(new Set([...likerSet, ...commenterSet, ...followerIds, ...inviterIds].filter(Boolean)));
 
     const [profilesResponse, groupsResponse] = await Promise.all([
       userIds.length
@@ -179,6 +218,14 @@ export function NotificationsDrawer({
       createdAt: data.createdAt,
     }));
 
+    const commentItems: NotificationItem[] = Array.from(commentsByEntry.entries()).map(([entryId, data]) => ({
+      id: `comment-${entryId}`,
+      type: 'comment',
+      entryId,
+      commenterIds: data.commenterIds,
+      createdAt: data.createdAt,
+    }));
+
     const followItems: NotificationItem[] = followRows.map((row) => ({
       id: `follow-${row.follower_id}`,
       type: 'follow',
@@ -195,7 +242,7 @@ export function NotificationsDrawer({
       createdAt: row.created_at ?? null,
     }));
 
-    const combined = [...likeItems, ...followItems, ...inviteItems].sort((a, b) => {
+    const combined = [...likeItems, ...commentItems, ...followItems, ...inviteItems].sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;
@@ -284,6 +331,35 @@ export function NotificationsDrawer({
                     >
                       <span className="bw-notify-icon bw-notify-like">
                         <Favorite fontSize="small" />
+                      </span>
+                      <span className="bw-notify-text">{message}</span>
+                    </button>
+                  );
+                }
+                if (item.type === 'comment') {
+                  const total = item.commenterIds.length;
+                  const firstId = item.commenterIds[0];
+                  const firstName = formatHandle(firstId);
+                  const restCount = Math.max(0, total - 1);
+                  let message = '';
+                  if (total <= 1) {
+                    message = `${firstName} ha comentado tu post.`;
+                  } else {
+                    const plural = restCount === 1 ? '' : 's';
+                    message = `${firstName} y ${restCount} persona${plural} mas comentaron tu post.`;
+                  }
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="bw-notify-item"
+                      onClick={() => {
+                        onOpenEntry(item.entryId);
+                        onClose();
+                      }}
+                    >
+                      <span className="bw-notify-icon bw-notify-comment">
+                        <ChatBubbleOutline fontSize="small" />
                       </span>
                       <span className="bw-notify-text">{message}</span>
                     </button>
