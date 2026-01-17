@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, startTransition } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -14,6 +15,7 @@ type SavedPostsPageProps = {
 };
 
 export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps>) {
+  const navigate = useNavigate();
   const [savedEntryIds, setSavedEntryIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,6 +81,7 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
               currentUserId={currentUserId}
               entryIdsFilter={savedEntryIds}
               hideHeader
+              onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: '/saved' } })}
             />
           ) : (
             <p className="bw-helper">Inicia sesión para ver tus posts guardados.</p>

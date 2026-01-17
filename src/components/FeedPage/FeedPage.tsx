@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, startTransition } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { supabase } from '../../lib/supabaseClient';
@@ -53,6 +54,7 @@ export function FeedPage({
   onRequireLogin,
   lockedPreview,
 }: Readonly<FeedPageProps>) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -422,6 +424,7 @@ export function FeedPage({
               onRequireLogin={onRequireLogin}
               lockedPreview={lockedPreview}
               refreshKey={refreshFeedKey}
+              onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: '/feed' } })}
               onOpenProfile={(userId) => setProfileModalUserId(userId)}
               focusUserId={effectiveFocusedUser?.id ?? null}
               hideHeader={Boolean(effectiveFocusedUser)}

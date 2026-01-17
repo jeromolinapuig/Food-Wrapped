@@ -636,6 +636,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               monthFilter={monthFilter}
               onMonthFilterChange={setMonthFilter}
               refreshKey={refreshFeedKey}
+              onOpenEntry={handleOpenPost}
               showOwnerActions
               onEditEntry={(entry) =>
                 handleEditEntry({

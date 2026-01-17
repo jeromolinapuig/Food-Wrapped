@@ -1,0 +1,211 @@
+import { Avatar } from '../common/Avatar';
+import type { CommentMode, EntryComment } from './types';
+
+type EntryCommentsProps = {
+  variant: 'inline' | 'card';
+  entryId: string;
+  entryUserId: string;
+  viewerId: string | null;
+  commentMode: CommentMode;
+  comments: EntryComment[];
+  commentCount: number;
+  isLoading: boolean;
+  error: string | null;
+  draft: string;
+  isSubmitting: boolean;
+  maxLength: number;
+  onDraftChange: (value: string) => void;
+  onSubmit: () => void;
+  onRequestDelete: (comment: EntryComment) => void;
+  onOpenEntry?: (entryId: string) => void;
+};
+
+const getPreviewCommentLimit = (comments: EntryComment[]) => {
+  if (comments.length <= 2) return comments.length;
+  const sample = comments.slice(0, 3);
+  const totalLength = sample.reduce((sum, comment) => sum + comment.body.length, 0);
+  const hasLong = sample.some((comment) => comment.body.length > 140);
+  return hasLong || totalLength > 260 ? 2 : 3;
+};
+
+export function EntryComments({
+  variant,
+  entryId,
+  entryUserId,
+  viewerId,
+  commentMode,
+  comments,
+  commentCount,
+  isLoading,
+  error,
+  draft,
+  isSubmitting,
+  maxLength,
+  onDraftChange,
+  onSubmit,
+  onRequestDelete,
+  onOpenEntry,
+}: Readonly<EntryCommentsProps>) {
+  const shouldShowComments =
+    commentMode === 'full' || Boolean(error) || commentCount > 0 || (commentMode === 'preview' && Boolean(onOpenEntry));
+
+  if (variant === 'inline' && (commentMode !== 'preview' || !shouldShowComments)) return null;
+  if (variant === 'card' && (commentMode !== 'full' || !shouldShowComments)) return null;
+
+  const previewLimit = commentMode === 'preview' ? getPreviewCommentLimit(comments) : comments.length;
+  const visibleComments = commentMode === 'preview' ? comments.slice(0, previewLimit) : comments;
+
+  if (variant === 'inline') {
+    return (
+      <div className="bw-comment-inline">
+        <div className="bw-comment-block">
+          {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
+          {!!visibleComments.length && (
+            <div className="bw-comment-list">
+              {visibleComments.map((comment) => {
+                const canDelete = Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
+                const commentName = comment.displayName || comment.username;
+                const initial = comment.username?.[0]?.toUpperCase() ?? '?';
+                const content = (
+                  <>
+                    <div className="bw-comment-avatar">
+                      <Avatar
+                        url={comment.avatarUrl}
+                        alt={comment.username}
+                        initial={initial}
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="bw-comment-body">
+                      <div className="bw-comment-meta">
+                        <span className="bw-comment-name">{commentName}</span>
+                      </div>
+                      <p className="bw-comment-text">{comment.body}</p>
+                    </div>
+                  </>
+                );
+
+                return canDelete ? (
+                  <button
+                    type="button"
+                    key={comment.id}
+                    className="bw-comment-item is-deletable"
+                    onClick={() => onRequestDelete(comment)}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="bw-comment-item" key={comment.id}>
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {onOpenEntry && (
+            <button
+              type="button"
+              className="bw-link-button bw-link-inline bw-comment-link"
+              onClick={() => onOpenEntry(entryId)}
+            >
+              Ver comentarios
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <article className="bw-comment-card">
+      <div className="bw-comment-block">
+        {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
+        {isLoading && (
+          <p className="bw-helper">Cargando comentarios...</p>
+        )}
+        {!!visibleComments.length && (
+          <div className="bw-comment-list">
+            {visibleComments.map((comment) => {
+              const canDelete = Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
+              const commentName = comment.displayName || comment.username;
+              const commentDate = new Date(comment.createdAt).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+              const initial = comment.username?.[0]?.toUpperCase() ?? '?';
+              const content = (
+                <>
+                  <div className="bw-comment-avatar">
+                    <Avatar
+                      url={comment.avatarUrl}
+                      alt={comment.username}
+                      initial={initial}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="bw-comment-body">
+                    <div className="bw-comment-meta">
+                      <span className="bw-comment-name">{commentName}</span>
+                      <span className="bw-comment-date">{commentDate}</span>
+                    </div>
+                    <p className="bw-comment-text">{comment.body}</p>
+                  </div>
+                </>
+              );
+
+              return canDelete ? (
+                <button
+                  type="button"
+                  key={comment.id}
+                  className="bw-comment-item is-deletable"
+                  onClick={() => onRequestDelete(comment)}
+                >
+                  {content}
+                </button>
+              ) : (
+                <div className="bw-comment-item" key={comment.id}>
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {!isLoading && !visibleComments.length && (
+          <p className="bw-helper">Se el primero en comentar.</p>
+        )}
+        {viewerId ? (
+          <form
+            className="bw-comment-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void onSubmit();
+            }}
+          >
+            <textarea
+              className="bw-textarea bw-comment-input"
+              rows={3}
+              placeholder="Escribe un comentario..."
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              maxLength={maxLength}
+              disabled={isSubmitting}
+            />
+            <div className="bw-comment-actions">
+              <button
+                className="bw-btn bw-btn-primary"
+                type="submit"
+                disabled={isSubmitting || !draft.trim()}
+              >
+                {isSubmitting ? 'Comentando...' : 'Comentar'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="bw-helper">Inicia sesion para comentar.</p>
+        )}
+      </div>
+    </article>
+  );
+}

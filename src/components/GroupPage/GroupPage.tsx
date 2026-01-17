@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { Euro, LunchDining } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -44,6 +45,7 @@ type GroupPageProps = {
 };
 
 export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>) {
+  const navigate = useNavigate();
   const [groupName, setGroupName] = useState<string | null>(null);
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -398,6 +400,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   hideHeader
                   monthFilter={monthFilter}
                   onMonthFilterChange={setMonthFilter}
+                  onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: `/groups/${groupId}` } })}
                 />
               )
             ) : (
