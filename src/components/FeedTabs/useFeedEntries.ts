@@ -32,7 +32,7 @@ type UseFeedEntriesResult = {
   setEffectiveMonthFilter: (value: string) => void;
   authNotice: string | null;
   setAuthNotice: (value: string | null) => void;
-  loadMoreRef: React.RefObject<HTMLDivElement>;
+  loadMoreRef: React.RefObject<HTMLDivElement | null>;
   viewerId: string | null;
   isUserFeed: boolean;
   isCustomList: boolean;
