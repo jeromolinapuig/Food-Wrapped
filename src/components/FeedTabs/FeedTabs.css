@@ -346,6 +346,7 @@
   border: 1px solid rgba(0, 0, 0, 0.06);
   text-align: left;
   width: 100%;
+  box-sizing: border-box;
   color: inherit;
   font: inherit;
   appearance: none;
@@ -382,18 +383,22 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .bw-comment-meta {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .bw-comment-name {
   font-weight: 700;
   font-size: 13px;
   color: var(--bw-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bw-comment-date {
