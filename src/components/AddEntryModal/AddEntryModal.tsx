@@ -6,12 +6,10 @@ import './AddEntryModal.css';
 import {
   Button,
   CssBaseline,
-  Switch,
   TextField,
   ThemeProvider,
   Rating,
 } from '@mui/material';
-import { LunchDining } from '@mui/icons-material';
 import { addEntrySchema } from '../../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
 import { createAppTheme } from '../../theme';
@@ -162,7 +160,7 @@ export function AddEntryModal({
           ? null
           : { id: entry.restaurantId, name: entry.restaurantName ?? '' }
       );
-      setIsBurger(entry.is_burger);
+      setIsBurger(true);
       setBurgerType(entry.meatType ?? 'beef');
       setBurgerSource(entry.burgerOrigin ?? 'restaurant');
       setBurgerInput(isHomemade ? '' : entry.burgerName ?? '');
@@ -624,6 +622,7 @@ export function AddEntryModal({
               />
             </div>
 
+              {/* Burger toggle hidden for now; entries are always burgers.
               <div className="bw-toggle-card">
                 <div className="bw-toggle-info">
                   <span className="bw-toggle-icon">
@@ -651,6 +650,7 @@ export function AddEntryModal({
                   inputProps={{ 'aria-label': 'Es hamburguesa' }}
                 />
               </div>
+              */}
 
               {isBurger && (
                 <>
