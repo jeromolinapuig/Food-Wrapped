@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen/AuthScreen';
+import { ResetPasswordScreen } from './components/AuthScreen/ResetPasswordScreen';
 import { BottomNav } from './components/BottomNav/BottomNav';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { FeedPage } from './components/FeedPage/FeedPage';
@@ -37,7 +38,7 @@ function App() {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const isLoginRoute = location.pathname === '/login';
+  const isLoginRoute = location.pathname === '/login' || location.pathname === '/reset-password';
 
   // Aplicar tema al <html> y guardar
   useEffect(() => {
@@ -105,8 +106,11 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password', { replace: true });
+      }
     });
 
     return () => {
@@ -336,6 +340,7 @@ function App() {
           path="/login"
           element={session ? <Navigate to="/" replace /> : <AuthScreen />}
         />
+        <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -16,11 +16,13 @@ export function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupNotice, setSignupNotice] = useState<string | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
   const hasUsernameWhitespace = (value: string) => /\s/.test(value);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setResetNotice(null);
     setLoading(true);
 
     try {
@@ -76,6 +78,29 @@ export function AuthScreen() {
     }
   };
 
+  const handleResetPassword = async () => {
+    setError(null);
+    setSignupNotice(null);
+    setResetNotice(null);
+    if (!email.trim()) {
+      setError('Escribe tu email para recuperar la contraseña.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetNotice('Te enviamos un email con el enlace para crear una nueva contraseña.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo enviar el correo.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-blob auth-blob-1" />
@@ -104,14 +129,24 @@ export function AuthScreen() {
           <button
             type="button"
             className={mode === 'login' ? 'is-active' : ''}
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login');
+              setError(null);
+              setSignupNotice(null);
+              setResetNotice(null);
+            }}
           >
             Entrar
           </button>
           <button
             type="button"
             className={mode === 'signup' ? 'is-active' : ''}
-            onClick={() => setMode('signup')}
+            onClick={() => {
+              setMode('signup');
+              setError(null);
+              setSignupNotice(null);
+              setResetNotice(null);
+            }}
           >
             Crear cuenta
           </button>
@@ -161,10 +196,21 @@ export function AuthScreen() {
                 {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
               </button>
             </div>
+            {mode === 'login' && (
+              <button
+                type="button"
+                className="auth-forgot"
+                onClick={handleResetPassword}
+                disabled={loading}
+              >
+                He olvidado mi contraseña
+              </button>
+            )}
           </label>
 
           {error && <p className="auth-error">{error}</p>}
           {signupNotice && <p className="auth-notice">{signupNotice}</p>}
+          {resetNotice && <p className="auth-notice">{resetNotice}</p>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
             {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}
@@ -176,7 +222,12 @@ export function AuthScreen() {
           <button
             type="button"
             className="auth-link"
-            onClick={() => setMode((prev) => (prev === 'login' ? 'signup' : 'login'))}
+            onClick={() => {
+              setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
+              setError(null);
+              setSignupNotice(null);
+              setResetNotice(null);
+            }}
           >
             {mode === 'login' ? 'Registrate' : 'Inicia sesion'}
           </button>

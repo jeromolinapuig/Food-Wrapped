@@ -263,3 +263,20 @@
   align-items: center;
   justify-content: center;
 }
+
+.auth-forgot {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: var(--bw-accent);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
+}
+
+.auth-forgot:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
