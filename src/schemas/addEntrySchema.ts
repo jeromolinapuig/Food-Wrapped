@@ -19,8 +19,8 @@ export const addEntrySchema = z
       .min(1, 'Selecciona una puntuacion.')
       .refine((val) => {
         const n = Number(val);
-        return !Number.isNaN(n) && n >= 1 && n <= 5;
-      }, 'La puntuacion debe estar entre 1 y 5.'),
+        return !Number.isNaN(n) && n >= 0.5 && n <= 5;
+      }, 'La puntuacion debe estar entre 0.5 y 5.'),
     isBurger: z.boolean(),
     burger: z.string().trim(),
     burgerOrigin: z.string().trim().optional().or(z.literal('')),

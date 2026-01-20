@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, type SyntheticEvent, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import '../../styles/shared.css';
@@ -15,9 +15,9 @@ import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
 import { createAppTheme } from '../../theme';
 import { compressImage } from '../../utils/image';
 import { lockBodyScroll } from '../../utils/scrollLock';
-import Cropper from 'react-easy-crop';
-import type { Area } from 'react-easy-crop';
+import ReactCrop, { convertToPixelCrop, type Crop, type PixelCrop } from 'react-image-crop';
 import { cropImageFile } from '../../utils/cropImage';
+import 'react-image-crop/dist/ReactCrop.css';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 type BurgerSource = 'restaurant' | 'homemade';
 
@@ -109,11 +109,11 @@ export function AddEntryModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoCropSrc, setPhotoCropSrc] = useState<string | null>(null);
   const [photoCropFile, setPhotoCropFile] = useState<File | null>(null);
-  const [photoCrop, setPhotoCrop] = useState({ x: 0, y: 0 });
-  const [photoZoom, setPhotoZoom] = useState(1);
-  const [photoCropArea, setPhotoCropArea] = useState<Area | null>(null);
+  const [photoCrop, setPhotoCrop] = useState<Crop>();
+  const [photoCropArea, setPhotoCropArea] = useState<PixelCrop | null>(null);
   const [cropIsPortrait, setCropIsPortrait] = useState(false);
-  const [cropAspect, setCropAspect] = useState(9 / 16);
+  const [photoStageHeight, setPhotoStageHeight] = useState(360);
+  const [photoNaturalSize, setPhotoNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
   const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
 
@@ -125,21 +125,10 @@ export function AddEntryModal({
   useEffect(() => {
     if (!photoCropSrc) {
       setCropIsPortrait(false);
-      setCropAspect(9 / 16);
-      return;
+      setPhotoCrop(undefined);
+      setPhotoCropArea(null);
+      setPhotoStageHeight(360);
     }
-    let cancelled = false;
-    const img = new Image();
-    img.onload = () => {
-      if (cancelled) return;
-      const isPortrait = img.height >= img.width;
-      setCropIsPortrait(isPortrait);
-      setCropAspect(isPortrait ? 9 / 16 : 16 / 9);
-    };
-    img.src = photoCropSrc;
-    return () => {
-      cancelled = true;
-    };
   }, [photoCropSrc]);
 
   // Reset form when opening
@@ -173,16 +162,18 @@ export function AddEntryModal({
       setIngredientsInput(entry.ingredients ?? '');
       setPriceInput(entry.price != null ? String(entry.price) : '');
       setRatingInput(entry.rating != null ? String(entry.rating) : '');
-    setAdditionalNotes(entry.additionalNotes ?? '');
-    setPhotoFile(null);
-    setPhotoPreview(entry.photoUrl ?? null);
-    setPhotoCropSrc(null);
-    setPhotoCropFile(null);
-    setPhotoCropArea(null);
-    setPhotoZoom(1);
-    setPhotoCrop({ x: 0, y: 0 });
-  } else {
-    setDatetimeInput(nowString);
+      setAdditionalNotes(entry.additionalNotes ?? '');
+      setPhotoFile(null);
+      setPhotoPreview(entry.photoUrl ?? null);
+      setPhotoCropSrc(null);
+      setPhotoCropFile(null);
+      setPhotoCropArea(null);
+      setPhotoCrop(undefined);
+      setCropIsPortrait(false);
+      setPhotoStageHeight(360);
+      setPhotoNaturalSize(null);
+    } else {
+      setDatetimeInput(nowString);
       setRestaurantInput('');
       setRestaurantSuggestions([]);
       setSelectedRestaurant(null);
@@ -194,17 +185,19 @@ export function AddEntryModal({
       setSelectedBurger(null);
       setIngredientsInput('');
       setPriceInput('');
-    setRatingInput('');
-    setAdditionalNotes('');
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setPhotoCropSrc(null);
-    setPhotoCropFile(null);
-    setPhotoCropArea(null);
-    setPhotoZoom(1);
-    setPhotoCrop({ x: 0, y: 0 });
-  }
-  setFormError(null);
+      setRatingInput('');
+      setAdditionalNotes('');
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      setPhotoCropSrc(null);
+      setPhotoCropFile(null);
+      setPhotoCropArea(null);
+      setPhotoCrop(undefined);
+      setCropIsPortrait(false);
+      setPhotoStageHeight(360);
+      setPhotoNaturalSize(null);
+    }
+    setFormError(null);
   }, [open, mode, entry]);
 
   const requestClose = () => {
@@ -261,17 +254,48 @@ export function AddEntryModal({
       setPhotoCropSrc(null);
       setPhotoCropFile(null);
       setPhotoCropArea(null);
+      setPhotoCrop(undefined);
+      setPhotoStageHeight(360);
+      setPhotoNaturalSize(null);
       return;
     }
+    if (photoCropSrc) URL.revokeObjectURL(photoCropSrc);
     const src = URL.createObjectURL(file);
     setPhotoCropSrc(src);
     setPhotoCropFile(file);
+    setPhotoCrop(undefined);
+    setPhotoCropArea(null);
+    setPhotoStageHeight(360);
+    setPhotoNaturalSize(null);
+  };
+
+  const handlePhotoInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = '';
+    void handlePhotoChange(file);
   };
 
   const removePhoto = () => handlePhotoChange(null);
 
+  const handleCropImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = event.currentTarget;
+    const isPortrait = naturalHeight >= naturalWidth;
+    setCropIsPortrait(isPortrait);
+    setPhotoNaturalSize({ width: naturalWidth, height: naturalHeight });
+    const stageEl = event.currentTarget.closest('.bw-cropper-stage') as HTMLElement | null;
+    const containerWidth =
+      stageEl?.clientWidth ?? Math.max(260, Math.min(window.innerWidth - 32, 480) - 24);
+    const maxContainerHeight = Math.max(260, window.innerHeight - 220);
+    const scale = Math.min(containerWidth / naturalWidth, maxContainerHeight / naturalHeight, 1);
+    const nextStageHeight = Math.max(260, Math.round(naturalHeight * scale));
+    setPhotoStageHeight(nextStageHeight);
+    const defaultCrop: Crop = { unit: '%', width: 90, height: 90, x: 5, y: 5 };
+    setPhotoCrop(defaultCrop);
+    setPhotoCropArea(convertToPixelCrop(defaultCrop, naturalWidth, naturalHeight));
+  };
+
   const handlePhotoCropConfirm = async () => {
-    if (!photoCropFile || !photoCropArea) return;
+    if (!photoCropFile || !photoCropArea || photoCropArea.width <= 0 || photoCropArea.height <= 0) return;
     setPhotoCompressing(true);
     try {
       const croppedFile = await cropImageFile(photoCropFile, photoCropArea);
@@ -288,8 +312,9 @@ export function AddEntryModal({
       setPhotoCropSrc(null);
       setPhotoCropFile(null);
       setPhotoCropArea(null);
-      setPhotoZoom(1);
-      setPhotoCrop({ x: 0, y: 0 });
+      setPhotoCrop(undefined);
+      setCropIsPortrait(false);
+      setPhotoStageHeight(360);
       setPhotoCompressing(false);
     }
   };
@@ -299,8 +324,9 @@ export function AddEntryModal({
     setPhotoCropSrc(null);
     setPhotoCropFile(null);
     setPhotoCropArea(null);
-    setPhotoZoom(1);
-    setPhotoCrop({ x: 0, y: 0 });
+    setPhotoCrop(undefined);
+    setCropIsPortrait(false);
+    setPhotoStageHeight(360);
   };
 
   const handleBurgerChange = async (value: string) => {
@@ -533,6 +559,7 @@ export function AddEntryModal({
     !ratingInput.trim() ||
     (isBurger && burgerSource === 'homemade' && !ingredientsInput.trim()) ||
     (isBurger && burgerSource === 'restaurant' && !burgerInput.trim());
+  const isCropSelectionReady = Boolean(photoCropArea && photoCropArea.width > 0 && photoCropArea.height > 0);
 
   if (!open) return null;
 
@@ -585,7 +612,7 @@ export function AddEntryModal({
                             type="file"
                             accept="image/*"
                             hidden
-                            onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                            onChange={handlePhotoInputChange}
                           />
                         </Button>
                       </div>
@@ -602,7 +629,7 @@ export function AddEntryModal({
                         type="file"
                         accept="image/*"
                         hidden
-                        onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                        onChange={handlePhotoInputChange}
                       />
                     </Button>
                   )}
@@ -621,36 +648,6 @@ export function AddEntryModal({
                 InputLabelProps={{ shrink: true }}
               />
             </div>
-
-              {/* Burger toggle hidden for now; entries are always burgers.
-              <div className="bw-toggle-card">
-                <div className="bw-toggle-info">
-                  <span className="bw-toggle-icon">
-                    <LunchDining fontSize="small" />
-                  </span>
-                  <div>
-                    <div className="bw-toggle-title">¿Es una hamburguesa?</div>
-                    <div className="bw-toggle-subtitle">Activa para elegir el tipo</div>
-                  </div>
-                </div>
-                <Switch
-                  checked={isBurger}
-                  onChange={(e) => {
-                    const nextValue = e.target.checked;
-                    setIsBurger(nextValue);
-                    if (!nextValue) {
-                      setBurgerSource('restaurant');
-                      setBurgerInput('');
-                      setBurgerSuggestions([]);
-                      setSelectedBurger(null);
-                      setIngredientsInput('');
-                    }
-                  }}
-                  color="primary"
-                  inputProps={{ 'aria-label': 'Es hamburguesa' }}
-                />
-              </div>
-              */}
 
               {isBurger && (
                 <>
@@ -876,22 +873,49 @@ export function AddEntryModal({
       {photoCropSrc && (
         <div className="bw-photo-viewer-backdrop" onClick={handlePhotoCropCancel}>
           <div className="bw-cropper" onClick={(e) => e.stopPropagation()}>
-            <div className={`bw-cropper-stage ${cropIsPortrait ? 'is-portrait' : ''}`}>
-              <Cropper
-                image={photoCropSrc}
-                crop={photoCrop}
-                zoom={photoZoom}
-                aspect={cropAspect}
-                onCropChange={setPhotoCrop}
-                onZoomChange={setPhotoZoom}
-                onCropComplete={(_area, areaPixels) => setPhotoCropArea(areaPixels)}
-              />
+            <div
+              className={`bw-cropper-stage ${cropIsPortrait ? 'is-portrait' : ''}`}
+              style={{ height: photoStageHeight }}
+            >
+              <div className="bw-react-crop">
+                <ReactCrop
+                  crop={photoCrop}
+                  onChange={(_nextCrop, percentCrop) => {
+                    setPhotoCrop(percentCrop);
+                    if (photoNaturalSize) {
+                      setPhotoCropArea(
+                        convertToPixelCrop(
+                          percentCrop,
+                          photoNaturalSize.width,
+                          photoNaturalSize.height
+                        )
+                      );
+                    }
+                  }}
+                  onComplete={() => {
+                    if (photoNaturalSize && photoCrop) {
+                      setPhotoCropArea(
+                        convertToPixelCrop(photoCrop, photoNaturalSize.width, photoNaturalSize.height)
+                      );
+                    }
+                  }}
+                  minHeight={80}
+                  minWidth={80}
+                  keepSelection
+                >
+                  <img src={photoCropSrc} alt="Foto a recortar" onLoad={handleCropImageLoad} />
+                </ReactCrop>
+              </div>
             </div>
             <div className="bw-cropper-actions">
               <Button variant="outlined" onClick={handlePhotoCropCancel} disabled={photoCompressing}>
                 Cancelar
               </Button>
-              <Button variant="contained" onClick={handlePhotoCropConfirm} disabled={photoCompressing}>
+              <Button
+                variant="contained"
+                onClick={handlePhotoCropConfirm}
+                disabled={photoCompressing || !isCropSelectionReady}
+              >
                 Recortar
               </Button>
             </div>

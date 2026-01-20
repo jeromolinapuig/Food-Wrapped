@@ -1,6 +1,16 @@
-import type { Area } from 'react-easy-crop';
+export type CropArea = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
-export async function cropImageFile(file: File, cropArea: Area, outputType = 'image/jpeg', quality = 0.95): Promise<File> {
+export async function cropImageFile(
+  file: File,
+  cropArea: CropArea,
+  outputType = 'image/jpeg',
+  quality = 0.95
+): Promise<File> {
   const imageBitmap = await createImageBitmap(file);
   const canvas = document.createElement('canvas');
   canvas.width = cropArea.width;
