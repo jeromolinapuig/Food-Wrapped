@@ -10,6 +10,7 @@ import { GroupsPage } from './components/GroupsPage/GroupsPage';
 import { GroupPage } from './components/GroupPage/GroupPage';
 import { LandingPage } from './components/LandingPage/LandingPage';
 import { ProfilePage } from './components/ProfilePage/ProfilePage';
+import { PrivacyPage } from './components/PrivacyPage/PrivacyPage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
@@ -340,6 +341,7 @@ function App() {
           path="/login"
           element={session ? <Navigate to="/" replace /> : <AuthScreen />}
         />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
