@@ -29,6 +29,9 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
               </button>
             </div>
             <p className="landing-note">Gratis y sin anuncios</p>
+            <p className="landing-legal">
+              <a href="/privacy">Politica de privacidad</a>
+            </p>
           </div>
 
           <section id="features" className="landing-section">

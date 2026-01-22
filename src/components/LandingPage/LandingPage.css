@@ -100,6 +100,16 @@
   font-size: 12px;
 }
 
+.landing-legal {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.landing-legal a {
+  color: var(--bw-text-muted);
+  text-decoration: underline;
+}
+
 .landing-section {
   background: #fff6fb;
   border-radius: 20px;

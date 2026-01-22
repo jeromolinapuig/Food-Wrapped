@@ -1,9 +1,7 @@
-import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 
 export function PrivacyPage() {
-  const navigate = useNavigate();
 
   return (
     <AppShell>
@@ -39,14 +37,6 @@ export function PrivacyPage() {
             Si tienes dudas sobre esta politica, escribe a{' '}
             <a href="mailto:burgerwrapped@gmail.com">burgerwrapped@gmail.com</a>.
           </p>
-          <button
-            type="button"
-            className="bw-button"
-            onClick={() => navigate('/')}
-            style={{ marginTop: 12 }}
-          >
-            Volver
-          </button>
         </section>
       </main>
     </AppShell>
