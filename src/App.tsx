@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 're
 import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen/AuthScreen';
 import { ResetPasswordScreen } from './components/AuthScreen/ResetPasswordScreen';
+import { UsernameSetupScreen } from './components/AuthScreen/UsernameSetupScreen';
 import { BottomNav } from './components/BottomNav/BottomNav';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { FeedPage } from './components/FeedPage/FeedPage';
@@ -27,9 +28,19 @@ type FocusUser = { id: string; username: string | null; displayName: string | nu
 type FeedLocationState = { openProfileUserId?: string | null };
 type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: string | null };
 type PostLocationState = { returnTo?: string };
+type AuthMetadata = { username?: string; username_set?: boolean };
+type AppMetadata = { provider?: string; providers?: string[] };
+
+const deriveDefaultUsername = (email?: string | null) => {
+  if (!email) return null;
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0) return null;
+  return email.slice(0, atIndex);
+};
 
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [requiresUsername, setRequiresUsername] = useState(false);
   const [feedFocusUser, setFeedFocusUser] = useState<FocusUser | null>(null);
   const [feedOpenProfileUserId, setFeedOpenProfileUserId] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(() => {
@@ -39,7 +50,9 @@ function App() {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const isLoginRoute = location.pathname === '/login' || location.pathname === '/reset-password';
+  const isLoginRoute = location.pathname === '/login' ||
+    location.pathname === '/reset-password' ||
+    location.pathname === '/setup-username';
 
   // Aplicar tema al <html> y guardar
   useEffect(() => {
@@ -95,6 +108,58 @@ function App() {
 
     keysToRemove.forEach((key) => window.localStorage.removeItem(key));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const checkUsername = async () => {
+      if (!session) {
+        setRequiresUsername(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', session.user.id)
+        .single();
+      if (!active) return;
+      if (error) {
+        setRequiresUsername(false);
+        return;
+      }
+      const profileUsername = (data as { username: string | null } | null)?.username ?? null;
+      const metadata =
+        (session.user.user_metadata as AuthMetadata | null);
+      const appMetadata =
+        (session.user.app_metadata as AppMetadata | null);
+      const metadataUsername = metadata?.username ?? null;
+      const metadataSet = Boolean(metadata?.username_set);
+      const isGoogle =
+        appMetadata?.provider === 'google' ||
+        Boolean(appMetadata?.providers?.includes('google'));
+      const defaultUsername = deriveDefaultUsername(session.user.email);
+      const usesDefault =
+        Boolean(profileUsername) &&
+        Boolean(defaultUsername) &&
+        profileUsername?.toLowerCase() === defaultUsername?.toLowerCase();
+      const inferredSet =
+        Boolean(profileUsername) &&
+        Boolean(metadataUsername) &&
+        profileUsername === metadataUsername &&
+        !usesDefault;
+      const hasCustomUsername = metadataSet || inferredSet;
+      setRequiresUsername(isGoogle && !hasCustomUsername);
+    };
+    checkUsername();
+    return () => {
+      active = false;
+    };
+  }, [location.pathname, session]);
+
+  useEffect(() => {
+    if (!session || !requiresUsername) return;
+    if (location.pathname === '/setup-username') return;
+    navigate('/setup-username', { replace: true });
+  }, [location.pathname, navigate, requiresUsername, session]);
 
   // Auth
   useEffect(() => {
@@ -342,6 +407,10 @@ function App() {
           element={session ? <Navigate to="/" replace /> : <AuthScreen />}
         />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route
+          path="/setup-username"
+          element={session ? <UsernameSetupScreen /> : <Navigate to="/login" replace />}
+        />
         <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />

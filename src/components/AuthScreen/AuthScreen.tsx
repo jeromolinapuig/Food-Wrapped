@@ -14,10 +14,12 @@ export function AuthScreen() {
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupNotice, setSignupNotice] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const hasUsernameWhitespace = (value: string) => /\s/.test(value);
+  const isBusy = loading || oauthLoading;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,6 +52,7 @@ export function AuthScreen() {
           options: {
             data: {
               username: trimmedUsername,
+              username_set: true,
             },
           },
         });
@@ -98,6 +101,26 @@ export function AuthScreen() {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setSignupNotice(null);
+    setResetNotice(null);
+    setOauthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo iniciar con Google.';
+      setError(message);
+      setOauthLoading(false);
     }
   };
 
@@ -150,6 +173,21 @@ export function AuthScreen() {
           >
             Crear cuenta
           </button>
+        </div>
+
+        <div className="auth-oauth">
+          <button
+            type="button"
+            className="auth-oauth-button"
+            onClick={handleGoogleSignIn}
+            disabled={isBusy}
+          >
+            <span className="auth-oauth-icon" aria-hidden="true">G</span>
+            {oauthLoading ? 'Conectando...' : 'Continuar con Google'}
+          </button>
+        </div>
+        <div className="auth-divider">
+          <span>o</span>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -212,7 +250,7 @@ export function AuthScreen() {
           {signupNotice && <p className="auth-notice">{signupNotice}</p>}
           {resetNotice && <p className="auth-notice">{resetNotice}</p>}
 
-          <button className="auth-submit" type="submit" disabled={loading}>
+          <button className="auth-submit" type="submit" disabled={isBusy}>
             {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}
           </button>
         </form>
