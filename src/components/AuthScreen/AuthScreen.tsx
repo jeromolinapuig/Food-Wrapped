@@ -182,7 +182,7 @@ export function AuthScreen() {
             onClick={handleGoogleSignIn}
             disabled={isBusy}
           >
-            <span className="auth-oauth-icon" aria-hidden="true">G</span>
+            <img src="/google.png" alt="" className="auth-oauth-icon" aria-hidden="true" />
             {oauthLoading ? 'Conectando...' : 'Continuar con Google'}
           </button>
         </div>

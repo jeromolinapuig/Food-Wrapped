@@ -184,27 +184,14 @@
 }
 
 .auth-oauth-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  font-weight: 800;
-  font-size: 14px;
-  color: #1f1f1f;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  object-fit: contain;
 }
 
 :root[data-theme='dark'] .auth-oauth-button {
   background: #13161c;
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #f3f4f6;
-}
-
-:root[data-theme='dark'] .auth-oauth-icon {
-  background: #0f1116;
   border-color: rgba(255, 255, 255, 0.16);
   color: #f3f4f6;
 }
