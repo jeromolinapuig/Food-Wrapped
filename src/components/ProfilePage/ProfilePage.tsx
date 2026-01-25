@@ -38,6 +38,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
+  const usernameInputRef = useRef('');
   const [bioInput, setBioInput] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -68,8 +69,15 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       setError(error.message);
       setProfile(null);
     } else {
-      setProfile(data as ProfileData);
-      setUsernameInput(data?.username ?? username ?? '');
+      const nextProfile = data as ProfileData;
+      setProfile(nextProfile);
+
+      const incomingUsername = nextProfile?.username ?? username ?? '';
+      const currentInput = usernameInputRef.current ?? '';
+      const userIsEditing = currentInput.trim() !== '' && currentInput.trim() !== incomingUsername;
+      if (!userIsEditing) {
+        setUsernameInput(incomingUsername);
+      }
       setBioInput(data?.bio ?? '');
       setAvatarPreview(data?.avatar_url ?? null);
       setIsPrivate(Boolean(data?.is_private));
@@ -90,7 +98,11 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       try {
         const parsed = JSON.parse(cached) as ProfileData;
         setProfile(parsed);
-        setUsernameInput(parsed.username ?? username ?? '');
+        const cachedUsername = parsed.username ?? username ?? '';
+        const currentInput = usernameInputRef.current ?? '';
+        if (!(currentInput.trim() && currentInput.trim() !== cachedUsername)) {
+          setUsernameInput(cachedUsername);
+        }
         setBioInput(parsed.bio ?? '');
         setAvatarPreview(parsed.avatar_url ?? null);
         setIsPrivate(Boolean(parsed.is_private));
@@ -186,12 +198,16 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
 
   useEffect(() => {
     if (!profile) return;
-    try {
-      sessionStorage.setItem(profileCacheKey, JSON.stringify(profile));
-    } catch {
-      // Ignore cache write errors (private mode, quota, etc.).
-    }
+      try {
+        sessionStorage.setItem(profileCacheKey, JSON.stringify(profile));
+      } catch {
+        // Ignore cache write errors (private mode, quota, etc.).
+      }
   }, [profile, profileCacheKey]);
+
+  useEffect(() => {
+    usernameInputRef.current = usernameInput;
+  }, [usernameInput]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const hasChanges = useMemo(() => {
@@ -312,6 +328,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       await supabase.auth.refreshSession().catch(() => {});
 
       setProfile(data as ProfileData);
+      setUsernameInput(nextUsername);
       // Avisar a otras vistas (dashboard) para refrescar el username mostrado
       window.dispatchEvent(
         new CustomEvent('bw-profile-updated', {
