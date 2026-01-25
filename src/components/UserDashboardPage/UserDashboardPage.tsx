@@ -211,6 +211,8 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     let ratingCount = 0;
 
     const restaurantCounter = new Map<string, number>();
+    const restaurantRatings = new Map<string, { sum: number; count: number }>();
+    const restaurantLastVisited = new Map<string, number>();
     const burgerTypes: BurgerTypeStats = { beef: 0, chicken: 0, vegan: 0 };
 
     for (const entry of entries) {
@@ -230,6 +232,15 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       const restaurantName = entry.restaurant?.name;
       if (restaurantName) {
         restaurantCounter.set(restaurantName, (restaurantCounter.get(restaurantName) ?? 0) + 1);
+        const visitTime = new Date(entry.datetime).getTime();
+        const lastVisit = restaurantLastVisited.get(restaurantName) ?? -Infinity;
+        if (visitTime > lastVisit) restaurantLastVisited.set(restaurantName, visitTime);
+        if (entry.rating != null) {
+          const current = restaurantRatings.get(restaurantName) ?? { sum: 0, count: 0 };
+          current.sum += entry.rating;
+          current.count++;
+          restaurantRatings.set(restaurantName, current);
+        }
       }
 
       if (entry.is_burger) {
@@ -241,10 +252,20 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     }
 
     let favoriteRestaurant = '';
-    let maxCount = 0;
-    restaurantCounter.forEach((count, name) => {
-      if (count > maxCount) {
-        maxCount = count;
+    let bestAverage = -Infinity;
+    restaurantRatings.forEach(({ sum, count }, name) => {
+      if (!count) return;
+      const avg = sum / count;
+      const visitCount = restaurantCounter.get(name) ?? 0;
+      const currentBestVisits = restaurantCounter.get(favoriteRestaurant) ?? 0;
+      const lastVisit = restaurantLastVisited.get(name) ?? -Infinity;
+      const currentBestLastVisit = restaurantLastVisited.get(favoriteRestaurant) ?? -Infinity;
+      if (
+        avg > bestAverage ||
+        (avg === bestAverage && visitCount > currentBestVisits) ||
+        (avg === bestAverage && visitCount === currentBestVisits && lastVisit > currentBestLastVisit)
+      ) {
+        bestAverage = avg;
         favoriteRestaurant = name;
       }
     });

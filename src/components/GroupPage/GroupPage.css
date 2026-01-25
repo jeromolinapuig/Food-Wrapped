@@ -46,6 +46,12 @@
   background: var(--bw-card-bg);
   border-radius: 18px;
   padding: 10px 14px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  color: inherit;
 }
 
 .bw-ranking-left {

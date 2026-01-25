@@ -86,6 +86,8 @@ function computeStats(entries: DbEntryRow[]) {
     ratingSum: 0,
     ratingCount: 0,
     restaurantCounter: new Map<string, number>(),
+    restaurantLastVisited: new Map<string, number>(),
+    restaurantRatings: new Map<string, { sum: number; count: number }>(),
     burgerTypes: { beef: 0, chicken: 0, vegan: 0 } as BurgerTypeStats,
   };
 
@@ -104,15 +106,36 @@ function computeStats(entries: DbEntryRow[]) {
       a.ratingCount++;
     }
     const rn = e.restaurant?.name;
-    if (rn) a.restaurantCounter.set(rn, (a.restaurantCounter.get(rn) ?? 0) + 1);
+    if (rn) {
+      a.restaurantCounter.set(rn, (a.restaurantCounter.get(rn) ?? 0) + 1);
+      const visitTime = new Date(e.datetime).getTime();
+      const lastVisit = a.restaurantLastVisited.get(rn) ?? -Infinity;
+      if (visitTime > lastVisit) a.restaurantLastVisited.set(rn, visitTime);
+      if (e.rating != null) {
+        const current = a.restaurantRatings.get(rn) ?? { sum: 0, count: 0 };
+        current.sum += e.rating;
+        current.count++;
+        a.restaurantRatings.set(rn, current);
+      }
+    }
     return a;
   }, init);
 
   let favoriteRestaurant = '';
-  let maxCount = 0;
-  acc.restaurantCounter.forEach((count, name) => {
-    if (count > maxCount) {
-      maxCount = count;
+  let bestAverage = -Infinity;
+  acc.restaurantRatings.forEach(({ sum, count }, name) => {
+    if (!count) return;
+    const avg = sum / count;
+    const visitCount = acc.restaurantCounter.get(name) ?? 0;
+    const currentBestVisits = acc.restaurantCounter.get(favoriteRestaurant) ?? 0;
+    const lastVisit = acc.restaurantLastVisited.get(name) ?? -Infinity;
+    const currentBestLastVisit = acc.restaurantLastVisited.get(favoriteRestaurant) ?? -Infinity;
+    if (
+      avg > bestAverage ||
+      (avg === bestAverage && visitCount > currentBestVisits) ||
+      (avg === bestAverage && visitCount === currentBestVisits && lastVisit > currentBestLastVisit)
+    ) {
+      bestAverage = avg;
       favoriteRestaurant = name;
     }
   });
