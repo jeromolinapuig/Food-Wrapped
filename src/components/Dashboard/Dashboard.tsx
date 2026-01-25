@@ -134,6 +134,8 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const location = useLocation();
   const lastSeenKey = `bw-notify-last-seen-${session.user.id}`;
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
+  const profileCacheKey = `bw-profile-${session.user.id}`;
+  const [headerUsername, setHeaderUsername] = useState<string | null>(null);
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -359,6 +361,65 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     setNotificationsLatest(latest ?? null);
   }, [session.user.id]);
 
+  const loadHeaderUsername = useCallback(async () => {
+    // 1) Intentar user_metadata fresca (no depende de perfiles ni cache)
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (!authErr) {
+      const authUser = authData.user;
+      const authUsername =
+        (authUser?.user_metadata as { username?: string; display_name?: string } | null)?.username ??
+        (authUser?.user_metadata as { display_name?: string } | null)?.display_name ??
+        null;
+      if (authUsername) {
+        setHeaderUsername(authUsername);
+      }
+    } else {
+      console.warn('No se pudo leer user_metadata para header', authErr);
+    }
+
+    // 2) Canon: perfil en tabla
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error || !data) {
+      console.warn('No se pudo cargar username del header', error);
+      return;
+    }
+
+    const profile = data as { username: string | null; display_name: string | null };
+    setHeaderUsername(profile.username ?? profile.display_name ?? null);
+  }, [session.user.id]);
+
+  useEffect(() => {
+    // Primer intento: cache guardada por ProfilePage
+    const cached = sessionStorage.getItem(profileCacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as { username?: string | null; display_name?: string | null };
+        const fromCache = parsed.username ?? parsed.display_name ?? null;
+        if (fromCache) setHeaderUsername(fromCache);
+      } catch {
+        // ignorar parseo
+      }
+    }
+
+    loadHeaderUsername();
+  }, [loadHeaderUsername, profileCacheKey]);
+
+  // Escucha actualizaciones emitidas desde ProfilePage para refrescar al instante
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<{ username?: string | null; displayName?: string | null }>;
+      const next = custom.detail?.username ?? custom.detail?.displayName ?? null;
+      if (next) setHeaderUsername(next);
+    };
+    window.addEventListener('bw-profile-updated', handler);
+    return () => window.removeEventListener('bw-profile-updated', handler);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const cached = sessionStorage.getItem(cacheKey);
@@ -420,9 +481,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       loadInvites();
       loadGroupCount();
       loadNotificationsMeta();
+      loadHeaderUsername();
     },
-    [loadEntries, loadGroupCount, loadInvites, loadNotificationsMeta],
-    { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
+    [loadEntries, loadGroupCount, loadInvites, loadNotificationsMeta, loadHeaderUsername],
+    { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
   );
 
   useEffect(() => {
@@ -517,7 +579,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     <AppShell>
         <PageHeader
           title="Burger Wrapped"
-          subtitle={`Tu año 2026 en hamburguesas - ${username ?? session.user.email}`}
+          subtitle={`Tu año 2026 en hamburguesas - ${headerUsername ?? username ?? session.user.email}`}
           logoAlt="Burger Wrapped"
           actions={(
             <button

@@ -258,11 +258,13 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
   };
 
   const handleSave = async () => {
-    if (!usernameInput.trim()) {
+    const nextUsername = usernameInput.trim();
+
+    if (!nextUsername) {
       setError('El nombre de usuario no puede estar vacio.');
       return;
     }
-    if (/\s/.test(usernameInput)) {
+    if (/\s/.test(nextUsername)) {
       setError('El nombre de usuario no puede tener espacios.');
       return;
     }
@@ -275,7 +277,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       const { data: existing, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', usernameInput.trim())
+        .eq('username', nextUsername)
         .neq('id', session.user.id)
         .limit(1);
 
@@ -289,8 +291,8 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       const { data, error: updateError } = await supabase
         .from('profiles')
         .update({
-          username: usernameInput.trim(),
-          display_name: usernameInput.trim(),
+          username: nextUsername,
+          display_name: nextUsername,
           bio: bioInput.trim(),
           is_private: isPrivate,
         })
@@ -300,7 +302,22 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
 
       if (updateError) throw updateError;
 
+      // Sincronizar metadata del usuario para que la sesión y el dashboard vean el nuevo username
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { username: nextUsername, display_name: nextUsername, username_set: true },
+      });
+      if (authError) throw authError;
+
+      // Refrescar la sesión para que los consumers vean el metadata actualizado
+      await supabase.auth.refreshSession().catch(() => {});
+
       setProfile(data as ProfileData);
+      // Avisar a otras vistas (dashboard) para refrescar el username mostrado
+      window.dispatchEvent(
+        new CustomEvent('bw-profile-updated', {
+          detail: { username: nextUsername, displayName: nextUsername },
+        })
+      );
       try {
         sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
       } catch {
