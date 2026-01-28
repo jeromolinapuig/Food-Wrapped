@@ -35,13 +35,16 @@ const localeToCurrency: Record<string, string> = {
 
 const loadLanguage = () => {
   if (typeof window === 'undefined') return 'en';
-  const stored = window.localStorage.getItem('bw-lang');
-  if (stored) return stored;
   const navLang = window.navigator.language || window.navigator.languages?.[0];
   if (!navLang) return 'en';
   const short = navLang.slice(0, 2).toLowerCase();
   if (['en', 'es', 'th', 'fr', 'it', 'de'].includes(short)) return short;
   return 'en';
+};
+
+const loadHasStoredLanguage = () => {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.localStorage.getItem('bw-lang'));
 };
 
 const loadCurrency = () => {
@@ -57,12 +60,13 @@ type PreferencesProviderProps = { children: ReactNode };
 
 export function PreferencesProvider({ children }: Readonly<PreferencesProviderProps>) {
   const [language, setLanguageState] = useState<string>(loadLanguage);
+  const [languagePersist, setLanguagePersist] = useState<boolean>(loadHasStoredLanguage);
   const [currency, setCurrencyState] = useState<string>(loadCurrency);
   const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);
 
   useEffect(() => {
     i18n.changeLanguage(language).catch(() => {});
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && languagePersist) {
       window.localStorage.setItem('bw-lang', language);
       document.documentElement.lang = language;
     }
@@ -123,13 +127,16 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
     }
   };
 
-  const setLanguage = (lang: string) => setLanguageState(lang);
+  const setLanguagePersisted = (lang: string) => {
+    setLanguagePersist(true);
+    setLanguageState(lang);
+  };
   const setCurrency = (cur: string) => setCurrencyState(cur);
 
   const value: PreferencesContextValue = {
     language,
     currency,
-    setLanguage,
+    setLanguage: setLanguagePersisted,
     setCurrency,
     formatCurrency,
     convertAmount,
