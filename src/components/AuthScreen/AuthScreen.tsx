@@ -4,10 +4,12 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Close from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { useTranslation } from 'react-i18next';
 import './AuthScreen.css';
 
 export function AuthScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,10 +32,10 @@ export function AuthScreen() {
     try {
       setSignupNotice(null);
       if (mode === 'signup' && !username.trim()) {
-        throw new Error('El nombre de usuario es obligatorio.');
+        throw new Error(t('auth.usernameRequired'));
       }
       if (mode === 'signup' && hasUsernameWhitespace(username)) {
-        throw new Error('El nombre de usuario no puede tener espacios.');
+        throw new Error(t('auth.usernameNoSpaces'));
       }
       if (mode === 'signup') {
         const trimmedUsername = username.trim();
@@ -44,7 +46,7 @@ export function AuthScreen() {
           .limit(1);
         if (existingError) throw existingError;
         if (existingUsers && existingUsers.length > 0) {
-          throw new Error('Ese nombre de usuario ya esta en uso.');
+          throw new Error(t('auth.usernameExists'));
         }
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -58,14 +60,14 @@ export function AuthScreen() {
         });
         if (error) {
           if (error.message?.toLowerCase().includes('already') || error.status === 400) {
-            throw new Error('Ya existe una cuenta con ese email.');
+            throw new Error(t('auth.emailExists'));
           }
           throw error;
         }
         if (data?.user?.identities && data.user.identities.length === 0) {
-          throw new Error('Ya existe una cuenta con ese email.');
+          throw new Error(t('auth.emailExists'));
         }
-        setSignupNotice('Revisa tu correo. Te hemos enviado un enlace para verificar la cuenta.');
+        setSignupNotice(t('auth.verifyEmail'));
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -74,7 +76,7 @@ export function AuthScreen() {
         if (error) throw error;
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Algo ha ido mal';
+      const message = err instanceof Error ? err.message : t('auth.genericError');
       setError(message);
     } finally {
       setLoading(false);
@@ -86,7 +88,7 @@ export function AuthScreen() {
     setSignupNotice(null);
     setResetNotice(null);
     if (!email.trim()) {
-      setError('Escribe tu email para recuperar la contraseña.');
+      setError(t('auth.errorEmail'));
       return;
     }
     setLoading(true);
@@ -95,9 +97,9 @@ export function AuthScreen() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      setResetNotice('Te enviamos un email con el enlace para crear una nueva contraseña.');
+      setResetNotice(t('auth.resetNotice'));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'No se pudo enviar el correo.';
+      const message = err instanceof Error ? err.message : t('auth.resetError');
       setError(message);
     } finally {
       setLoading(false);
@@ -118,7 +120,7 @@ export function AuthScreen() {
       });
       if (error) throw error;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'No se pudo iniciar con Google.';
+      const message = err instanceof Error ? err.message : t('auth.resetError');
       setError(message);
       setOauthLoading(false);
     }
@@ -133,7 +135,7 @@ export function AuthScreen() {
         <button
           type="button"
           className="auth-close"
-          aria-label="Cerrar"
+          aria-label={t('common.close')}
           onClick={() => navigate('/')}
         >
           <Close fontSize="small" />
@@ -144,7 +146,7 @@ export function AuthScreen() {
           </div>
           <div>
             <h1 className="auth-title">Burger Wrapped</h1>
-            <h5 className="auth-subtitle">Guarda tus sitios, notas y precios en un solo lugar.</h5>
+            <h5 className="auth-subtitle">{t('auth.subtitle')}</h5>
           </div>
         </div>
 
@@ -159,7 +161,7 @@ export function AuthScreen() {
               setResetNotice(null);
             }}
           >
-            Entrar
+            {t('auth.titleLogin')}
           </button>
           <button
             type="button"
@@ -171,7 +173,7 @@ export function AuthScreen() {
               setResetNotice(null);
             }}
           >
-            Crear cuenta
+            {t('auth.titleSignup')}
           </button>
         </div>
 
@@ -183,53 +185,53 @@ export function AuthScreen() {
             disabled={isBusy}
           >
             <img src="/google.png" alt="" className="auth-oauth-icon" aria-hidden="true" />
-            {oauthLoading ? 'Conectando...' : 'Continuar con Google'}
+            {oauthLoading ? t('auth.connecting') : t('auth.continueWithGoogle')}
           </button>
         </div>
         <div className="auth-divider">
-          <span>o</span>
+          <span>{t('auth.or')}</span>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {mode === 'signup' && (
             <label className="auth-field">
-              <span>Nombre de usuario</span>
+              <span>{t('auth.usernameLabel')}</span>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="ej. burgerlover"
+                placeholder={t('auth.usernamePlaceholder')}
                 required={mode === 'signup'}
               />
             </label>
           )}
 
           <label className="auth-field">
-            <span>Email</span>
+            <span>{t('common.email')}</span>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               required
             />
           </label>
 
           <label className="auth-field">
-            <span>Contraseña</span>
+            <span>{t('auth.passwordLabel')}</span>
             <div className="auth-password">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder={t('auth.passwordPlaceholder')}
                 required
               />
               <button
                 type="button"
                 className="auth-eye"
                 onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
               >
                 {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
               </button>
@@ -241,7 +243,7 @@ export function AuthScreen() {
                 onClick={handleResetPassword}
                 disabled={loading}
               >
-                He olvidado mi contraseña
+                {t('auth.forgotPassword')}
               </button>
             )}
           </label>
@@ -251,12 +253,12 @@ export function AuthScreen() {
           {resetNotice && <p className="auth-notice">{resetNotice}</p>}
 
           <button className="auth-submit" type="submit" disabled={isBusy}>
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarme'}
+            {loading ? t('common.loading') : mode === 'login' ? t('auth.titleLogin') : t('auth.signupCta')}
           </button>
         </form>
 
         <p className="auth-secondary">
-          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
           <button
             type="button"
             className="auth-link"
@@ -267,10 +269,15 @@ export function AuthScreen() {
               setResetNotice(null);
             }}
           >
-            {mode === 'login' ? 'Registrate' : 'Inicia sesion'}
+            {mode === 'login' ? t('auth.switchToSignup') : t('auth.switchToLogin')}
           </button>
         </p>
       </div>
     </div>
   );
 }
+
+
+
+
+

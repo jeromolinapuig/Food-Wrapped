@@ -1,0 +1,15 @@
+﻿{
+  "title": "Fil",
+  "subtitle": "Découvrez des burgers et rencontrez plus de monde.",
+  "clearSearch": "Effacer la recherche",
+  "searchPlaceholder": "Rechercher des utilisateurs...",
+  "searching": "Recherche...",
+  "noUsers": "Aucun utilisateur trouvé.",
+  "postsOf": "Posts de @{{user}}",
+  "confirmFollow": "Voulez-vous vraiment suivre @{{user}} ?",
+  "confirmUnfollow": "Voulez-vous vraiment ne plus suivre @{{user}} ?",
+  "yes": "Oui",
+  "no": "Non",
+  "postTitle": "Post",
+  "postSubtitle": "Détail du post."
+}

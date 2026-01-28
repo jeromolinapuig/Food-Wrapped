@@ -1,5 +1,6 @@
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import type { EntryComment } from './types';
+import { useTranslation } from 'react-i18next';
 
 type CommentConfirm = {
   entryId: string;
@@ -19,11 +20,13 @@ export function CommentConfirmDialog({
   onConfirm,
   isProcessing,
 }: Readonly<CommentConfirmDialogProps>) {
+  const { t } = useTranslation();
   return (
     <ConfirmDialog
       open={Boolean(commentConfirm)}
       onClose={onCancel}
-      title="Eliminar comentario"
+      title={t('comments.deleteTitle')}
+      message={t('comments.deleteConfirm')}
       actions={(
         <>
           <button
@@ -32,7 +35,7 @@ export function CommentConfirmDialog({
             onClick={onCancel}
             disabled={isProcessing}
           >
-            Cancelar
+            {t('comments.cancel')}
           </button>
           <button
             className="bw-btn bw-btn-danger"
@@ -40,7 +43,7 @@ export function CommentConfirmDialog({
             onClick={onConfirm}
             disabled={isProcessing}
           >
-            {isProcessing ? 'Eliminando...' : 'Eliminar comentario'}
+            {isProcessing ? t('comments.deleting') : t('comments.delete')}
           </button>
         </>
       )}

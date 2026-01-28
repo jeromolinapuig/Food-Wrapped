@@ -6,6 +6,7 @@ import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
+import { useTranslation } from 'react-i18next';
 
 type PostPageProps = {
   session: Session | null;
@@ -14,6 +15,7 @@ type PostPageProps = {
 };
 
 export function PostPage({ session, entryId, onBack }: Readonly<PostPageProps>) {
+  const { t } = useTranslation();
   const currentUserId = session?.user.id ?? null;
   useEffect(() => {
     const main = document.querySelector('.bw-main');
@@ -27,9 +29,9 @@ export function PostPage({ session, entryId, onBack }: Readonly<PostPageProps>) 
   return (
     <AppShell>
         <PageHeader
-          title="Post"
-          subtitle="Detalle de la entrada."
-          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+          title={t('feedPage.postTitle', { defaultValue: 'Post' })}
+          subtitle={t('feedPage.postSubtitle', { defaultValue: 'Post details.' })}
+          leading={<BackButton onClick={onBack} ariaLabel={t('common.back', { defaultValue: 'Back' })} />}
         />
 
         <main className="bw-main bw-post-main">

@@ -1,0 +1,15 @@
+﻿{
+  "title": "Feed",
+  "subtitle": "Scopri burger e connettiti con più persone.",
+  "clearSearch": "Pulisci la ricerca",
+  "searchPlaceholder": "Cerca utenti...",
+  "searching": "Ricerca...",
+  "noUsers": "Nessun utente trovato.",
+  "postsOf": "Post di @{{user}}",
+  "confirmFollow": "Vuoi davvero seguire @{{user}}?",
+  "confirmUnfollow": "Vuoi davvero smettere di seguire @{{user}}?",
+  "yes": "Sì",
+  "no": "No",
+  "postTitle": "Post",
+  "postSubtitle": "Dettaglio del post."
+}

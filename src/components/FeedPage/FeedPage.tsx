@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, startTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -55,6 +56,7 @@ export function FeedPage({
   lockedPreview,
 }: Readonly<FeedPageProps>) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -278,8 +280,8 @@ export function FeedPage({
   return (
     <AppShell>
         <PageHeader
-          title="Feed"
-          subtitle="Descubre burgers y conecta con más gente."
+          title={t('feedPage.title', { defaultValue: 'Feed' })}
+          subtitle={t('feedPage.subtitle')}
         />
 
         <main className="bw-main">
@@ -298,7 +300,7 @@ export function FeedPage({
                   ariaLabel="Volver al feed general"
                 />
                 <div className="bw-feed-focus-text">
-                  <div className="bw-feed-focus-name">Posts de @{effectiveFocusedUser.username ?? 'usuario'}</div>
+          <div className="bw-feed-focus-name">{t('feedPage.postsOf', { user: effectiveFocusedUser.username ?? 'user' })}</div>
                 </div>
               </div>
               <div className="bw-feed-focus-right">
@@ -321,7 +323,7 @@ export function FeedPage({
                   type="button"
                   className="bw-feed-search-back"
                   onClick={() => setSearchTerm('')}
-                  aria-label="Limpiar búsqueda"
+                  aria-label={t('common.searchClear')}
                   disabled={!searchTerm}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -336,7 +338,7 @@ export function FeedPage({
                 <input
                   type="search"
                   className="bw-input bw-feed-search-input"
-                  placeholder="Buscar usuarios..."
+                  placeholder={t('feedPage.searchPlaceholder', { defaultValue: 'Search users...' })}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
@@ -347,7 +349,7 @@ export function FeedPage({
                     type="button"
                     className="bw-feed-search-clear"
                     onClick={() => setSearchTerm('')}
-                    aria-label="Limpiar búsqueda"
+                    aria-label={t('common.searchClear')}
                   >
                     <Clear fontSize="small" />
                   </button>
@@ -358,10 +360,10 @@ export function FeedPage({
 
           {!effectiveFocusedUser && trimmedTerm.length >= 2 && (
             <div className="bw-user-results">
-              {searchLoading && <p className="bw-helper">Buscando...</p>}
+              {searchLoading && <p className="bw-helper">{t('feedPage.searching', { defaultValue: 'Searching...' })}</p>}
               {searchError && <p style={{ color: 'red', fontSize: 12 }}>{searchError}</p>}
               {!searchLoading && !searchError && !searchResults.length && (
-                <p className="bw-helper">No se encontraron usuarios.</p>
+                <p className="bw-helper">{t('feedPage.noUsers', { defaultValue: 'No users found.' })}</p>
               )}
               {searchResults.map((user) => {
                 const outgoingId = followingIds[user.id];
@@ -467,16 +469,16 @@ export function FeedPage({
         backdropClassName="bw-modal-backdrop"
         title={
           confirmAction?.action === 'request'
-            ? `¿Estás seguro que quieres seguir a @${confirmAction.user.username ?? 'usuario'}?`
-            : `¿Estás seguro que quieres dejar de seguir a @${confirmAction?.user.username ?? 'usuario'}?`
+            ? t('feedPage.confirmFollow', { user: confirmAction.user.username ?? 'user' })
+            : t('feedPage.confirmUnfollow', { user: confirmAction?.user.username ?? 'user' })
         }
         actions={(
           <>
             <button className="bw-btn bw-btn-ghost" onClick={handleCancelModal}>
-              No
+              {t('feedPage.no')}
             </button>
             <button className="bw-btn bw-btn-primary" onClick={handleConfirm}>
-              Sí
+              {t('feedPage.yes')}
             </button>
           </>
         )}
@@ -484,3 +486,6 @@ export function FeedPage({
     </AppShell>
   );
 }
+
+
+

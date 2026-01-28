@@ -2,6 +2,7 @@ import { Euro, LunchDining } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
@@ -46,6 +47,7 @@ type GroupPageProps = {
 };
 
 export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [groupName, setGroupName] = useState<string | null>(null);
   const [memberIds, setMemberIds] = useState<string[]>([]);
@@ -332,7 +334,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   }, [entries, members, rankingMetric]);
 
   const title = groupName ?? 'Grupo';
-  const sectionTitle = activeTab === 'posts' ? `Posts (${postsCount})` : 'Ranking';
+  const sectionTitle = activeTab === 'posts' ? t('groups.postsCount', { count: postsCount }) : t('groups.ranking');
   const handleSelectRanking = useCallback(
     (metric: 'spent' | 'burgers') => {
       setRankingMetric(metric);
@@ -354,14 +356,14 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     <AppShell>
         <PageHeader
           title="Burger Wrapped"
-          subtitle={`Resumen de ${title}`}
+          subtitle={t('groups.summary', { name: title })}
           logoAlt="Burger Wrapped"
-          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+          leading={<BackButton onClick={onBack} ariaLabel={t('groups.back')} />}
         />
 
         <main className="bw-main">
           {groupMissing ? (
-            <div className="bw-card bw-private-card">Este grupo ya no existe.</div>
+            <div className="bw-card bw-private-card">{t('groups.groupMissing')}</div>
           ) : (
             <>
           <section className="bw-stats-grid">
@@ -378,14 +380,14 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                 <StatCard
                   icon={<Euro fontSize="small" />}
                   value={`${stats.totalSpent.toFixed(2)}\u20AC`}
-                  label="Total gastado"
+                  label={t('groups.totalSpent')}
                   onClick={() => handleSelectRanking('spent')}
                   isActive={activeTab === 'ranking' && rankingMetric === 'spent'}
                 />
                 <StatCard
                   icon={<LunchDining fontSize="small" />}
                   value={`${stats.totalBurgers}`}
-                  label="Hamburguesas"
+                  label={t('groups.burgers')}
                   onClick={() => handleSelectRanking('burgers')}
                   isActive={activeTab === 'ranking' && rankingMetric === 'burgers'}
                 />
@@ -420,9 +422,9 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
             {activeTab === 'posts' ? (
               !membersLoaded ? (
-                <p className="bw-helper">Cargando posts del grupo...</p>
+                <p className="bw-helper">{t('groups.loadingPosts')}</p>
               ) : memberIds.length === 0 ? (
-                <p className="bw-helper">Este grupo no tiene miembros.</p>
+                <p className="bw-helper">{t('groups.noMembers')}</p>
               ) : (
                 <FeedTabs
                   currentUserId={session.user.id}
@@ -439,7 +441,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
             ) : (
               <div className="bw-ranking-list">
                 {!rankingRows.length && (
-                  <div className="bw-ranking-empty">Sin datos para mostrar.</div>
+                  <div className="bw-ranking-empty">{t('groups.noData')}</div>
                 )}
                 {rankingRows.map((member, index) => {
                   const label = member.displayName || member.username || 'usuario';

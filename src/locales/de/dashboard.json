@@ -1,0 +1,16 @@
+{
+  "subtitle": "Dein Burger-Jahr 2026 - {{user}}",
+  "installText": "Füge es zum Homescreen hinzu, um schnell zu öffnen.",
+  "later": "Später",
+  "addEntry": "Eintrag hinzufügen",
+  "posts": "Posts",
+  "burgers": "Burger",
+  "homemade": "Hausgemachte Burger",
+  "avgRating": "Durchschnittsbewertung",
+  "favorite": "Favorit",
+  "type": "Typ",
+  "totalSpent": "Gesamt ausgegeben",
+  "beef": "Rind",
+  "chicken": "Huhn",
+  "vegan": "Vegan"
+}

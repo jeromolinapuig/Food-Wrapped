@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import './BottomNav.css';
 import '../../styles/shared.css';
+import { useTranslation } from 'react-i18next';
 
 type BottomNavProps = {
   session: Session | null;
@@ -15,6 +16,7 @@ type BottomNavProps = {
 export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<string>('?');
   const [inviteCount, setInviteCount] = useState(0);
@@ -95,15 +97,15 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   const handleClick = (path: string) => navigate(path);
 
   return (
-    <nav className="bw-bottom-nav" aria-label="Navegacion principal">
+    <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}
         onClick={() => navigate('/')}
-        aria-label="Inicio"
+        aria-label={t('common.home', { defaultValue: 'Home' })}
       >
         <span className="bw-bottom-nav-icon"><Home /></span>
-        <span className="bw-bottom-nav-label">Inicio</span>
+        <span className="bw-bottom-nav-label">{t('common.home', { defaultValue: 'Home' })}</span>
       </button>
       <button
         type="button"
@@ -118,13 +120,13 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'groups' ? 'is-active' : ''}`}
         onClick={() => handleClick('/groups')}
-        aria-label="Grupos"
+        aria-label={t('common.groups', { defaultValue: 'Groups' })}
       >
         <span className="bw-bottom-nav-icon">
           <Groups />
           {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
         </span>
-        <span className="bw-bottom-nav-label">Grupos</span>
+        <span className="bw-bottom-nav-label">{t('common.groups', { defaultValue: 'Groups' })}</span>
       </button>
       <button
         type="button"
@@ -136,7 +138,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
           }
           handleClick('/profile');
         }}
-        aria-label="Mi perfil"
+        aria-label={t('profile.title')}
       >
         <span className="bw-bottom-nav-avatar">
           {isGuest ? (
@@ -149,7 +151,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
             <span className="bw-bottom-nav-initial">{initial}</span>
           )}
         </span>
-        <span className="bw-bottom-nav-label">{isGuest ? 'Invitado' : ''}</span>
+        <span className="bw-bottom-nav-label">{isGuest ? t('common.guest', { defaultValue: 'Guest' }) : ''}</span>
       </button>
     </nav>
   );

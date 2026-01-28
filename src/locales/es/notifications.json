@@ -1,0 +1,14 @@
+{
+  "title": "Notificaciones",
+  "loading": "Cargando notificaciones...",
+  "noNotifications": "No tienes notificaciones todavia.",
+  "likedSingle": "A {{name}} le ha gustado tu post.",
+  "likedPlural": "A {{name}} y a {{count}} persona más les ha gustado tu post.",
+  "likedMany": "A {{name}} y a muchos más les ha gustado tu post.",
+  "commentedSingle": "{{name}} ha comentado tu post.",
+  "commentedPlural": "{{name}} y {{count}} persona más comentaron tu post.",
+  "commentedMany": "{{name}} y muchos más comentaron tu post.",
+  "followed": "@{{name}} te ha seguido.",
+  "invited": "@{{name}} te ha invitado al grupo \"{{group}}\".",
+  "yourGroup": "tu grupo"
+}

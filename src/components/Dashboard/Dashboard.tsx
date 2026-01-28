@@ -15,6 +15,8 @@ import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { AppShell } from '../common/AppShell';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { PageHeader } from '../common/PageHeader';
+import { usePreferences } from '../../context/PreferencesContext';
+import { useTranslation } from 'react-i18next';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -39,6 +41,7 @@ type DbEntryRow = {
   datetime: string;
   rating: number | null;
   price: number | null;
+  currency?: string | null;
   is_burger: boolean;
   burger_origin: 'restaurant' | 'homemade' | null;
   meat_type: MeatType | null;
@@ -55,6 +58,7 @@ type EditEntry = {
   datetime: string;
   rating: number | null;
   price: number | null;
+  currency?: string | null;
   is_burger: boolean;
   additionalNotes?: string | null;
   restaurantId?: string | null;
@@ -176,6 +180,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     if (typeof window === 'undefined') return null;
     return window.localStorage.getItem(lastSeenKey);
   });
+  const { formatCurrency, currency: viewerCurrency } = usePreferences(); const { t } = useTranslation();
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
   const [invites, setInvites] = useState<GroupInvite[]>([]);
@@ -213,6 +218,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         datetime,
         rating,
         price,
+        currency,
         is_burger,
         burger_origin,
         meat_type,
@@ -602,7 +608,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     <AppShell>
         <PageHeader
           title="Burger Wrapped"
-          subtitle={`Tu año 2026 en hamburguesas - ${headerUsername ?? username ?? session.user.email}`}
+          subtitle={t('dashboard.subtitle', { user: headerUsername ?? username ?? session.user.email })}
           logoAlt="Burger Wrapped"
           actions={(
             <button
@@ -622,15 +628,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             <div className="bw-install-modal-card">
               <div className="bw-install-modal-body">
                 <div>
-                  <div className="bw-install-title">Instala la app</div>
-                  <div className="bw-install-text">Añádela a tu pantalla de inicio para abrirla rápido.</div>
+                  <div className="bw-install-title">{t('dashboard.installText')}</div>
+                  <div className="bw-install-text">{t('dashboard.installText')}</div>
                 </div>
                 <div className="bw-install-actions">
                   <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
-                    Más tarde
+                    {t('dashboard.later')}
                   </button>
                   <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
-                    Instalar
+                    {t('dashboard.addEntry')}
                   </button>
                 </div>
               </div>
@@ -650,41 +656,41 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               ))
             ) : (
               <>
-                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
                 <StatCard
                   icon={<House fontSize="small" />}
                   value={`${stats.homemadeBurgers}`}
-                  label="Hamburguesas caseras"
+                  label={t('dashboard.homemade')}
                 />
                 <StatCard
                   icon={<Star fontSize="small" />}
                   value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-                  label="Nota media"
+                  label={t('dashboard.avgRating')}
                 />
-                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
+                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label={t('dashboard.favorite')} />
               </>
             )}
           </section>
 
           <section className="bw-dashboard-row">
             <div className="bw-card bw-burger-types">
-              <h2 className="bw-section-title">Tipo</h2>
+              <h2 className="bw-section-title">{t('dashboard.type')}</h2>
               <div className="bw-burger-types-row">
                 <div className="bw-burger-type">
                   <span className="bw-burger-type-emoji">
-                    <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                    <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
                   </span>
                   <span>{stats.burgerTypes.beef}</span>
                 </div>
                 <div className="bw-burger-type">
                   <span className="bw-burger-type-emoji">
-                    <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                    <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
                   </span>
                   <span>{stats.burgerTypes.chicken}</span>
                 </div>
                 <div className="bw-burger-type">
                   <span className="bw-burger-type-emoji">
-                    <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                    <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
                   </span>
                   <span>{stats.burgerTypes.vegan}</span>
                 </div>
@@ -692,14 +698,14 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             </div>
             <StatCard
               icon={<Euro fontSize="small" />}
-              value={`${stats.totalSpent.toFixed(2)}\u20AC`}
-              label="Total gastado"
+              value={formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency })}
+              label={t('dashboard.totalSpent')}
             />
           </section>
 
           <section className="bw-history">
             <div className="bw-section-header">
-              <h2 className="bw-section-title">Posts ({postsCount})</h2>
+              <h2 className="bw-section-title">{t('dashboard.posts')} ({postsCount})</h2>
               <div className="bw-section-right">
                 <FeedTabs
                   currentUserId={session.user.id}
@@ -729,6 +735,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
                   datetime: entry.datetime,
                   rating: entry.rating,
                   price: entry.price,
+                  currency: entry.currency,
                   is_burger: entry.isBurger,
                   additionalNotes: entry.additionalNotes,
                   restaurantId: entry.restaurantId,
@@ -768,10 +775,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           <button
             className="bw-fab"
             onClick={openAddModal}
-            aria-label="Añadir entrada"
+            aria-label={t('common.addEntry')}
           >
             <span className="bw-fab-plus">+</span>
-            <span className="bw-fab-label">Añadir</span>
+            <span className="bw-fab-label">{t('common.add')}</span>
           </button>
         </div>
 
@@ -860,6 +867,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     </AppShell>
   );
 }
+
 
 
 

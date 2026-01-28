@@ -8,6 +8,7 @@ export type FeedEntry = {
   avatarUrl: string | null;
   datetime: string;
   price: number;
+  currency: string | null;
   rating: number;
   isBurger: boolean;
   additionalNotes: string | null;
@@ -29,6 +30,7 @@ export type SupabaseEntryRow = {
   rating: number | null;
   is_burger: boolean | null;
   additional_notes: string | null;
+  currency?: string | null;
   restaurant_id: string | null;
   burger_id: string | null;
   meat_type?: 'beef' | 'chicken' | 'vegan' | 'other' | null;

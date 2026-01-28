@@ -1,0 +1,13 @@
+{
+  "title": "Perfil",
+  "loadingProfile": "Cargando perfil...",
+  "mutual": "Os seguís mutuamente",
+  "followsYou": "Te sigue",
+  "privateProfile": "Perfil privado",
+  "viewStats": "Ver sus estadísticas",
+  "bioLabel": "Bio",
+  "noBio": "Sin bio todavía.",
+  "unfollow": "Dejar de seguir",
+  "follow": "Seguir",
+  "loginToFollow": "Inicia sesión para seguir a esta persona."
+}

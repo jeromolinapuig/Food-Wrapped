@@ -1,0 +1,16 @@
+{
+  "subtitle": "Tu año 2026 en hamburguesas - {{user}}",
+  "installText": "Añádela a tu pantalla de inicio para abrirla rápido.",
+  "later": "Más tarde",
+  "addEntry": "Añadir entrada",
+  "posts": "Posts",
+  "burgers": "Hamburguesas",
+  "homemade": "Hamburguesas caseras",
+  "avgRating": "Nota media",
+  "favorite": "Favorito",
+  "type": "Tipo",
+  "totalSpent": "Total gastado",
+  "beef": "Carne",
+  "chicken": "Pollo",
+  "vegan": "Vegana"
+}

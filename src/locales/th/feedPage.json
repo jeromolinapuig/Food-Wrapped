@@ -1,0 +1,15 @@
+﻿{
+  "title": "Feed",
+  "subtitle": "ค้นพบเบอร์เกอร์และเชื่อมต่อกับผู้คน",
+  "clearSearch": "ล้างการค้นหา",
+  "searchPlaceholder": "ค้นหาผู้ใช้...",
+  "searching": "กำลังค้นหา...",
+  "noUsers": "ไม่พบผู้ใช้",
+  "postsOf": "โพสต์ของ @{{user}}",
+  "confirmFollow": "ต้องการติดตาม @{{user}} หรือไม่?",
+  "confirmUnfollow": "ต้องการเลิกติดตาม @{{user}} หรือไม่?",
+  "yes": "ใช่",
+  "no": "ไม่",
+  "postTitle": "โพสต์",
+  "postSubtitle": "รายละเอียดโพสต์"
+}

@@ -1,0 +1,20 @@
+{
+  "followers": "ผู้ติดตาม",
+  "following": "กำลังติดตาม",
+  "title": "{{title}} ({{count}})",
+  "searchPlaceholder": "ค้นหาในรายการ...",
+  "searchClear": "ล้างการค้นหา",
+  "loading": "กำลังโหลด...",
+  "noFollowersName": "ยังไม่มีผู้ติดตามชื่อนั้น",
+  "noFollowers": "ยังไม่มีผู้ติดตาม",
+  "noFollowingName": "คุณไม่ได้ติดตามใครชื่อนี้",
+  "noFollowing": "ยังไม่ได้ติดตามใคร",
+  "mutual": "ติดตามกันและกัน",
+  "followsYou": "ติดตามคุณ",
+  "youFollow": "คุณติดตาม",
+  "viewStats": "ดูสถิติของพวกเขา",
+  "unfollow": "เลิกติดตาม",
+  "follow": "ติดตาม",
+  "confirmUnfollow": "แน่ใจหรือไม่ว่าจะเลิกติดตาม @{{user}}?",
+  "cancel": "ยกเลิก"
+}

@@ -1,0 +1,20 @@
+{
+  "followers": "Seguidores",
+  "following": "Seguidos",
+  "title": "{{title}} ({{count}})",
+  "searchPlaceholder": "Buscar en la lista...",
+  "searchClear": "Limpiar búsqueda",
+  "loading": "Cargando...",
+  "noFollowersName": "Aún no tienes seguidores con ese nombre.",
+  "noFollowers": "Aún no tienes seguidores.",
+  "noFollowingName": "No sigues a nadie con ese nombre.",
+  "noFollowing": "Todavía no sigues a nadie.",
+  "mutual": "Os seguís mutuamente",
+  "followsYou": "Te sigue",
+  "youFollow": "Lo sigues",
+  "viewStats": "Ver sus estadisticas",
+  "unfollow": "Dejar de seguir",
+  "follow": "Seguir",
+  "confirmUnfollow": "¿Estás seguro que quieres dejar de seguir a @{{user}}?",
+  "cancel": "Cancelar"
+}

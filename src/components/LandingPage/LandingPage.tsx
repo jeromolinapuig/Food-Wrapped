@@ -1,7 +1,8 @@
-import BarChartIcon from '@mui/icons-material/BarChart';
+﻿import BarChartIcon from '@mui/icons-material/BarChart';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PublicIcon from '@mui/icons-material/Public';
 import RestoreIcon from '@mui/icons-material/Restore';
+import { useTranslation } from 'react-i18next';
 import { AppShell } from '../common/AppShell';
 import './LandingPage.css';
 
@@ -10,6 +11,7 @@ type LandingPageProps = {
 };
 
 export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
+  const { t } = useTranslation();
   return (
     <AppShell>
       <main className="bw-main landing-main">
@@ -19,35 +21,35 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
               <img src="/logo.png" alt="Burger Wrapped" className="landing-logo" />
             </div>
             <h1 className="landing-title">Burger Wrapped</h1>
-            <p className="landing-subtitle">Tu año en hamburguesas</p>
+            <p className="landing-subtitle">{t('landing.subtitle')}</p>
             <p className="landing-lead">
-              Registra cada hamburguesa, guarda precios y notas, y descubre tus estadísticas al final del año.
+              {t('landing.lead')}
             </p>
             <div className="landing-actions">
               <button type="button" className="landing-btn landing-btn-primary" onClick={onLogin}>
-                Comenzar ahora
+                {t('landing.cta')}
               </button>
             </div>
-            <p className="landing-note">Gratis y sin anuncios</p>
+            <p className="landing-note">{t('landing.note')}</p>
             <p className="landing-legal">
-              <a href="/privacy">Politica de privacidad</a>
+              <a href="/privacy">{t('landing.privacy')}</a>
             </p>
           </div>
 
           <section id="features" className="landing-section">
-            <h2 className="landing-section-title">Que puedes hacer?</h2>
+            <h2 className="landing-section-title">{t('landing.featuresTitle')}</h2>
             <div className="landing-feature-list">
               <article className="landing-feature">
                 <div className="landing-feature-icon">
                   <BarChartIcon fontSize="small" />
                 </div>
                 <div>
-                  <h3>Tu dashboard personal</h3>
-                  <p>Visualiza total gastado, conteo de burgers, nota media y tu top restaurantes.</p>
+                  <h3>{t('landing.dashboardTitle')}</h3>
+                  <p>{t('landing.dashboardDesc')}</p>
                   <div className="landing-tags">
-                    <span className="landing-tag">Total gastado</span>
-                    <span className="landing-tag">Contador</span>
-                    <span className="landing-tag">Nota media</span>
+                    <span className="landing-tag">{t('landing.tagTotalSpent')}</span>
+                    <span className="landing-tag">{t('landing.tagCount')}</span>
+                    <span className="landing-tag">{t('landing.tagAvg')}</span>
                   </div>
                 </div>
               </article>
@@ -56,12 +58,12 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
                   <PublicIcon fontSize="small" />
                 </div>
                 <div>
-                  <h3>Feed global y social</h3>
-                  <p>Descubre lo que comen otros, sigue amigos y comparte tus mejores burgers.</p>
+                  <h3>{t('landing.feedTitle')}</h3>
+                  <p>{t('landing.feedDesc')}</p>
                   <div className="landing-tags">
-                    <span className="landing-tag">Feed</span>
-                    <span className="landing-tag">Amigos</span>
-                    <span className="landing-tag">Fotos</span>
+                    <span className="landing-tag">{t('landing.tagFeed')}</span>
+                    <span className="landing-tag">{t('landing.tagFriends')}</span>
+                    <span className="landing-tag">{t('landing.tagPhotos')}</span>
                   </div>
                 </div>
               </article>
@@ -70,11 +72,11 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
                   <EmojiEventsIcon fontSize="small" />
                 </div>
                 <div>
-                  <h3>Grupos y retos</h3>
-                  <p>Crea grupos, compite por rankings y compara gustos con tu gente.</p>
+                  <h3>{t('landing.groupsTitle')}</h3>
+                  <p>{t('landing.groupsDesc')}</p>
                   <div className="landing-tags">
-                    <span className="landing-tag">Rankings</span>
-                    <span className="landing-tag">Grupos</span>
+                    <span className="landing-tag">{t('landing.tagRankings')}</span>
+                    <span className="landing-tag">{t('landing.tagGroups')}</span>
                   </div>
                 </div>
               </article>
@@ -83,12 +85,12 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
                   <RestoreIcon fontSize="small" />
                 </div>
                 <div>
-                  <h3>Tu wrapped anual</h3>
-                  <p>Recibe tu resumen personalizado con top burgers, records y hallazgos del año.</p>
+                  <h3>{t('landing.wrappedTitle')}</h3>
+                  <p>{t('landing.wrappedDesc')}</p>
                   <div className="landing-tags">
-                    <span className="landing-tag">Top 5</span>
-                    <span className="landing-tag">Records</span>
-                    <span className="landing-tag">Tendencias</span>
+                    <span className="landing-tag">{t('landing.tagTop5')}</span>
+                    <span className="landing-tag">{t('landing.tagRecords')}</span>
+                    <span className="landing-tag">{t('landing.tagTrends')}</span>
                   </div>
                 </div>
               </article>
@@ -97,11 +99,11 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
 
           <section className="landing-cta">
             <div>
-              <h2>Listo para tu siguiente burger?</h2>
-              <p>Empieza hoy y ten tu wrapped listo cuando acabe el año.</p>
+              <h2>{t('landing.ctaTitle')}</h2>
+              <p>{t('landing.ctaDesc')}</p>
             </div>
             <button type="button" className="landing-btn landing-btn-primary" onClick={onLogin}>
-              Empezar mi wrapped
+              {t('landing.ctaSecondary')}
             </button>
           </section>
         </div>
@@ -109,3 +111,4 @@ export function LandingPage({ onLogin }: Readonly<LandingPageProps>) {
     </AppShell>
   );
 }
+

@@ -10,6 +10,7 @@ import { FeedHeader } from './FeedHeader';
 import { useEntryReactions } from './useEntryReactions';
 import { useFeedEntries } from './useFeedEntries';
 import type { FeedEntry } from './types';
+import { useTranslation } from 'react-i18next';
 import '../../styles/shared.css';
 import './FeedTabs.css';
 import '../EntryCard/EntryCard.css';
@@ -61,6 +62,7 @@ export function FeedTabs({
   commentMode = 'preview',
   lockedPreview,
 }: Readonly<FeedTabsProps>) {
+  const { t } = useTranslation();
   const {
     activeTab,
     setActiveTab,
@@ -138,16 +140,16 @@ export function FeedTabs({
   }, [photoPreviewUrl]);
 
   const renderPlaceholderText = () => {
-    if (isUserFeed && effectiveMonthFilter !== 'all') return 'Este usuario no tiene comidas publicas en este mes.';
-    if (isUserFeed) return 'Este usuario no tiene comidas publicas todavia.';
-    if (hasEntryFilter && effectiveMonthFilter !== 'all') return 'No tienes posts guardados en este mes.';
-    if (hasEntryFilter) return 'No tienes posts guardados.';
-    if (isCustomList && effectiveMonthFilter !== 'all') return 'Este grupo no tiene comidas publicas en este mes.';
-    if (isCustomList) return 'Este grupo no tiene comidas publicas todavia.';
-    if (privacyBlocked) return 'Este perfil es privado.';
-    if (isReadOnly && activeTab === 'following') return 'Inicia sesión para ver a quienes sigues.';
-    if (activeTab === 'following') return 'No hay entradas publicas de la gente a la que sigues.';
-    return 'No hay comidas todavia en este feed.';
+    if (isUserFeed && effectiveMonthFilter !== 'all') return t('feed.noMonthUser', { defaultValue: 'No public posts this month.' });
+    if (isUserFeed) return t('feed.noUserPosts', { defaultValue: 'No public posts yet.' });
+    if (hasEntryFilter && effectiveMonthFilter !== 'all') return t('feed.noSavedMonth', { defaultValue: 'No saved posts this month.' });
+    if (hasEntryFilter) return t('feed.noSaved', { defaultValue: 'No saved posts.' });
+    if (isCustomList && effectiveMonthFilter !== 'all') return t('feed.noGroupMonth', { defaultValue: 'No group posts this month.' });
+    if (isCustomList) return t('feed.noGroup', { defaultValue: 'No group posts yet.' });
+    if (privacyBlocked) return t('feed.privateProfile', { defaultValue: 'This profile is private.' });
+    if (isReadOnly && activeTab === 'following') return t('feedTabs.lockedFollowing');
+    if (activeTab === 'following') return t('feed.noFollowingPosts', { defaultValue: 'No posts from people you follow.' });
+    return t('feed.empty', { defaultValue: 'No posts in this feed yet.' });
   };
 
   const renderLockedFeedPreview = () =>
@@ -189,9 +191,9 @@ export function FeedTabs({
         if (shouldLockFollowing) {
           return (
             <LockedContent
-              title="Inicia sesión para ver a quienes sigues"
-              message="Entra con tu cuenta para ver el feed de la gente a la que sigues."
-              actionLabel="Iniciar sesión"
+              title={t('feedTabs.titleLocked')}
+              message={t('feedTabs.lockedFollowing')}
+              actionLabel={t('common.login')}
               onLogin={onRequireLogin ?? (() => {})}
               preview={renderLockedFeedPreview()}
               blurAmount={10}
@@ -261,7 +263,7 @@ export function FeedTabs({
               />
             );
           })}
-        {loadingMore && <div className="bw-feed-loading-more">Cargando mas...</div>}
+        {loadingMore && <div className="bw-feed-loading-more">{t('common.loading')}</div>}
         {!loading && !loadingMore && hasMore && <div ref={loadMoreRef} className="bw-feed-load-more" />}
       </div>
         );

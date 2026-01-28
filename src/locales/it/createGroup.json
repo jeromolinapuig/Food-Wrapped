@@ -1,0 +1,17 @@
+{
+  "title": "Crea gruppo",
+  "subtitle": "Seleziona gli amici con cui vuoi formare un gruppo.",
+  "limitWarning": "Hai già raggiunto il limite di {{max}} gruppi.",
+  "groupNameLabel": "Nome del gruppo",
+  "groupNamePlaceholder": "Es. Amici del burger",
+  "searchPlaceholder": "Cerca per nome utente...",
+  "loading": "Caricamento amici...",
+  "noResults": "Nessun risultato.",
+  "noFriends": "Non hai ancora amici reciproci.",
+  "creating": "Creazione...",
+  "createButton": "Crea gruppo",
+  "errorCreate": "Impossibile creare il gruppo.",
+  "errorLimit": "Non puoi creare più di 6 gruppi.",
+  "errorInviteLimit": "Alcuni utenti hanno già raggiunto il limite di 6 gruppi.",
+  "errorAddOwner": "Impossibile aggiungere il creatore al gruppo."
+}

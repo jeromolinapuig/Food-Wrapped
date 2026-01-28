@@ -1,5 +1,6 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { i18n } from '../../lib/i18n';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import type { FeedEntry, FeedTab, MonthOption, SupabaseEntryRow } from './types';
 
@@ -61,7 +62,7 @@ export function useFeedEntries({
   const [error, setError] = useState<string | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const [internalMonthFilter, setInternalMonthFilter] = useState<string>('all');
-  const [monthOptions, setMonthOptions] = useState<MonthOption[]>([{ value: 'all', label: 'Todo' }]);
+  const [monthOptions, setMonthOptions] = useState<MonthOption[]>([{ value: 'all', label: i18n.t('feedTabs.all') }]);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [cursor, setCursor] = useState<{ datetime: string; id: string } | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -375,6 +376,7 @@ export function useFeedEntries({
         avatarUrl: profile?.avatar_url ?? null,
         datetime: entry.datetime,
         price: entry.price ?? 0,
+        currency: (entry as { currency?: string | null }).currency ?? 'EUR',
         rating: entry.rating ?? 0,
         isBurger: Boolean(entry.is_burger),
         additionalNotes: entry.additional_notes ?? null,
@@ -529,12 +531,21 @@ export function useFeedEntries({
 
       if (error) {
         console.error('Error cargando meses', error);
-        setMonthOptions([{ value: 'all', label: 'Todo' }]);
+    setMonthOptions([{ value: 'all', label: i18n.t('feedTabs.all') }]);
         return;
       }
 
       const seen = new Set<string>();
-      const options: MonthOption[] = [{ value: 'all', label: 'Todo' }];
+      const localeMap: Record<string, string> = {
+        es: 'es-ES',
+        th: 'th-TH',
+        fr: 'fr-FR',
+        it: 'it-IT',
+        de: 'de-DE',
+        en: 'en-US',
+      };
+      const locale = localeMap[i18n.language as keyof typeof localeMap] ?? 'en-US';
+      const options: MonthOption[] = [{ value: 'all', label: i18n.t('feedTabs.all') }];
       const now = new Date();
       const currentYear = now.getFullYear();
       (data ?? []).forEach((row) => {
@@ -544,8 +555,8 @@ export function useFeedEntries({
         if (seen.has(value)) return;
         seen.add(value);
         const label = date.getFullYear() === currentYear
-          ? date.toLocaleString('es-ES', { month: 'long' })
-          : date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+          ? date.toLocaleString(locale, { month: 'long' })
+          : date.toLocaleString(locale, { month: 'long', year: 'numeric' });
         options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
       });
       setMonthOptions(options);
@@ -563,7 +574,7 @@ export function useFeedEntries({
     return () => {
       cancelled = true;
     };
-  }, [entryIdsFilter, focusUserId, hasEntryFilter, hideHeader, isCustomList, monthCacheKey, userIdsFilter]);
+  }, [entryIdsFilter, focusUserId, hasEntryFilter, hideHeader, isCustomList, monthCacheKey, userIdsFilter, i18n.language]);
 
   useEffect(() => {
     if (headerOnly) return;

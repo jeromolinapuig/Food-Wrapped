@@ -7,6 +7,8 @@ import {
   StarBorder,
   StarHalf,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { usePreferences } from '../../context/PreferencesContext';
 import '../../styles/shared.css';
 import './EntryCard.css';
 
@@ -22,6 +24,7 @@ type EntryCardProps = {
   onDelete?: () => void;
   photoUrl?: string | null;
   onPhotoClick?: () => void;
+  currency?: string | null;
 };
 
 const renderStars = (rating: number) =>
@@ -42,7 +45,10 @@ export function EntryCard({
   onDelete,
   photoUrl,
   onPhotoClick,
+  currency,
 }: EntryCardProps) {
+  const { t } = useTranslation();
+  const { formatCurrency } = usePreferences();
   return (
     <article className="bw-history-card">
       <div className="bw-history-header">
@@ -71,7 +77,7 @@ export function EntryCard({
           type="button"
           className="bw-history-photo-large"
           onClick={onPhotoClick}
-          aria-label="Ver foto"
+          aria-label={t('common.viewPhoto')}
         >
           <img src={photoUrl} alt={burgerName ?? restaurantName} loading="lazy" />
         </button>
@@ -93,11 +99,13 @@ export function EntryCard({
       </div>
 
       <div className="bw-history-footer">
-        <div className="bw-history-price">{'\u20AC'} {price != null ? price.toFixed(2) : '-'}</div>
+        <div className="bw-history-price">
+          {price != null ? formatCurrency(price, { fromCurrency: currency ?? 'EUR' }) : '-'}
+        </div>
         <div className="bw-history-actions">
           <button
             className="bw-icon-button"
-            title="Editar entrada"
+            title={t('common.edit')}
             onClick={onEdit}
             disabled={!onEdit}
           >
@@ -105,7 +113,7 @@ export function EntryCard({
           </button>
           <button
             className="bw-icon-button bw-icon-danger"
-            title="Eliminar entrada"
+            title={t('common.delete')}
             onClick={onDelete}
             disabled={!onDelete}
           >

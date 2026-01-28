@@ -1,0 +1,17 @@
+{
+  "title": "Create group",
+  "subtitle": "Select friends you want to form a group with.",
+  "limitWarning": "You already have the maximum of {{max}} groups.",
+  "groupNameLabel": "Group name",
+  "groupNamePlaceholder": "E.g. Burger friends",
+  "searchPlaceholder": "Search by username...",
+  "loading": "Loading friends...",
+  "noResults": "No results.",
+  "noFriends": "You don't have mutual friends yet.",
+  "creating": "Creating...",
+  "createButton": "Create group",
+  "errorCreate": "Could not create the group.",
+  "errorLimit": "You cannot create more than 6 groups.",
+  "errorInviteLimit": "Some users already have the maximum of 6 groups.",
+  "errorAddOwner": "Could not add the creator to the group."
+}

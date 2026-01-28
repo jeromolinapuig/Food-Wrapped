@@ -1,0 +1,13 @@
+{
+  "title": "Profile",
+  "loadingProfile": "Loading profile...",
+  "mutual": "You follow each other",
+  "followsYou": "Follows you",
+  "privateProfile": "Private profile",
+  "viewStats": "View their stats",
+  "bioLabel": "Bio",
+  "noBio": "No bio yet.",
+  "unfollow": "Unfollow",
+  "follow": "Follow",
+  "loginToFollow": "Log in to follow this person."
+}

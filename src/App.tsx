@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './lib/supabaseClient';
 import { AuthScreen } from './components/AuthScreen/AuthScreen';
 import { ResetPasswordScreen } from './components/AuthScreen/ResetPasswordScreen';
@@ -43,6 +44,7 @@ function App() {
   const [requiresUsername, setRequiresUsername] = useState(false);
   const [feedFocusUser, setFeedFocusUser] = useState<FocusUser | null>(null);
   const [feedOpenProfileUserId, setFeedOpenProfileUserId] = useState<string | null>(null);
+  const { t } = useTranslation();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'light';
     const saved = window.localStorage.getItem('bw-theme') as Theme | null;
@@ -338,8 +340,8 @@ function App() {
               />
             ) : (
               <LockedPage
-                title="Mi perfil"
-                subtitle="Inicia sesión para editar tu perfil y ver tus estadísticas."
+                title={t('locked.profileTitle')}
+                subtitle={t('locked.profileSubtitle')}
                 onLogin={handleLogin}
                 preview={<ProfilePlaceholder />}
               />
@@ -358,8 +360,8 @@ function App() {
               />
             ) : (
               <LockedPage
-                title="Grupos"
-                subtitle="Crea grupos y visualiza rankings con tus amigos."
+                title={t('locked.section')}
+                subtitle={t('locked.groupsSubtitle')}
                 onLogin={handleLogin}
                 preview={<GroupsPlaceholder />}
               />
@@ -377,8 +379,8 @@ function App() {
               />
             ) : (
               <LockedPage
-                title="Grupo"
-                subtitle="Inicia sesión para ver el grupo."
+                title={t('locked.section')}
+                subtitle={t('locked.groupSubtitle')}
                 onLogin={handleLogin}
                 preview={<GroupsPlaceholder />}
               />
@@ -394,8 +396,8 @@ function App() {
               <SavedPostsRoute />
             ) : (
               <LockedPage
-                title="Guardados"
-                subtitle="Inicia sesión para ver tus posts guardados."
+                title={t('locked.section')}
+                subtitle={t('locked.savedSubtitle')}
                 onLogin={handleLogin}
                 preview={<FeedPlaceholder />}
               />
@@ -455,6 +457,7 @@ type LockedPageProps = {
 };
 
 function LockedPage({ title, subtitle, onLogin, preview }: Readonly<LockedPageProps>) {
+  const { t } = useTranslation();
   const fallbackPreview = preview ?? (
     <div className="bw-locked-placeholder">
       <div className="bw-locked-row">
@@ -481,8 +484,8 @@ function LockedPage({ title, subtitle, onLogin, preview }: Readonly<LockedPagePr
       <PageHeader title={title} subtitle={subtitle} />
       <main className="bw-main">
         <LockedContent
-          title="Inicia sesión para ver esta sección"
-          actionLabel="Iniciar sesión"
+          title={t('locked.section')}
+          actionLabel={t('locked.action')}
           onLogin={onLogin}
           preview={fallbackPreview}
         />

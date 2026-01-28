@@ -1,6 +1,7 @@
 import { type ChangeEvent, type FormEvent, type SyntheticEvent, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
+import { useTranslation } from 'react-i18next';
 import '../../styles/shared.css';
 import './AddEntryModal.css';
 import {
@@ -9,6 +10,7 @@ import {
   TextField,
   ThemeProvider,
   Rating,
+  MenuItem,
 } from '@mui/material';
 import { addEntrySchema } from '../../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
@@ -17,6 +19,7 @@ import { compressImage } from '../../utils/image';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import ReactCrop, { convertToPixelCrop, type Crop, type PixelCrop } from 'react-image-crop';
 import { cropImageFile } from '../../utils/cropImage';
+import { usePreferences } from '../../context/PreferencesContext';
 import 'react-image-crop/dist/ReactCrop.css';
 type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 type BurgerSource = 'restaurant' | 'homemade';
@@ -60,6 +63,7 @@ type AddEntryModalProps = {
     datetime: string;
     rating: number | null;
     price: number | null;
+    currency?: string | null;
     is_burger: boolean;
     additionalNotes?: string | null;
     restaurantId?: string | null;
@@ -82,6 +86,8 @@ export function AddEntryModal({
   mode,
   entry,
 }: AddEntryModalProps) {
+  const { t } = useTranslation();
+  const { currency: defaultCurrency } = usePreferences();
   const [maxDateTime, setMaxDateTime] = useState(() => formatLocalDateTime(new Date()));
   const [datetimeInput, setDatetimeInput] = useState('');
   const [restaurantInput, setRestaurantInput] = useState('');
@@ -97,6 +103,7 @@ export function AddEntryModal({
   const [ingredientsInput, setIngredientsInput] = useState('');
 
   const [priceInput, setPriceInput] = useState('');
+  const [priceCurrency, setPriceCurrency] = useState<string>(defaultCurrency);
   const [ratingInput, setRatingInput] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
   const NOTES_LIMIT = 250;
@@ -116,6 +123,15 @@ export function AddEntryModal({
   const [photoNaturalSize, setPhotoNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
   const { colors, muiTheme } = useMemo(() => createAppTheme(theme), [theme]);
+  const currencyOptions = useMemo(
+    () => [
+      { value: 'EUR', label: '€ EUR' },
+      { value: 'THB', label: '฿ THB' },
+      { value: 'USD', label: '$ USD' },
+      { value: 'GBP', label: '£ GBP' },
+    ],
+    []
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -162,6 +178,7 @@ export function AddEntryModal({
       setIngredientsInput(entry.ingredients ?? '');
       setPriceInput(entry.price != null ? String(entry.price) : '');
       setRatingInput(entry.rating != null ? String(entry.rating) : '');
+      setPriceCurrency(entry.currency ?? defaultCurrency);
       setAdditionalNotes(entry.additionalNotes ?? '');
       setPhotoFile(null);
       setPhotoPreview(entry.photoUrl ?? null);
@@ -186,6 +203,7 @@ export function AddEntryModal({
       setIngredientsInput('');
       setPriceInput('');
       setRatingInput('');
+      setPriceCurrency(defaultCurrency);
       setAdditionalNotes('');
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -369,6 +387,7 @@ export function AddEntryModal({
       datetime: datetimeInput,
       restaurant: restaurantInput,
       price: priceInput,
+      currency: priceCurrency,
       rating: ratingInput,
       isBurger,
       burger: burgerInput,
@@ -505,6 +524,7 @@ export function AddEntryModal({
             meat_type: isBurger ? burgerType : null,
             rating,
             price,
+            currency: priceCurrency,
             photo_url: photoUrl,
             additional_notes: additionalNotesValue,
             homemade_ingredients: ingredientsValue,
@@ -525,6 +545,7 @@ export function AddEntryModal({
           meat_type: isBurger ? burgerType : null,
           rating,
           price,
+          currency: priceCurrency,
           photo_url: photoUrl,
           additional_notes: additionalNotesValue,
           homemade_ingredients: ingredientsValue,
@@ -576,22 +597,24 @@ export function AddEntryModal({
         >
           <div className="bw-modal-header">
             <div>
-              <h2 className="bw-modal-title">Nueva comida</h2>
-              <p className="bw-modal-subtitle">Registra lo que acabas de probar.</p>
+              <h2 className="bw-modal-title">
+                {t(mode === 'edit' ? 'addEntry.titleEdit' : 'addEntry.titleCreate')}
+              </h2>
+              <p className="bw-modal-subtitle">{t('addEntry.subtitle')}</p>
             </div>
             <Button variant="outlined" size="small" onClick={requestClose} disabled={formLoading}>
-              Cerrar
+              {t('common.close')}
             </Button>
           </div>
 
           <form className="bw-modal-form" onSubmit={handleAddEntry}>
             <div className="bw-modal-fields">
               <div className="bw-field">
-                <span className="bw-label">Foto (opcional)</span>
+                <span className="bw-label">{t('addEntry.photoLabel')}</span>
                 <div className="bw-photo-card">
                   {photoPreview ? (
                     <>
-                      <img src={photoPreview} alt="Foto de la entrada" className="bw-photo-preview" />
+                      <img src={photoPreview} alt={t('addEntry.photoAlt')} className="bw-photo-preview" />
                       <div className="bw-photo-actions">
                         <Button
                           variant="outlined"
@@ -599,7 +622,7 @@ export function AddEntryModal({
                           onClick={removePhoto}
                           disabled={photoCompressing || formLoading}
                         >
-                          Quitar
+                          {t('addEntry.removePhoto')}
                         </Button>
                         <Button
                           variant="contained"
@@ -607,7 +630,7 @@ export function AddEntryModal({
                           size="small"
                           disabled={photoCompressing || formLoading}
                         >
-                          Cambiar
+                          {t('addEntry.changePhoto')}
                           <input
                             type="file"
                             accept="image/*"
@@ -624,7 +647,7 @@ export function AddEntryModal({
                       size="small"
                       disabled={photoCompressing || formLoading}
                     >
-                      Añadir foto
+                      {t('addEntry.addPhoto')}
                       <input
                         type="file"
                         accept="image/*"
@@ -639,7 +662,7 @@ export function AddEntryModal({
               <div className="bw-field">
                 <TextField
                 id="bw-datetime"
-                label="Fecha y hora"
+                label={t('addEntry.datetime')}
                 type="datetime-local"
                 value={datetimeInput}
                 onChange={(e) => setDatetimeInput(e.target.value)}
@@ -653,28 +676,28 @@ export function AddEntryModal({
                 <>
                   <div className="bw-burger-type-block">
                     <div className="bw-field">
-                      <span className="bw-label">Tipo de hamburguesa</span>
+                      <span className="bw-label">{t('addEntry.burgerType', { defaultValue: 'Burger type' })}</span>
                       <div className="bw-meat-grid">
                         {[
                           {
                             value: 'beef',
-                            label: 'Ternera',
-                            icon: <img src="/meat.png" alt="Carne" className="bw-meat-icon-img" />,
+                            label: t('addEntry.beef'),
+                            icon: <img src="/meat.png" alt={t('addEntry.beef')} className="bw-meat-icon-img" />,
                           },
                           {
                             value: 'chicken',
-                            label: 'Pollo',
-                            icon: <img src="/chicken-leg.png" alt="Pollo" className="bw-meat-icon-img" />,
+                            label: t('addEntry.chicken'),
+                            icon: <img src="/chicken-leg.png" alt={t('addEntry.chicken')} className="bw-meat-icon-img" />,
                           },
                           {
                             value: 'vegan',
-                            label: 'Vegana',
-                            icon: <img src="/plant.png" alt="Vegana" className="bw-meat-icon-img" />,
+                            label: t('addEntry.vegan'),
+                            icon: <img src="/plant.png" alt={t('addEntry.vegan')} className="bw-meat-icon-img" />,
                           },
                           {
                             value: 'other',
-                            label: 'Otro',
-                            icon: <img src="/question-mark.png" alt="Otro" className="bw-meat-icon-img" />,
+                            label: t('addEntry.other'),
+                            icon: <img src="/question-mark.png" alt={t('addEntry.other')} className="bw-meat-icon-img" />,
                           },
                         ].map((opt) => (
                           <button
@@ -690,18 +713,18 @@ export function AddEntryModal({
                       </div>
                     </div>
                     <div className="bw-field">
-                      <span className="bw-label">Origen</span>
+                      <span className="bw-label">{t('addEntry.origin')}</span>
                       <div className="bw-meat-grid bw-source-grid">
                         {[
                           {
                             value: 'homemade',
-                            label: 'Casera',
-                            icon: <img src="/homemade.png" alt="Casera" className="bw-meat-icon-img" />,
+                            label: t('addEntry.homemade'),
+                            icon: <img src="/homemade.png" alt={t('addEntry.homemade')} className="bw-meat-icon-img" />,
                           },
                           {
                             value: 'restaurant',
-                            label: 'Restaurante',
-                            icon: <img src="/dollar.png" alt="Restaurante" className="bw-meat-icon-img" />,
+                            label: t('addEntry.restaurant'),
+                            icon: <img src="/dollar.png" alt={t('addEntry.restaurant')} className="bw-meat-icon-img" />,
                           },
                         ].map((opt) => (
                           <button
@@ -734,10 +757,10 @@ export function AddEntryModal({
                     <div className="bw-field">
                       <TextField
                         id="bw-ingredients"
-                        label="Ingredientes"
+                        label={t('addEntry.ingredientsLabel')}
                         value={ingredientsInput}
                         onChange={(e) => setIngredientsInput(e.target.value)}
-                        placeholder="Carne, pan, queso, salsas..."
+                        placeholder={t('addEntry.ingredientsPlaceholder')}
                         fullWidth
                         multiline
                         minRows={2}
@@ -752,10 +775,10 @@ export function AddEntryModal({
                 <div className="bw-field">
                   <TextField
                     id="bw-restaurant"
-                    label="Restaurante"
+                    label={t('addEntry.restaurantLabel')}
                     value={restaurantInput}
                     onChange={(e) => handleRestaurantChange(e.target.value)}
-                    placeholder="Jenkin's, Goiko, McDonalds..."
+                    placeholder={t('addEntry.restaurantPlaceholder')}
                     autoComplete="off"
                     fullWidth
                   />
@@ -775,10 +798,10 @@ export function AddEntryModal({
                 <div className="bw-field">
                   <TextField
                     id="bw-burger-name"
-                    label="Hamburguesa"
+                    label={t('addEntry.burgerLabel')}
                     value={burgerInput}
                     onChange={(e) => handleBurgerChange(e.target.value)}
-                    placeholder="Emmy B, Valhalla..."
+                    placeholder={t('addEntry.burgerPlaceholder')}
                     autoComplete="off"
                     fullWidth
                   />
@@ -793,7 +816,7 @@ export function AddEntryModal({
                   )}
                   {!selectedRestaurant && (
                     <p className="bw-helper">
-                      Escribe el nombre. Si eliges un restaurante verás sugerencias.
+                      {t('addEntry.nameHelp')}
                     </p>
                   )}
                 </div>
@@ -801,7 +824,7 @@ export function AddEntryModal({
 
               <div className="bw-field">
                 <span className="bw-label" style={{ marginBottom: 6 }}>
-                  Puntuación
+                  {t('addEntry.score')}
                 </span>
                 <Rating
                   name="entry-rating"
@@ -822,24 +845,52 @@ export function AddEntryModal({
               </div>
 
               <div className="bw-field">
-                <TextField
-                  id="bw-price"
-                  label="Precio por persona (€)"
-                  type="number"
-                  inputProps={{ step: 0.01, min: 0 }}
-                  value={priceInput}
-              onChange={(e) => setPriceInput(e.target.value)}
-              fullWidth
-            />
-          </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '3fr 2fr', // 60/40
+                    gap: 12,
+                    alignItems: 'flex-end',
+                  }}
+                >
+                  <TextField
+                    id="bw-price"
+                    label={t('addEntry.priceLabel', { currency: priceCurrency })}
+                    type="number"
+                    inputProps={{ step: 0.01, min: 0 }}
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    fullWidth
+                    sx={{ minWidth: 0 }}
+                  />
+                  <TextField
+                    id="bw-price-currency"
+                    select
+                    label={t('addEntry.priceCurrency')}
+                    value={priceCurrency}
+                    onChange={(e) => setPriceCurrency(e.target.value)}
+                    fullWidth
+                    sx={{
+                      minWidth: 0,
+                    }}
+                    SelectProps={{ MenuProps: { disablePortal: true } }}
+                  >
+                    {currencyOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </div>
+              </div>
 
           <div className="bw-field">
             <TextField
               id="bw-notes"
-              label="Comentarios adicionales"
+              label={t('addEntry.notesLabel')}
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Salsa especial, punto de la carne, con quién fuiste..."
+              placeholder={t('addEntry.notesPlaceholder')}
               fullWidth
               multiline
               minRows={3}
@@ -860,10 +911,10 @@ export function AddEntryModal({
                 onClick={requestClose}
                 disabled={formLoading}
               >
-                Cancelar
+                {t('addEntry.cancel')}
               </Button>
               <Button type="submit" variant="contained" disabled={isSubmitDisabled}>
-                {formLoading ? 'Guardando...' : 'Guardar'}
+                {formLoading ? t('addEntry.saving') : t('addEntry.save')}
               </Button>
             </div>
           </form>
@@ -903,20 +954,20 @@ export function AddEntryModal({
                   minWidth={80}
                   keepSelection
                 >
-                  <img src={photoCropSrc} alt="Foto a recortar" onLoad={handleCropImageLoad} />
+                  <img src={photoCropSrc} alt={t('addEntry.cropAlt')} onLoad={handleCropImageLoad} />
                 </ReactCrop>
               </div>
             </div>
             <div className="bw-cropper-actions">
               <Button variant="outlined" onClick={handlePhotoCropCancel} disabled={photoCompressing}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="contained"
                 onClick={handlePhotoCropConfirm}
                 disabled={photoCompressing || !isCropSelectionReady}
               >
-                Recortar
+                {t('addEntry.crop')}
               </Button>
             </div>
           </div>

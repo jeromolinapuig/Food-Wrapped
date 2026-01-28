@@ -6,6 +6,7 @@ import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
+import { useTranslation } from 'react-i18next';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 
@@ -15,6 +16,7 @@ type SavedPostsPageProps = {
 };
 
 export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps>) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [savedEntryIds, setSavedEntryIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -68,13 +70,13 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
   return (
     <AppShell>
         <PageHeader
-          title="Posts guardados"
-          subtitle="Tus publicaciones guardadas."
-          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+          title={t('saved.title')}
+          subtitle={t('saved.subtitle')}
+          leading={<BackButton onClick={onBack} ariaLabel={t('common.close')} />}
         />
 
         <main className="bw-main">
-          {loading && <p className="bw-helper">Cargando guardados...</p>}
+          {loading && <p className="bw-helper">{t('saved.loading')}</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {session && currentUserId ? (
             <FeedTabs
@@ -84,7 +86,7 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
               onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: '/saved' } })}
             />
           ) : (
-            <p className="bw-helper">Inicia sesión para ver tus posts guardados.</p>
+            <p className="bw-helper">{t('saved.loginHelper')}</p>
           )}
         </main>
     </AppShell>

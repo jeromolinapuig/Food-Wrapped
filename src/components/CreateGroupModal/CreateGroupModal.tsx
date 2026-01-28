@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Close, RadioButtonUnchecked } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { UserSummary } from '../../types/profiles';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
@@ -27,6 +28,7 @@ export function CreateGroupModal({
   onClose,
   onCreated,
 }: Readonly<CreateGroupModalProps>) {
+  const { t } = useTranslation();
   const [friends, setFriends] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function CreateGroupModal({
       if (cancelled) return;
 
       if (outgoingError || incomingError) {
-        setError('No se pudieron cargar tus amigos.');
+        setError(t('createGroup.loading'));
         setLoading(false);
         return;
       }
@@ -76,7 +78,7 @@ export function CreateGroupModal({
       if (cancelled) return;
 
       if (profilesError) {
-        setError('No se pudieron cargar tus amigos.');
+        setError(t('createGroup.loading'));
         setLoading(false);
         return;
       }
@@ -122,7 +124,7 @@ export function CreateGroupModal({
 
   const handleCreate = async () => {
     if (isAtLimit) {
-      setError('No puedes crear mas de 6 grupos.');
+      setError(t('createGroup.errorLimit'));
       return;
     }
     if (saving || !groupName.trim() || selectedIds.size === 0) return;
@@ -137,9 +139,9 @@ export function CreateGroupModal({
 
     if (groupError || !groupRow) {
       if (isGroupLimitError(groupError?.message)) {
-        setError('No puedes crear mas de 6 grupos.');
+        setError(t('createGroup.errorLimit'));
       } else {
-        setError('No se pudo crear el grupo.');
+        setError(t('createGroup.errorCreate'));
       }
       setSaving(false);
       return;
@@ -159,9 +161,9 @@ export function CreateGroupModal({
 
       if (invitesError) {
         if (isGroupLimitError(invitesError.message)) {
-          setError('Alguno de los usuarios ya tiene el maximo de 6 grupos.');
+          setError(t('createGroup.errorInviteLimit'));
         } else {
-          setError('No se pudieron enviar las invitaciones.');
+          setError(t('groupManage.errorInvite'));
         }
         setSaving(false);
         return;
@@ -174,9 +176,9 @@ export function CreateGroupModal({
 
     if (ownerMemberError) {
       if (isGroupLimitError(ownerMemberError.message)) {
-        setError('No puedes unirte a mas de 6 grupos.');
+        setError(t('createGroup.errorLimit'));
       } else {
-        setError('No se pudo aヵadir al creador al grupo.');
+        setError(t('createGroup.errorAddOwner'));
       }
       setSaving(false);
       return;
@@ -192,30 +194,30 @@ export function CreateGroupModal({
       <div className="bw-modal bw-group-modal" onClick={(e) => e.stopPropagation()}>
         <div className="bw-modal-header">
           <div>
-            <h2 className="bw-modal-title">Crear grupo</h2>
-            <p className="bw-modal-subtitle">Selecciona amigos con los que quieres formar el grupo.</p>
+            <h2 className="bw-modal-title">{t('createGroup.title')}</h2>
+            <p className="bw-modal-subtitle">{t('createGroup.subtitle')}</p>
           </div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             <Close fontSize="small" />
           </button>
         </div>
 
         {isAtLimit && (
           <p className="bw-helper" style={{ color: 'red', marginBottom: 8 }}>
-            Ya tienes el maximo de {maxGroups} grupos.
+            {t('createGroup.limitWarning', { max: maxGroups })}
           </p>
         )}
 
         <div className="bw-field bw-group-name-field">
           <label className="bw-label" htmlFor="bw-group-name">
-            Nombre del grupo
+            {t('createGroup.groupNameLabel')}
           </label>
           <input
             id="bw-group-name"
             className="bw-input"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
-            placeholder="Ej. Amigos del burger"
+            placeholder={t('createGroup.groupNamePlaceholder')}
           />
         </div>
 
@@ -224,7 +226,7 @@ export function CreateGroupModal({
             <input
               type="search"
               className="bw-input"
-              placeholder="Buscar por nombre de usuario..."
+              placeholder={t('createGroup.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -232,11 +234,11 @@ export function CreateGroupModal({
         )}
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">Cargando amigos...</p>}
+          {loading && <p className="bw-helper">{t('createGroup.loading')}</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {!loading && !error && !filteredFriends.length && (
             <p className="bw-helper">
-              {friends.length ? 'No hay resultados.' : 'Aカn no tienes amigos que te sigan y a los que sigas.'}
+              {friends.length ? t('createGroup.noResults') : t('createGroup.noFriends')}
             </p>
           )}
 
@@ -244,7 +246,7 @@ export function CreateGroupModal({
             <div className="bw-group-friends">
               {filteredFriends.map((friend) => {
                 const isSelected = selectedIds.has(friend.id);
-                const displayName = friend.displayName ?? friend.username ?? 'Usuario';
+                const displayName = friend.displayName ?? friend.username ?? t('common.user', { defaultValue: 'User' });
                 return (
                   <button
                     key={friend.id}
@@ -263,7 +265,7 @@ export function CreateGroupModal({
                         )}
                       </div>
                       <div>
-                        <div className="bw-user-name">@{friend.username ?? 'usuario'}</div>
+                        <div className="bw-user-name">@{friend.username ?? t('common.user', { defaultValue: 'user' })}</div>
                         <div className="bw-user-meta">{displayName}</div>
                       </div>
                     </div>
@@ -284,7 +286,7 @@ export function CreateGroupModal({
             disabled={isAtLimit || selectedIds.size === 0 || !groupName.trim() || saving}
             onClick={handleCreate}
           >
-            {saving ? 'Creando...' : 'Crear grupo'}
+            {saving ? t('createGroup.creating') : t('createGroup.createButton')}
           </button>
         </div>
       </div>

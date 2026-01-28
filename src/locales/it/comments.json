@@ -1,0 +1,14 @@
+{
+  "deleteTitle": "Elimina commento",
+  "deleteConfirm": "Sei sicuro di voler eliminare questo commento?",
+  "delete": "Elimina commento",
+  "deleting": "Eliminazione...",
+  "cancel": "Annulla",
+  "viewComments": "Vedi commenti",
+  "loading": "Caricamento commenti...",
+  "beFirst": "Scrivi tu il primo commento.",
+  "loginToComment": "Accedi per commentare.",
+  "placeholder": "Scrivi un commento...",
+  "commenting": "Pubblicazione...",
+  "comment": "Commenta"
+}

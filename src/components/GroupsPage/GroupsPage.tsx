@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Add, ChevronRight, PeopleOutline, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { GroupCard, GroupInvite } from '../../types/groups';
 import { supabase } from '../../lib/supabaseClient';
 import { GroupInvitesModal } from '../GroupInvitesModal/GroupInvitesModal';
@@ -33,6 +34,7 @@ const readSessionCache = <T,>(key: string) => {
 const MAX_GROUPS = 6;
 
 export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
+  const { t } = useTranslation();
   const groupsCacheKey = `bw-groups-v2-${session.user.id}`;
   const invitesCacheKey = `bw-group-invites-${session.user.id}`;
   const groupsCache = readSessionCache<GroupCard[]>(groupsCacheKey);
@@ -68,7 +70,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     ]);
 
     if (ownedError || memberError) {
-      setGroupsError('No se pudieron cargar los grupos.');
+      setGroupsError(t('groups.loading'));
       setLoadingGroups(false);
       return;
     }
@@ -97,7 +99,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
       .in('id', groupIds);
 
     if (groupsError) {
-      setGroupsError('No se pudieron cargar los grupos.');
+      setGroupsError(t('groups.loading'));
       setLoadingGroups(false);
       return;
     }
@@ -108,7 +110,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
       .in('group_id', groupIds);
 
     if (membersError) {
-      setGroupsError('No se pudieron cargar los grupos.');
+      setGroupsError(t('groups.loading'));
       setLoadingGroups(false);
       return;
     }
@@ -138,7 +140,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         .in('id', memberUserIds);
 
       if (profilesError) {
-        setGroupsError('No se pudieron cargar los grupos.');
+        setGroupsError(t('groups.loading'));
         setLoadingGroups(false);
         return;
       }
@@ -213,7 +215,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
       .eq('invitee_id', session.user.id);
 
     if (inviteError) {
-      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvitesError(t('groups.loading'));
       setLoadingInvites(false);
       return;
     }
@@ -242,7 +244,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     ]);
 
     if (groupsError || profilesError) {
-      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvitesError(t('groups.loading'));
       setLoadingInvites(false);
       return;
     }
@@ -361,8 +363,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
             <img src="/logo.png" alt="Burger Wrapped" />
           </div>
           <div style={{ flex: 1 }}>
-            <h1 className="bw-title">Grupos</h1>
-            <p className="bw-subtitle">Rankings y estadisticas con tus amigos.</p>
+            <h1 className="bw-title">{t('groups.title')}</h1>
+            <p className="bw-subtitle">{t('groups.subtitle')}</p>
           </div>
 
         </header>
@@ -374,30 +376,30 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
               className="bw-group-invites-button"
               onClick={() => setIsInvitesOpen(true)}
             >
-              Invitaciones a grupos ({invites.length})
+              {t('groups.invitations', { count: invites.length })}
             </button>
           )}
           <section className="bw-group-list">
-            {loadingGroups && <p className="bw-helper">Cargando grupos...</p>}
+            {loadingGroups && <p className="bw-helper">{t('groups.loading')}</p>}
             {groupsError && <p className="bw-helper" style={{ color: 'red' }}>{groupsError}</p>}
             {!loadingGroups && !groupsError && groups.length === 0 && (
-              <p className="bw-helper">Aun no tienes grupos. Crea el primero.</p>
+              <p className="bw-helper">{t('groups.empty')}</p>
             )}
             {!loadingGroups && hasGroupLimit && (
-              <p className="bw-helper">Has alcanzado el maximo de 6 grupos.</p>
+              <p className="bw-helper">{t('groups.limit')}</p>
             )}
             {groups.map((group) => (
               <Link
                 key={group.id}
                 to={`/groups/${group.id}`}
                 className="bw-group-card"
-                aria-label={`Ver grupo ${group.name}`}
+                aria-label={t('groups.viewGroupAriaLabel', { name: group.name })}
               >
                 <div className="bw-group-card-body">
                   <div className="bw-group-title">{group.name}</div>
                   <div className="bw-group-meta">
                     <PeopleOutline fontSize="small" />
-                    <span>{group.members === 1 ? 'Por ahora estas solo' : `${group.members} miembros`}</span>
+                    <span>{group.members === 1 ? t('groups.alone') : t('groups.members', { count: group.members })}</span>
                   </div>
                   <div className="bw-group-avatars">
                     {group.membersPreview.map((member) => (
@@ -416,7 +418,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
                     <button
                       type="button"
                       className="bw-group-settings"
-                      aria-label="Configurar grupo"
+                      aria-label={t('groups.settingsAriaLabel')}
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -435,7 +437,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
             <button
               type="button"
               className="bw-group-card bw-group-card-add"
-              aria-label="Crear grupo"
+              aria-label={t('groups.createButton')}
               onClick={() => {
                 if (hasGroupLimit) return;
                 setIsCreateOpen(true);

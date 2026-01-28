@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Close } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { GroupInvite } from '../../types/groups';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
@@ -37,6 +38,7 @@ export function GroupInvitesModal({
   onClose,
   onChanged,
 }: Readonly<GroupInvitesModalProps>) {
+  const { t } = useTranslation();
   const [confirmAction, setConfirmAction] = useState<{
     invite: GroupInvite;
     action: 'accept' | 'reject';
@@ -55,7 +57,7 @@ export function GroupInvitesModal({
 
     if (action === 'accept') {
       if (isAtLimit) {
-        setActionError(`No puedes unirte a mas de ${maxGroups} grupos.`);
+        setActionError(t('groupInvites.limitError', { max: maxGroups }));
         setMutating(false);
         setConfirmAction(null);
         return;
@@ -66,7 +68,7 @@ export function GroupInvitesModal({
 
       if (memberError) {
         if (isGroupLimitError(memberError.message)) {
-          setActionError(`No puedes unirte a mas de ${maxGroups} grupos.`);
+          setActionError(t('groupInvites.limitError', { max: maxGroups }));
         }
         setMutating(false);
         return;
@@ -79,7 +81,7 @@ export function GroupInvitesModal({
       .eq('id', invite.id);
 
     if (deleteError) {
-      setActionError('No se pudo actualizar la invitacion.');
+      setActionError(t('groupInvites.updateError'));
       setMutating(false);
       return;
     }
@@ -96,32 +98,32 @@ export function GroupInvitesModal({
         <div className="bw-modal-header">
           <div>
             <h2 className="bw-modal-title">
-              Invitaciones a grupos{isAtLimit ? ` (no puedes unirte a mas de ${maxGroups})` : ''}
+              {isAtLimit ? t('groupInvites.titleLimit', { max: maxGroups }) : t('groupInvites.title')}
             </h2>
-            <p className="bw-modal-subtitle">Gestiona las invitaciones pendientes.</p>
+            <p className="bw-modal-subtitle">{t('groupInvites.subtitle')}</p>
           </div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             <Close fontSize="small" />
           </button>
         </div>
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">Cargando invitaciones...</p>}
+          {loading && <p className="bw-helper">{t('groupInvites.loading')}</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {actionError && <p className="bw-helper" style={{ color: 'red' }}>{actionError}</p>}
           {!loading && !error && invites.length === 0 && (
-            <p className="bw-helper">No tienes invitaciones pendientes.</p>
+            <p className="bw-helper">{t('groupInvites.noInvites')}</p>
           )}
 
           {!loading && !error && invites.length > 0 && (
             <div className="bw-group-invites">
               {invites.map((invite) => {
                 const inviterHandle = invite.inviterUsername ?? invite.inviterDisplayName ?? 'usuario';
-                const groupLabel = invite.groupName ? `"${invite.groupName}"` : 'este grupo';
+                const groupLabel = invite.groupName ? `"${invite.groupName}"` : t('groupInvites.thisGroup');
                 return (
                   <div key={invite.id} className="bw-group-invite-card">
                     <p className="bw-group-invite-text">
-                      @{inviterHandle} te ha invitado a unirte a {groupLabel}.
+                      {t('groupInvites.inviteText', { inviter: inviterHandle, group: groupLabel })}
                     </p>
                     <div className="bw-group-invite-actions">
                       <button
@@ -130,7 +132,7 @@ export function GroupInvitesModal({
                         onClick={() => setConfirmAction({ invite, action: 'reject' })}
                         disabled={mutating}
                       >
-                        Rechazar
+                        {t('groupInvites.reject')}
                       </button>
                       <button
                         type="button"
@@ -138,7 +140,7 @@ export function GroupInvitesModal({
                         onClick={() => setConfirmAction({ invite, action: 'accept' })}
                         disabled={mutating || isAtLimit}
                       >
-                        Aceptar
+                        {t('groupInvites.accept')}
                       </button>
                     </div>
                   </div>
@@ -153,8 +155,8 @@ export function GroupInvitesModal({
         onClose={() => setConfirmAction(null)}
         title={
           confirmAction?.action === 'accept'
-            ? '¿Estás seguro que quieres aceptar la invitacion?'
-            : '¿Estás seguro que quieres rechazar la invitacion?'
+            ? t('groupInvites.acceptConfirm')
+            : t('groupInvites.rejectConfirm')
         }
         actions={(
           <>
@@ -164,7 +166,7 @@ export function GroupInvitesModal({
               onClick={() => setConfirmAction(null)}
               disabled={mutating}
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               className="bw-btn bw-btn-primary"
@@ -172,7 +174,7 @@ export function GroupInvitesModal({
               onClick={handleConfirm}
               disabled={mutating}
             >
-              {mutating ? 'Procesando...' : 'Confirmar'}
+              {mutating ? t('groupInvites.processing') : t('groupInvites.confirm')}
             </button>
           </>
         )}

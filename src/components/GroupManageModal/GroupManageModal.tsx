@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Close, Delete, RadioButtonUnchecked } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { GroupMemberWithRole } from '../../types/groups';
 import type { UserSummary } from '../../types/profiles';
 import { supabase } from '../../lib/supabaseClient';
@@ -28,6 +29,7 @@ export function GroupManageModal({
   onClose,
   onChanged,
 }: Readonly<GroupManageModalProps>) {
+  const { t } = useTranslation();
   const [members, setMembers] = useState<GroupMemberWithRole[]>([]);
   const [friends, setFriends] = useState<UserSummary[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -56,7 +58,7 @@ export function GroupManageModal({
       if (cancelled) return;
 
       if (groupError || !groupRow) {
-        setError('No se pudo cargar el grupo.');
+        setError(t('groupManage.loading'));
         setLoading(false);
         return;
       }
@@ -74,7 +76,7 @@ export function GroupManageModal({
       if (cancelled) return;
 
       if (membersError) {
-        setError('No se pudieron cargar los miembros.');
+        setError(t('groupManage.loading'));
         setLoading(false);
         return;
       }
@@ -92,7 +94,7 @@ export function GroupManageModal({
       if (cancelled) return;
 
       if (profilesError) {
-        setError('No se pudieron cargar los miembros.');
+        setError(t('groupManage.loading'));
         setLoading(false);
         return;
       }
@@ -135,7 +137,7 @@ export function GroupManageModal({
       if (cancelled) return;
 
       if (friendsError) {
-        setError('No se pudieron cargar los amigos.');
+        setError(t('groupManage.loading'));
         setLoading(false);
         return;
       }
@@ -168,7 +170,7 @@ export function GroupManageModal({
       .eq('id', groupId)
       .eq('owner_id', currentUserId);
     if (renameError) {
-      setError('No se pudo cambiar el nombre del grupo.');
+      setError(t('groupManage.errorRename'));
       setSaving(false);
       return;
     }
@@ -211,9 +213,9 @@ export function GroupManageModal({
 
     if (inviteError) {
       if (isGroupLimitError(inviteError.message)) {
-        setError('Alguno de los usuarios ya tiene el maximo de 6 grupos.');
+        setError(t('groupManage.errorInviteLimit'));
       } else {
-        setError('No se pudieron enviar las invitaciones.');
+        setError(t('groupManage.errorInvite'));
       }
       setSaving(false);
       return;
@@ -234,7 +236,7 @@ export function GroupManageModal({
       .eq('id', groupId)
       .eq('owner_id', currentUserId);
     if (deleteError) {
-      setError('No se pudo eliminar el grupo.');
+      setError(t('groupManage.errorDelete'));
       setSaving(false);
       return;
     }
@@ -246,7 +248,7 @@ export function GroupManageModal({
 
   const handleRemoveMember = async (member: GroupMemberWithRole) => {
     if (saving || member.isOwner) return;
-    const confirmRemove = window.confirm(`¿Eliminar a @${member.username ?? 'usuario'} del grupo?`);
+    const confirmRemove = window.confirm(t('groupManage.confirmRemove', { user: member.username ?? 'usuario' }));
     if (!confirmRemove) return;
     setSaving(true);
     const { error: removeError } = await supabase
@@ -254,7 +256,7 @@ export function GroupManageModal({
       .delete()
       .match({ group_id: groupId, user_id: member.id });
     if (removeError) {
-      setError('No se pudo expulsar al miembro.');
+      setError(t('groupManage.errorRemove'));
       setSaving(false);
       return;
     }
@@ -268,38 +270,40 @@ export function GroupManageModal({
       <div className="bw-modal bw-group-modal" onClick={(e) => e.stopPropagation()}>
         <div className="bw-modal-header">
           <div>
-            <h2 className="bw-modal-title">Configurar grupo</h2>
-            <p className="bw-modal-subtitle">{groupName ?? 'Grupo'}</p>
+            <h2 className="bw-modal-title">{t('groupManage.title')}</h2>
+            <p className="bw-modal-subtitle">
+              {t('groupManage.subtitle', { name: groupName ?? t('groups.title', { defaultValue: 'Group' }) })}
+            </p>
           </div>
           <div className="bw-modal-header-actions">
             <button
               type="button"
               className="bw-icon-button bw-icon-danger"
               onClick={() => setConfirmDelete(true)}
-              aria-label="Eliminar grupo"
+              aria-label={t('groupManage.deleteAriaLabel')}
             >
               <Delete fontSize="small" />
             </button>
-            <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+            <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
               <Close fontSize="small" />
             </button>
           </div>
         </div>
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">Cargando...</p>}
+          {loading && <p className="bw-helper">{t('groupManage.loading')}</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
 
           {!loading && (
             <>
               <div className="bw-group-section">
-                <div className="bw-group-section-title">Nombre del grupo</div>
+                <div className="bw-group-section-title">{t('groupManage.groupNameSection')}</div>
                 <div className="bw-group-rename">
                   <input
                     className="bw-input"
                     value={groupTitle}
                     onChange={(e) => setGroupTitle(e.target.value)}
-                    placeholder="Nombre del grupo"
+                    placeholder={t('groupManage.groupNamePlaceholder')}
                   />
                   <button
                     type="button"
@@ -307,15 +311,15 @@ export function GroupManageModal({
                     onClick={handleRename}
                     disabled={saving || !groupTitle.trim() || groupTitle.trim() === initialGroupTitle.trim()}
                   >
-                    Guardar
+                    {t('groupManage.save')}
                   </button>
                 </div>
               </div>
               <div className="bw-group-section">
-                <div className="bw-group-section-title">Miembros</div>
+                <div className="bw-group-section-title">{t('groupManage.membersSection')}</div>
                 <div className="bw-group-members">
                   {members.map((member) => {
-                    const name = member.displayName ?? member.username ?? 'Usuario';
+                    const name = member.displayName ?? member.username ?? t('common.user', { defaultValue: 'User' });
                     return (
                       <div key={member.id} className="bw-group-member-row">
                         <div className="bw-group-member-info">
@@ -327,48 +331,48 @@ export function GroupManageModal({
                                 {(member.username ?? '?').charAt(0).toUpperCase()}
                               </div>
                             )}
+                            </div>
+                            <div>
+                              <div className="bw-user-name">@{member.username ?? t('common.user', { defaultValue: 'user' })}</div>
+                              <div className="bw-user-meta">{name}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="bw-user-name">@{member.username ?? 'usuario'}</div>
-                            <div className="bw-user-meta">{name}</div>
-                          </div>
+                          {member.isOwner ? (
+                            <span className="bw-group-owner">{t('groupManage.admin')}</span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="bw-group-remove"
+                              onClick={() => handleRemoveMember(member)}
+                              disabled={saving}
+                            >
+                              {t('groupManage.remove')}
+                            </button>
+                          )}
                         </div>
-                        {member.isOwner ? (
-                          <span className="bw-group-owner">Admin</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="bw-group-remove"
-                            onClick={() => handleRemoveMember(member)}
-                            disabled={saving}
-                          >
-                            Expulsar
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {!members.length && <p className="bw-helper">No hay miembros.</p>}
+                      );
+                    })}
+                  {!members.length && <p className="bw-helper">{t('groupManage.noMembers')}</p>}
                 </div>
               </div>
 
               <div className="bw-group-section">
-                <div className="bw-group-section-title">Invitar amigos</div>
+                <div className="bw-group-section-title">{t('groupManage.inviteFriendsSection')}</div>
                 <div className="bw-group-search">
                   <input
                     type="search"
                     className="bw-input"
-                    placeholder="Buscar por nombre o username..."
+                    placeholder={t('groupManage.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                {!friends.length && <p className="bw-helper">No tienes amigos para invitar.</p>}
+                {!friends.length && <p className="bw-helper">{t('groupManage.noFriends')}</p>}
                 {friends.length > 0 && (
                   <div className="bw-group-friends">
                     {filteredFriends.map((friend) => {
                       const isSelected = selectedIds.has(friend.id);
-                      const displayName = friend.displayName ?? friend.username ?? 'Usuario';
+                      const displayName = friend.displayName ?? friend.username ?? t('common.user', { defaultValue: 'User' });
                       return (
                         <button
                           key={friend.id}
@@ -387,7 +391,7 @@ export function GroupManageModal({
                               )}
                             </div>
                             <div>
-                              <div className="bw-user-name">@{friend.username ?? 'usuario'}</div>
+                              <div className="bw-user-name">@{friend.username ?? t('common.user', { defaultValue: 'user' })}</div>
                               <div className="bw-user-meta">{displayName}</div>
                             </div>
                           </div>
@@ -406,7 +410,7 @@ export function GroupManageModal({
                     disabled={selectedIds.size === 0 || saving}
                     onClick={handleInvite}
                   >
-                    {saving ? 'Enviando...' : 'Invitar'}
+                    {saving ? t('groupManage.sending') : t('groupManage.invite')}
                   </button>
                 </div>
               </div>
@@ -418,8 +422,8 @@ export function GroupManageModal({
       {confirmDelete && (
         <div className="bw-confirm-backdrop" onClick={() => setConfirmDelete(false)}>
           <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="bw-confirm-title">Estas seguro que quieres eliminar el grupo?</h3>
-            <p className="bw-confirm-text">Esta accion no se puede deshacer.</p>
+            <h3 className="bw-confirm-title">{t('groupManage.confirmDelete')}</h3>
+            <p className="bw-confirm-text">{t('groupManage.confirmDeleteText')}</p>
             <div className="bw-confirm-actions">
               <button
                 className="bw-btn bw-btn-ghost"
@@ -427,7 +431,7 @@ export function GroupManageModal({
                 onClick={() => setConfirmDelete(false)}
                 disabled={saving}
               >
-                Cancelar
+                {t('common.cancel', { defaultValue: 'Cancel' })}
               </button>
               <button
                 className="bw-btn bw-btn-primary"
@@ -435,7 +439,7 @@ export function GroupManageModal({
                 onClick={handleDeleteGroup}
                 disabled={saving}
               >
-                {saving ? 'Eliminando...' : 'Eliminar'}
+                {saving ? t('groupManage.deleting') : t('groupManage.delete')}
               </button>
             </div>
           </div>

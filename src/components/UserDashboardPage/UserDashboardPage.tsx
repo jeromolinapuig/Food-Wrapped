@@ -10,6 +10,7 @@ import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
+import { useTranslation } from 'react-i18next';
 import '../Dashboard/Dashboard.css';
 import './UserDashboardPage.css';
 
@@ -45,6 +46,7 @@ type UserDashboardPageProps = {
 };
 
 export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDashboardPageProps>) {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -311,41 +313,41 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                   ))
                 ) : (
                   <>
-                    <StatCard
-                      icon={<Euro fontSize="small" />}
-                      value={`${stats.totalSpent.toFixed(2)}\u20AC`}
-                      label="Total gastado"
-                    />
-                    <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label="Hamburguesas" />
+                  <StatCard
+                    icon={<Euro fontSize="small" />}
+                    value={`${stats.totalSpent.toFixed(2)}\u20AC`}
+                    label={t('dashboard.totalSpent')}
+                  />
+                    <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
                     <StatCard
                       icon={<Star fontSize="small" />}
                       value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-                      label="Nota media"
+                      label={t('dashboard.avgRating')}
                     />
-                    <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label="Favorito" />
+                    <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label={t('dashboard.favorite')} />
                   </>
                 )}
               </section>
 
               <section className="bw-dashboard-row">
                 <div className="bw-card bw-burger-types">
-                  <h2 className="bw-section-title">Tipos de hamburguesa</h2>
+                  <h2 className="bw-section-title">{t('dashboard.type')}</h2>
                   <div className="bw-burger-types-row">
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/meat.png" alt="Carne" className="bw-burger-type-icon" />
+                        <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.beef}</span>
                     </div>
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/chicken-leg.png" alt="Pollo" className="bw-burger-type-icon" />
+                        <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.chicken}</span>
                     </div>
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/plant.png" alt="Vegana" className="bw-burger-type-icon" />
+                        <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.vegan}</span>
                     </div>
@@ -362,7 +364,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
 
               <section className="bw-history">
                 <div className="bw-section-header">
-                  <h2 className="bw-section-title">Posts ({postsCount})</h2>
+                  <h2 className="bw-section-title">{t('dashboard.posts')} ({postsCount})</h2>
                   <div className="bw-section-right">
                   <FeedTabs
                     currentUserId={viewerId}
@@ -391,3 +393,6 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     </AppShell>
   );
 }
+
+
+

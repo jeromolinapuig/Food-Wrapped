@@ -9,10 +9,12 @@ import {
   StarBorder,
   StarHalf,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { Avatar } from '../common/Avatar';
 import { EntryComments } from '../Comments/EntryComments';
 import type { CommentMode, EntryComment } from '../Comments/types';
 import type { FeedEntry } from './types';
+import { usePreferences } from '../../context/PreferencesContext';
 
 type EntryReactions = { likeCount: number; liked: boolean; saved: boolean };
 
@@ -87,18 +89,20 @@ export function FeedEntryCard({
     hour: '2-digit',
     minute: '2-digit',
   });
+  const { t } = useTranslation();
+  const { formatCurrency } = usePreferences();
   const isSelf = viewerId ? entry.userId === viewerId : false;
   const shouldDisableProfileClick = isSelf || isUserFeed;
-  const name = isSelf ? 'Tu' : entry.displayName || entry.username;
+  const name = isSelf ? t('common.you') : entry.displayName || entry.username;
   const stars = renderStars(entry.rating);
   const canEdit = showOwnerActions && isSelf;
   const isHomemade = entry.burgerOrigin === 'homemade';
   const restaurantLabel = isHomemade
-    ? 'Casera'
-    : entry.restaurantName ?? 'Restaurante';
+    ? t('feed.homemade')
+    : entry.restaurantName ?? t('feed.restaurant');
   const likeDisabled = isReadOnly || isLikePending;
   const saveDisabled = isReadOnly || isSavePending;
-  const actionLockLabel = isReadOnly ? 'Inicia sesion para usar esta accion' : undefined;
+  const actionLockLabel = isReadOnly ? t('feed.lockAction') : undefined;
 
   return (
     <div className="bw-feed-entry-wrap">
@@ -161,7 +165,7 @@ export function FeedEntryCard({
             >
               <img
                 src={entry.photoUrl}
-                alt={entry.burgerName ?? entry.restaurantName ?? 'Foto de la entrada'}
+                alt={entry.burgerName ?? entry.restaurantName ?? t('common.viewPhoto')}
                 loading="lazy"
               />
             </button>
@@ -171,7 +175,7 @@ export function FeedEntryCard({
             <p className="bw-feed-notes">{entry.additionalNotes}</p>
           )}
           {isHomemade && entry.ingredients && (
-            <p className="bw-feed-ingredients">Ingredientes: {entry.ingredients}</p>
+            <p className="bw-feed-ingredients">{t('feed.ingredients')}: {entry.ingredients}</p>
           )}
 
           <div className="bw-feed-footer">
@@ -192,7 +196,7 @@ export function FeedEntryCard({
                 })}
               </span>
               <span className="bw-feed-rating-number">
-                {entry.rating ? `${entry.rating.toFixed(1)}` : 'Sin nota'}
+                {entry.rating ? `${entry.rating.toFixed(1)}` : t('feed.noRating')}
               </span>
             </div>
             <div className="bw-feed-footer-row">
@@ -204,7 +208,7 @@ export function FeedEntryCard({
                     onClick={() => onToggleLike(entry.id)}
                     disabled={likeDisabled}
                     aria-pressed={reactions.liked}
-                    title={actionLockLabel ?? (reactions.liked ? 'Quitar like' : 'Dar like')}
+                    title={actionLockLabel ?? (reactions.liked ? t('feed.unlike') : t('feed.like'))}
                   >
                     {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
                     <span className="bw-feed-action-count">{reactions.likeCount}</span>
@@ -215,14 +219,16 @@ export function FeedEntryCard({
                     onClick={() => onToggleSave(entry.id)}
                     disabled={saveDisabled}
                     aria-pressed={reactions.saved}
-                    title={actionLockLabel ?? (reactions.saved ? 'Quitar guardado' : 'Guardar post')}
+                    title={actionLockLabel ?? (reactions.saved ? t('feed.unsave') : t('feed.save'))}
                   >
                     {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
                   </button>
                 </div>
               </div>
               <div className="bw-feed-footer-right">
-                <div className="bw-feed-price">{'\u20AC'} {entry.price.toFixed(2)}</div>
+                <div className="bw-feed-price">
+                  {formatCurrency(entry.price ?? 0, { fromCurrency: entry.currency ?? 'EUR' })}
+                </div>
                 {canEdit && (
                   <div className="bw-history-actions">
                     <button

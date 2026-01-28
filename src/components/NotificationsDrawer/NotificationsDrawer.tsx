@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { ChatBubbleOutline, Favorite, GroupAdd, Notifications, PersonAdd } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import '../../styles/shared.css';
@@ -62,6 +63,7 @@ export function NotificationsDrawer({
   onCountChange,
   onLatestChange,
 }: Readonly<NotificationsDrawerProps>) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +132,7 @@ export function NotificationsDrawer({
         'Error loading notifications',
         likesResponse.error ?? commentsResponse.error ?? followsResponse.error ?? invitesResponse.error
       );
-      setError('No se pudieron cargar las notificaciones.');
+      setError(t('notifications.loading'));
       setLoading(false);
       return;
     }
@@ -290,18 +292,18 @@ export function NotificationsDrawer({
         <div className="bw-notify-header">
           <div className="bw-notify-title">
             <Notifications fontSize="small" />
-            Notificaciones
+            {t('notifications.title')}
           </div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar notificaciones">
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             ✕
           </button>
         </div>
 
         <div className="bw-notify-body">
-          {loading && <p className="bw-helper">Cargando notificaciones...</p>}
+          {loading && <p className="bw-helper">{t('notifications.loading')}</p>}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {!loading && !error && notifications.length === 0 && (
-            <p className="bw-helper">No tienes notificaciones todavia.</p>
+            <p className="bw-helper">{t('notifications.noNotifications')}</p>
           )}
 
           {!loading && !error && notifications.length > 0 && (
@@ -313,11 +315,12 @@ export function NotificationsDrawer({
                   const firstName = formatHandle(firstId);
                   const restCount = Math.max(0, total - 1);
                   let message = '';
-                  if (total <= 1) {
-                    message = `A ${firstName} le ha gustado tu post.`;
+                  if (total === 1) {
+                    message = t('notifications.likedSingle', { name: firstName });
+                  } else if (total <= 5) {
+                    message = t('notifications.likedPlural', { name: firstName, count: restCount });
                   } else {
-                    const plural = restCount === 1 ? '' : 's';
-                    message = `A ${firstName} y a ${restCount} persona${plural} más les ha gustado tu post.`;
+                    message = t('notifications.likedMany', { name: firstName });
                   }
                   return (
                     <button
@@ -342,11 +345,12 @@ export function NotificationsDrawer({
                   const firstName = formatHandle(firstId);
                   const restCount = Math.max(0, total - 1);
                   let message = '';
-                  if (total <= 1) {
-                    message = `${firstName} ha comentado tu post.`;
+                  if (total === 1) {
+                    message = t('notifications.commentedSingle', { name: firstName });
+                  } else if (total <= 5) {
+                    message = t('notifications.commentedPlural', { name: firstName, count: restCount });
                   } else {
-                    const plural = restCount === 1 ? '' : 's';
-                    message = `${firstName} y ${restCount} persona${plural} mas comentaron tu post.`;
+                    message = t('notifications.commentedMany', { name: firstName });
                   }
                   return (
                     <button
@@ -380,12 +384,12 @@ export function NotificationsDrawer({
                       <span className="bw-notify-icon bw-notify-follow">
                         <PersonAdd fontSize="small" />
                       </span>
-                      <span className="bw-notify-text">@{name} te ha seguido.</span>
+                      <span className="bw-notify-text">{t('notifications.followed', { name })}</span>
                     </button>
                   );
                 }
                 const inviterName = formatHandle(item.inviterId);
-                const groupName = groupMap[item.groupId] ?? 'tu grupo';
+                const groupName = groupMap[item.groupId] ?? t('notifications.yourGroup');
                 return (
                   <button
                     key={item.id}
@@ -400,7 +404,7 @@ export function NotificationsDrawer({
                       <GroupAdd fontSize="small" />
                     </span>
                     <span className="bw-notify-text">
-                      @{inviterName} te ha invitado al grupo &quot;{groupName}&quot;.
+                      {t('notifications.invited', { inviter: inviterName, group: groupName })}
                     </span>
                   </button>
                 );

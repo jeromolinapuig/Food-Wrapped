@@ -1,12 +1,14 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { useTranslation } from 'react-i18next';
 import './AuthScreen.css';
 
 type ProfileRow = { username: string | null; display_name: string | null };
 
 export function UsernameSetupScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,11 +53,11 @@ export function UsernameSetupScreen() {
     setNotice(null);
     const trimmedUsername = username.trim();
     if (!trimmedUsername) {
-      setError('El nombre de usuario es obligatorio.');
+      setError(t('auth.usernameRequired'));
       return;
     }
     if (hasUsernameWhitespace(trimmedUsername)) {
-      setError('El nombre de usuario no puede tener espacios.');
+      setError(t('auth.usernameNoSpaces'));
       return;
     }
     setSaving(true);
@@ -73,7 +75,7 @@ export function UsernameSetupScreen() {
         .limit(1);
       if (existingError) throw existingError;
       if (existingUsers && existingUsers.length > 0) {
-        throw new Error('Ese nombre de usuario ya esta en uso.');
+        throw new Error(t('auth.usernameExists', { defaultValue: 'Username already in use.' }));
       }
       const { error: profileError } = await supabase
         .from('profiles')
@@ -84,10 +86,10 @@ export function UsernameSetupScreen() {
         data: { username: trimmedUsername, username_set: true },
       });
       if (userError) throw userError;
-      setNotice('Listo. Ya puedes entrar.');
+      setNotice(t('auth.usernameSuccess', { defaultValue: 'All set. You can enter now.' }));
       setTimeout(() => navigate('/', { replace: true }), 900);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Algo ha ido mal';
+      const message = err instanceof Error ? err.message : t('auth.genericError');
       setError(message);
     } finally {
       setSaving(false);
@@ -100,7 +102,7 @@ export function UsernameSetupScreen() {
         <div className="auth-blob auth-blob-1" />
         <div className="auth-blob auth-blob-2" />
         <div className="auth-card">
-          <p className="auth-subtitle">Cargando...</p>
+          <p className="auth-subtitle">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -117,19 +119,19 @@ export function UsernameSetupScreen() {
             <img src="/logo.png" alt="Burger Wrapped" />
           </div>
           <div>
-            <h1 className="auth-title">Elige tu usuario</h1>
-            <h5 className="auth-subtitle">Este nombre se mostrara en tu perfil.</h5>
+            <h1 className="auth-title">{t('auth.usernameTitle', { defaultValue: 'Choose your username' })}</h1>
+            <h5 className="auth-subtitle">{t('auth.usernameSubtitle', { defaultValue: 'This name will show on your profile.' })}</h5>
           </div>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="auth-field">
-            <span>Nombre de usuario</span>
+            <span>{t('auth.usernameLabel')}</span>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="ej. burgerlover"
+              placeholder={t('auth.usernamePlaceholder')}
               required
             />
           </label>
@@ -138,7 +140,7 @@ export function UsernameSetupScreen() {
           {notice && <p className="auth-notice">{notice}</p>}
 
           <button className="auth-submit" type="submit" disabled={saving}>
-            {saving ? 'Guardando...' : 'Guardar usuario'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
         </form>
       </div>

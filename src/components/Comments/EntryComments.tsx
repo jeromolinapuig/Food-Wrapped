@@ -1,4 +1,5 @@
 import { Avatar } from '../common/Avatar';
+import { useTranslation } from 'react-i18next';
 import type { CommentMode, EntryComment } from './types';
 
 type EntryCommentsProps = {
@@ -46,6 +47,7 @@ export function EntryComments({
   onRequestDelete,
   onOpenEntry,
 }: Readonly<EntryCommentsProps>) {
+  const { t } = useTranslation();
   const shouldShowComments =
     commentMode === 'full' || Boolean(error) || commentCount > 0 || (commentMode === 'preview' && Boolean(onOpenEntry));
 
@@ -108,7 +110,7 @@ export function EntryComments({
               className="bw-link-button bw-link-inline bw-comment-link"
               onClick={() => onOpenEntry(entryId)}
             >
-              Ver comentarios
+              {t('comments.viewComments')}
             </button>
           )}
         </div>
@@ -121,7 +123,7 @@ export function EntryComments({
       <div className="bw-comment-block">
         {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
         {isLoading && (
-          <p className="bw-helper">Cargando comentarios...</p>
+          <p className="bw-helper">{t('comments.loading')}</p>
         )}
         {!!visibleComments.length && (
           <div className="bw-comment-list">
@@ -173,7 +175,7 @@ export function EntryComments({
           </div>
         )}
         {!isLoading && !visibleComments.length && (
-          <p className="bw-helper">Se el primero en comentar.</p>
+          <p className="bw-helper">{t('comments.beFirst')}</p>
         )}
         {viewerId ? (
           <form
@@ -186,7 +188,7 @@ export function EntryComments({
             <textarea
               className="bw-textarea bw-comment-input"
               rows={3}
-              placeholder="Escribe un comentario..."
+              placeholder={t('comments.placeholder')}
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
               maxLength={maxLength}
@@ -198,12 +200,12 @@ export function EntryComments({
                 type="submit"
                 disabled={isSubmitting || !draft.trim()}
               >
-                {isSubmitting ? 'Comentando...' : 'Comentar'}
+                {isSubmitting ? t('comments.commenting') : t('comments.comment')}
               </button>
             </div>
           </form>
         ) : (
-          <p className="bw-helper">Inicia sesion para comentar.</p>
+          <p className="bw-helper">{t('comments.loginToComment')}</p>
         )}
       </div>
     </article>

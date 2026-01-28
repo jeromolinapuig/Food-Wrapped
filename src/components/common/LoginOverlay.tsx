@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import './LoginOverlay.css';
 
 type LoginOverlayProps = {
@@ -15,20 +16,23 @@ type LockedContentProps = LoginOverlayProps & {
 };
 
 export function LoginOverlay({
-  title = 'Inicia sesión',
-  actionLabel = 'Iniciar sesión',
+  title,
+  actionLabel,
   onLogin,
   message,
 }: Readonly<LoginOverlayProps>) {
+  const { t } = useTranslation();
+  const effectiveTitle = title ?? t('loginOverlay.title');
+  const effectiveAction = actionLabel ?? t('loginOverlay.action');
   return (
     <div className="bw-locked-overlay">
       <div className="bw-locked-card">
-        <p className="bw-locked-eyebrow">Modo invitado</p>
-        <h3 className="bw-locked-title">{title}</h3>
+        <p className="bw-locked-eyebrow">{t('locked.section', { defaultValue: 'Guest mode' })}</p>
+        <h3 className="bw-locked-title">{effectiveTitle}</h3>
         {message ? <p className="bw-locked-message">{message}</p> : null}
         <div className="bw-locked-actions">
           <button type="button" className="bw-btn bw-btn-primary" onClick={onLogin}>
-            {actionLabel}
+            {effectiveAction}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { FeedTab, MonthOption } from './types';
+import { useTranslation } from 'react-i18next';
 
 type FeedHeaderProps = {
   hideHeader: boolean;
@@ -27,6 +28,7 @@ export function FeedHeader({
   onMonthFilterChange,
   monthOptions,
 }: Readonly<FeedHeaderProps>) {
+  const { t } = useTranslation();
   return (
     <>
       {!hideHeader && !isUserFeed && !isCustomList && (
@@ -37,14 +39,14 @@ export function FeedHeader({
               className={`bw-feed-tab ${activeTab === 'following' ? 'is-active' : ''}`}
               onClick={() => {
                 if (isReadOnly) {
-                  onAuthNoticeChange('Inicia sesion para ver el feed de la gente a la que sigues.');
+                  onAuthNoticeChange(t('feedTabs.lockedFollowing'));
                 } else {
                   onAuthNoticeChange(null);
                 }
                 onTabChange('following');
               }}
             >
-              Siguiendo
+              {t('feedTabs.following', { defaultValue: 'Following' })}
             </button>
             <button
               type="button"
@@ -54,7 +56,7 @@ export function FeedHeader({
                 onTabChange('global');
               }}
             >
-              Global
+              {t('feedTabs.global', { defaultValue: 'Global' })}
             </button>
           </div>
         </div>
@@ -75,7 +77,7 @@ export function FeedHeader({
             >
               {monthOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.value === 'all' ? t('feedTabs.all') : option.label}
                 </option>
               ))}
             </select>

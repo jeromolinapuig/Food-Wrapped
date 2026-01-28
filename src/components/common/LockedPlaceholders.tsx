@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import './LoginOverlay.css';
 
 const PlaceholderStat = ({ label }: { label: string }) => (
@@ -12,16 +13,17 @@ const PlaceholderStat = ({ label }: { label: string }) => (
 );
 
 export function DashboardPlaceholder() {
+  const { t } = useTranslation();
   return (
     <div className="bw-locked-placeholder">
       <section className="bw-stats-grid">
-        {['Hamburguesas', 'Caseras', 'Nota', 'Favorito'].map((label) => (
-          <PlaceholderStat key={label} label={label} />
+        {[t('dashboard.burgers'), t('dashboard.homemade'), t('dashboard.avgRating'), t('dashboard.favorite')].map((label) => (
+          <PlaceholderStat key={label ?? ''} label={label ?? ''} />
         ))}
       </section>
       <section className="bw-dashboard-row">
         <div className="bw-card bw-burger-types">
-          <h2 className="bw-section-title">Tipo</h2>
+          <h2 className="bw-section-title">{t('dashboard.type')}</h2>
           <div className="bw-burger-types-row">
             {Array.from({ length: 3 }).map((_, i) => (
               <div className="bw-burger-type" key={`bt-${i}`}>
@@ -31,11 +33,11 @@ export function DashboardPlaceholder() {
             ))}
           </div>
         </div>
-        <PlaceholderStat label="Total gastado" />
+        <PlaceholderStat label={t('dashboard.totalSpent') ?? ''} />
       </section>
       <section className="bw-history">
         <div className="bw-section-header">
-          <h2 className="bw-section-title">Posts</h2>
+          <h2 className="bw-section-title">{t('dashboard.posts')}</h2>
         </div>
         <div className="bw-locked-list">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -48,12 +50,13 @@ export function DashboardPlaceholder() {
 }
 
 export function FeedPlaceholder() {
+  const { t } = useTranslation();
   return (
     <div className="bw-locked-placeholder">
       <div className="bw-feed-header">
         <div className="bw-feed-tabs bw-feed-tabs-duo">
-          <div className="bw-feed-tab is-active">Siguiendo</div>
-          <div className="bw-feed-tab">Global</div>
+          <div className="bw-feed-tab is-active">{t('feedTabs.following')}</div>
+          <div className="bw-feed-tab">{t('feedTabs.global')}</div>
         </div>
       </div>
       <div className="bw-locked-list">
@@ -66,6 +69,7 @@ export function FeedPlaceholder() {
 }
 
 export function GroupsPlaceholder() {
+  const { t } = useTranslation();
   return (
     <div className="bw-locked-placeholder">
       <div className="bw-locked-row">
@@ -76,7 +80,7 @@ export function GroupsPlaceholder() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div className="bw-group-card" key={`group-${i}`} style={{ pointerEvents: 'none' }}>
             <div className="bw-group-card-body">
-              <div className="bw-group-title">Grupo</div>
+              <div className="bw-group-title">{t('common.groups')}</div>
               <div className="bw-group-meta">
                 <span className="bw-locked-pill" style={{ width: 120 }} />
               </div>

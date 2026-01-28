@@ -1,0 +1,15 @@
+﻿{
+  "title": "Feed",
+  "subtitle": "Descubre hamburguesas y conecta con más gente.",
+  "clearSearch": "Borrar búsqueda",
+  "searchPlaceholder": "Buscar usuarios...",
+  "searching": "Buscando...",
+  "noUsers": "No se encontraron usuarios.",
+  "postsOf": "Posts de @{{user}}",
+  "confirmFollow": "¿Seguro que quieres seguir a @{{user}}?",
+  "confirmUnfollow": "¿Seguro que quieres dejar de seguir a @{{user}}?",
+  "yes": "Sí",
+  "no": "No",
+  "postTitle": "Post",
+  "postSubtitle": "Detalle de la entrada."
+}

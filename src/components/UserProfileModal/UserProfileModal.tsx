@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { ModalBase } from '../common/ModalBase';
@@ -36,6 +37,7 @@ export function UserProfileModal({
   onViewPosts,
   onRequireLogin,
 }: Readonly<UserProfileModalProps>) {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +187,7 @@ export function UserProfileModal({
   if (!shouldShow) return null;
 
   const displayName = profile?.display_name || profile?.username || 'Usuario';
-  const handleText = isFollowing && isIncoming ? 'Os seguís mutuamente' : isIncoming ? 'Te sigue' : '';
+  const handleText = isFollowing && isIncoming ? t('userProfileModal.mutual') : isIncoming ? t('userProfileModal.followsYou') : '';
   const isPrivateBlocked = Boolean(profile?.is_private) && !isMutual;
 
   const handleViewPosts = () => {
@@ -201,13 +203,13 @@ export function UserProfileModal({
   return (
     <ModalBase onClose={onClose} modalClassName="bw-modal bw-user-profile-modal">
         <div className="bw-modal-header" style={{ justifyContent: 'space-between' }}>
-          <div className="bw-modal-title" style={{ margin: 0 }}>Perfil</div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+          <div className="bw-modal-title" style={{ margin: 0 }}>{t('userProfileModal.title')}</div>
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             <Close fontSize="small" />
           </button>
         </div>
 
-        {loading && <p style={{ fontSize: 13 }}>Cargando perfil...</p>}
+        {loading && <p style={{ fontSize: 13 }}>{t('userProfileModal.loadingProfile')}</p>}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
 
         {!loading && profile && (
@@ -232,16 +234,16 @@ export function UserProfileModal({
                     onClick={handleViewPosts}
                     disabled={isPrivateBlocked}
                   >
-                    {isPrivateBlocked ? 'Perfil privado' : 'Ver sus estadísticas'}
+                    {isPrivateBlocked ? t('userProfileModal.privateProfile') : t('userProfileModal.viewStats')}
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="bw-field">
-              <label className="bw-label">Bio</label>
+              <label className="bw-label">{t('userProfileModal.bioLabel')}</label>
               <div className="bw-textarea" style={{ opacity: 0.8, minHeight: 90 }}>
-                {profile.bio || 'Sin bio todavía.'}
+                {profile.bio || t('userProfileModal.noBio')}
               </div>
             </div>
 
@@ -256,18 +258,18 @@ export function UserProfileModal({
                   {isFollowing ? (
                     <>
                       <CheckCircleOutline fontSize="small" />
-                      Dejar de seguir
+                      {t('userProfileModal.unfollow')}
                     </>
                   ) : (
                     <>
                       <GroupAdd fontSize="small" />
-                      Seguir
+                      {t('userProfileModal.follow')}
                     </>
                   )}
                 </button>
               ) : (
                 <p className="bw-helper" style={{ margin: 0, textAlign: 'center' }}>
-                  Inicia sesión para seguir a esta persona.
+                  {t('userProfileModal.loginToFollow')}
                 </p>
               )}
             </div>

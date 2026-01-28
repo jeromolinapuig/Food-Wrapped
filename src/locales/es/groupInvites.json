@@ -1,0 +1,17 @@
+{
+  "title": "Invitaciones a grupos",
+  "titleLimit": "Invitaciones a grupos (no puedes unirte a mas de {{max}})",
+  "subtitle": "Gestiona las invitaciones pendientes.",
+  "loading": "Cargando invitaciones...",
+  "noInvites": "No tienes invitaciones pendientes.",
+  "inviteText": "@{{inviter}} te ha invitado a unirte a {{group}}.",
+  "thisGroup": "este grupo",
+  "reject": "Rechazar",
+  "accept": "Aceptar",
+  "processing": "Procesando...",
+  "confirm": "Confirmar",
+  "limitError": "No puedes unirte a mas de {{max}} grupos.",
+  "updateError": "No se pudo actualizar la invitacion.",
+  "acceptConfirm": "¿Estás seguro que quieres aceptar la invitacion?",
+  "rejectConfirm": "¿Estás seguro que quieres rechazar la invitacion?"
+}

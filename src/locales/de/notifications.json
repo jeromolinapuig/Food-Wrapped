@@ -1,0 +1,4 @@
+{
+  "likedSingle": "{{name}} hat deinen Post geliked.",
+  "likedMany": "{{name}} und {{count}} weitere haben deinen Post geliked."
+}

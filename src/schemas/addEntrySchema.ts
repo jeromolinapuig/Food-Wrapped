@@ -21,6 +21,11 @@ export const addEntrySchema = z
         const n = Number(val);
         return !Number.isNaN(n) && n >= 0.5 && n <= 5;
       }, 'La puntuacion debe estar entre 0.5 y 5.'),
+    currency: z
+      .string()
+      .trim()
+      .min(1, 'Selecciona moneda.')
+      .max(5, 'Selecciona moneda.'),
     isBurger: z.boolean(),
     burger: z.string().trim(),
     burgerOrigin: z.string().trim().optional().or(z.literal('')),

@@ -1,0 +1,17 @@
+{
+  "title": "Group invitations",
+  "titleLimit": "Group invitations (you can't join more than {{max}})",
+  "subtitle": "Manage pending invitations.",
+  "loading": "Loading invitations...",
+  "noInvites": "You have no pending invitations.",
+  "inviteText": "@{{inviter}} has invited you to join {{group}}.",
+  "thisGroup": "this group",
+  "reject": "Reject",
+  "accept": "Accept",
+  "processing": "Processing...",
+  "confirm": "Confirm",
+  "limitError": "You can't join more than {{max}} groups.",
+  "updateError": "Could not update the invitation.",
+  "acceptConfirm": "Are you sure you want to accept the invite?",
+  "rejectConfirm": "Are you sure you want to reject the invite?"
+}

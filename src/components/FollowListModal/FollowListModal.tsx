@@ -5,6 +5,7 @@ import { lockBodyScroll } from '../../utils/scrollLock';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ModalBase } from '../common/ModalBase';
 import { UserCard } from '../common/UserCard';
+import { useTranslation } from 'react-i18next';
 import '../../styles/shared.css';
 import './FollowListModal.css';
 import '../UserProfileModal/UserProfileModal.css';
@@ -42,6 +43,7 @@ export function FollowListModal({
   onListCount,
   onViewPosts,
 }: Readonly<FollowListModalProps>) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<FollowListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,7 +185,7 @@ export function FollowListModal({
       })
     : items;
 
-  const title = mode === 'followers' ? 'Seguidores' : 'Seguidos';
+  const title = mode === 'followers' ? t('followList.followers') : t('followList.following');
 
   const handleToggleFollow = async (userId: string) => {
     const item = items.find((i) => i.id === userId);
@@ -249,7 +251,7 @@ export function FollowListModal({
           <div className="bw-modal-title" style={{ margin: 0 }}>
             {title} ({items.length})
           </div>
-          <button type="button" className="bw-icon-button" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             <Close fontSize="small" />
           </button>
         </div>
@@ -259,7 +261,7 @@ export function FollowListModal({
             <input
               type="search"
               className="bw-input"
-              placeholder="Buscar en la lista..."
+              placeholder={t('followList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -267,7 +269,7 @@ export function FollowListModal({
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                aria-label="Limpiar búsqueda"
+                aria-label={t('followList.searchClear')}
                 style={{
                   position: 'absolute',
                   right: 8,
@@ -289,17 +291,17 @@ export function FollowListModal({
           </div>
         </div>
 
-        {loading && <p style={{ fontSize: 13 }}>Cargando...</p>}
+        {loading && <p style={{ fontSize: 13 }}>{t('followList.loading')}</p>}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
         {!loading && !filteredItems.length && (
           <p style={{ fontSize: 13, opacity: 0.8 }}>
             {mode === 'followers'
               ? term
-                ? 'Aún no tienes seguidores con ese nombre.'
-                : 'Aún no tienes seguidores.'
+                ? t('followList.noFollowersName')
+                : t('followList.noFollowers')
               : term
-                ? 'No sigues a nadie con ese nombre.'
-                : 'Todavía no sigues a nadie.'}
+                ? t('followList.noFollowingName')
+                : t('followList.noFollowing')}
           </p>
         )}
 
@@ -308,11 +310,11 @@ export function FollowListModal({
             {filteredItems.map((item) => {
               const isMutual = item.isIncoming && item.isOutgoing;
               const metaText = isMutual
-                ? 'Os seguís mutuamente'
+                ? t('followList.mutual')
                 : item.isIncoming
-                  ? 'Te sigue'
+                  ? t('followList.followsYou')
                   : item.isOutgoing && mode === 'following'
-                    ? 'Lo sigues'
+                    ? t('followList.youFollow')
                     : '';
               return (
                 <UserCard
@@ -330,7 +332,7 @@ export function FollowListModal({
                   onClick={() => onViewPosts({ id: item.id, username: item.username, displayName: item.displayName })}
                   style={{ marginTop: 4 }}
                 >
-                  Ver sus estadisticas
+                  {t('followList.viewStats')}
                 </button>
               ) : null}
               action={(
@@ -339,7 +341,7 @@ export function FollowListModal({
                   className={`bw-user-action ${item.isOutgoing ? 'is-following' : ''} ${item.isIncoming && item.isOutgoing ? 'is-accepted' : ''}`}
                   onClick={() => handleToggleFollow(item.id)}
                   disabled={actioningId === item.id}
-                  title={item.isOutgoing ? 'Dejar de seguir' : 'Seguir'}
+                  title={item.isOutgoing ? t('followList.unfollow') : t('followList.follow')}
                 >
                   {item.isOutgoing ? <CheckCircleOutline fontSize="small" /> : <GroupAdd fontSize="small" />}
                 </button>
@@ -353,14 +355,14 @@ export function FollowListModal({
       <ConfirmDialog
         open={Boolean(confirmUnfollow)}
         onClose={() => setConfirmUnfollow(null)}
-        title={confirmUnfollow ? `¿Estás seguro que quieres dejar de seguir a @${confirmUnfollow.username ?? 'usuario'}?` : ''}
+        title={confirmUnfollow ? t('followList.confirmUnfollow', { user: confirmUnfollow.username ?? 'usuario' }) : ''}
         actions={(
           <>
             <button className="bw-btn bw-btn-ghost" onClick={() => setConfirmUnfollow(null)} disabled={actioningId === confirmUnfollow?.id}>
-              Cancelar
+              {t('followList.cancel')}
             </button>
             <button className="bw-btn bw-btn-primary" onClick={handleConfirmUnfollow} disabled={actioningId === confirmUnfollow?.id}>
-              Dejar de seguir
+              {t('followList.unfollow')}
             </button>
           </>
         )}
