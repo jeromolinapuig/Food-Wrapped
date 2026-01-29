@@ -35,6 +35,8 @@ const localeToCurrency: Record<string, string> = {
 
 const loadLanguage = () => {
   if (typeof window === 'undefined') return 'en';
+  const stored = window.localStorage.getItem('bw-lang');
+  if (stored) return stored;
   const navLang = window.navigator.language || window.navigator.languages?.[0];
   if (!navLang) return 'en';
   const short = navLang.slice(0, 2).toLowerCase();
