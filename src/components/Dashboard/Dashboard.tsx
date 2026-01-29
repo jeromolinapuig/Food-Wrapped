@@ -629,14 +629,13 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               <div className="bw-install-modal-body">
                 <div>
                   <div className="bw-install-title">{t('dashboard.installText')}</div>
-                  <div className="bw-install-text">{t('dashboard.installText')}</div>
                 </div>
                 <div className="bw-install-actions">
                   <button className="bw-btn bw-btn-ghost" type="button" onClick={() => setShowInstallBanner(false)}>
                     {t('dashboard.later')}
                   </button>
                   <button className="bw-btn bw-btn-primary" type="button" onClick={handleInstallClick}>
-                    {t('dashboard.addEntry')}
+                    {t('common.add')}
                   </button>
                 </div>
               </div>
