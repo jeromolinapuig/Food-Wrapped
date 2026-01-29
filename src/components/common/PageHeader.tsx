@@ -7,6 +7,7 @@ type PageHeaderProps = {
   actions?: ReactNode;
   logoSrc?: string;
   logoAlt?: string;
+  logoVariant?: 'square' | 'avatar';
 };
 
 export function PageHeader({
@@ -16,11 +17,16 @@ export function PageHeader({
   actions,
   logoSrc = '/logo.png',
   logoAlt = 'My Bite Story',
+  logoVariant = 'square',
 }: Readonly<PageHeaderProps>) {
+  const iconClassName = ['bw-header-icon', logoVariant === 'avatar' ? 'is-avatar' : null]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <header className="bw-header">
       {leading}
-      <div className="bw-header-icon">
+      <div className={iconClassName}>
         <img src={logoSrc} alt={logoAlt} />
       </div>
       <div style={{ flex: 1 }}>

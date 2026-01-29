@@ -52,26 +52,32 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
   const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
-  const [profile, setProfile] = useState<{ username: string | null; displayName: string | null; isPrivate?: boolean | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+    isPrivate?: boolean | null;
+  } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const viewerId = session?.user.id ?? null;
 
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('username, display_name, is_private')
+      .select('username, display_name, avatar_url, is_private')
       .eq('id', userId)
       .single();
 
     if (error) {
       console.error('Error loading profile', error);
-      setProfile({ username: null, displayName: null });
+      setProfile({ username: null, displayName: null, avatarUrl: null });
       return;
     }
 
     setProfile({
       username: (data as { username: string | null }).username,
       displayName: (data as { display_name: string | null }).display_name,
+      avatarUrl: (data as { avatar_url: string | null }).avatar_url,
       isPrivate: (data as { is_private: boolean | null }).is_private,
     });
   }, [userId]);
@@ -285,13 +291,17 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   }, [entries]);
 
   const titleHandle = profile?.username ?? profile?.displayName ?? 'usuario';
+  const headerAvatar = profile?.avatarUrl ?? null;
+  const headerAlt = profile?.displayName ?? profile?.username ?? 'Perfil';
 
   return (
     <AppShell>
         <PageHeader
           title="Burger Wrapped"
           subtitle={`Resumen de @${titleHandle}`}
-          logoAlt="Burger Wrapped"
+          logoSrc={headerAvatar ?? undefined}
+          logoAlt={headerAvatar ? headerAlt : 'Burger Wrapped'}
+          logoVariant={headerAvatar ? 'avatar' : 'square'}
           leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
         />
 
@@ -393,6 +403,5 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     </AppShell>
   );
 }
-
 
 

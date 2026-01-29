@@ -20,5 +20,9 @@
   "noMembers": "This group has no members.",
   "noData": "No data to show.",
   "back": "Back",
-  "summary": "Summary of {{name}}"
+  "summary": "Summary of {{name}}",
+  "leave": "Leave group",
+  "leaving": "Leaving...",
+  "leaveConfirm": "Are you sure you want to leave \"{{name}}\"?",
+  "leaveError": "Could not leave the group."
 }

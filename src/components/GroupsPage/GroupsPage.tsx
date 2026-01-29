@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Add, ChevronRight, PeopleOutline, Settings } from '@mui/icons-material';
+import { Add, ChevronRight, DeleteOutline, PeopleOutline, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +53,8 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
   const [manageGroupId, setManageGroupId] = useState<string | null>(null);
   const [manageGroupName, setManageGroupName] = useState<string | null>(null);
+  const [confirmLeaveGroup, setConfirmLeaveGroup] = useState<{ id: string; name: string } | null>(null);
+  const [leavingGroupId, setLeavingGroupId] = useState<string | null>(null);
   const hasGroupsCache = groupsCache.hasCache;
   const hasInvitesCache = invitesCache.hasCache;
   const lastRealtimeRef = useRef(0);
@@ -355,6 +357,23 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     };
   }, [loadGroups, loadInvites, ownedGroupIds, session.user.id]);
 
+  const handleConfirmLeave = async () => {
+    if (!confirmLeaveGroup || leavingGroupId) return;
+    setLeavingGroupId(confirmLeaveGroup.id);
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .match({ group_id: confirmLeaveGroup.id, user_id: session.user.id });
+    if (error) {
+      setGroupsError(t('groups.leaveError'));
+      setLeavingGroupId(null);
+      return;
+    }
+    setLeavingGroupId(null);
+    setConfirmLeaveGroup(null);
+    setRefreshKey((prev) => prev + 1);
+  };
+
   return (
     <div className="bw-app-root">
       <div className="bw-shell">
@@ -429,6 +448,20 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
                       <Settings fontSize="small" />
                     </button>
                   )}
+                  {!group.isOwner && (
+                    <button
+                      type="button"
+                      className="bw-group-settings bw-group-leave"
+                      aria-label={t('groups.leave')}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setConfirmLeaveGroup({ id: group.id, name: group.name });
+                      }}
+                    >
+                      <DeleteOutline fontSize="small" />
+                    </button>
+                  )}
                   <ChevronRight className="bw-group-chevron" />
                 </div>
               </Link>
@@ -485,6 +518,32 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
           }}
           onChanged={() => setRefreshKey((prev) => prev + 1)}
         />
+      )}
+      {confirmLeaveGroup && (
+        <div className="bw-confirm-backdrop" onClick={() => setConfirmLeaveGroup(null)}>
+          <div className="bw-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="bw-confirm-title">{t('groups.leave')}</h3>
+            <p className="bw-confirm-text">{t('groups.leaveConfirm', { name: confirmLeaveGroup.name })}</p>
+            <div className="bw-confirm-actions">
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => setConfirmLeaveGroup(null)}
+                disabled={Boolean(leavingGroupId)}
+              >
+                {t('common.cancel', { defaultValue: 'Cancel' })}
+              </button>
+              <button
+                className="bw-btn bw-btn-danger"
+                type="button"
+                onClick={handleConfirmLeave}
+                disabled={Boolean(leavingGroupId)}
+              >
+                {leavingGroupId ? t('groups.leaving') : t('groups.leave')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -24,6 +24,13 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   const userId = session?.user.id ?? null;
 
   const activeKey = useMemo(() => {
+    if (location.pathname.startsWith('/users')) {
+      const state = location.state as { returnTo?: string } | null;
+      const returnTo = state?.returnTo ?? '';
+      if (returnTo.startsWith('/groups')) return 'groups';
+      if (returnTo.startsWith('/feed')) return 'feed';
+      if (returnTo.startsWith('/profile')) return 'profile';
+    }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
     if (location.pathname.startsWith('/feed')) return 'feed';
     if (location.pathname.startsWith('/groups')) return 'groups';

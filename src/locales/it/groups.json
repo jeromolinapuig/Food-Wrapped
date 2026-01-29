@@ -20,5 +20,9 @@
   "noMembers": "Questo gruppo non ha membri.",
   "noData": "Nessun dato da mostrare.",
   "back": "Indietro",
-  "summary": "Riepilogo di {{name}}"
+  "summary": "Riepilogo di {{name}}",
+  "leave": "Lascia il gruppo",
+  "leaving": "Uscita in corso...",
+  "leaveConfirm": "Sei sicuro di voler lasciare \"{{name}}\"?",
+  "leaveError": "Impossibile lasciare il gruppo."
 }

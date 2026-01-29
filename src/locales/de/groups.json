@@ -20,5 +20,9 @@
   "noMembers": "Diese Gruppe hat keine Mitglieder.",
   "noData": "Keine Daten zum Anzeigen.",
   "back": "Zurück",
-  "summary": "Zusammenfassung von {{name}}"
+  "summary": "Zusammenfassung von {{name}}",
+  "leave": "Gruppe verlassen",
+  "leaving": "Wird verlassen...",
+  "leaveConfirm": "MÃ¶chtest du \"{{name}}\" wirklich verlassen?",
+  "leaveError": "Die Gruppe konnte nicht verlassen werden."
 }
