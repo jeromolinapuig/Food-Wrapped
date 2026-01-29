@@ -11,6 +11,7 @@ import { useEntryReactions } from './useEntryReactions';
 import { useFeedEntries } from './useFeedEntries';
 import type { FeedEntry } from './types';
 import { useTranslation } from 'react-i18next';
+import { ZoomableImage } from '../common/ZoomableImage';
 import '../../styles/shared.css';
 import './FeedTabs.css';
 import '../EntryCard/EntryCard.css';
@@ -280,7 +281,7 @@ export function FeedTabs({
             >
               <Close />
             </button>
-            <img src={photoPreviewUrl} alt="Foto de la entrada" />
+            <ZoomableImage src={photoPreviewUrl} alt="Foto de la entrada" />
           </div>
         </div>
       )}
