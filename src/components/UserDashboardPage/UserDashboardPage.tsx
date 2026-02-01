@@ -40,7 +40,7 @@ type UserDashboardPageProps = {
   session: Session | null;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups' | 'ranking') => void;
   userId: string;
   onBack: () => void;
 };
@@ -403,5 +403,4 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     </AppShell>
   );
 }
-
 

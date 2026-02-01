@@ -8,6 +8,7 @@ import { UsernameSetupScreen } from './components/AuthScreen/UsernameSetupScreen
 import { BottomNav } from './components/BottomNav/BottomNav';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { FeedPage } from './components/FeedPage/FeedPage';
+import { GlobalRankingPage } from './components/GlobalRankingPage/GlobalRankingPage';
 import { GroupsPage } from './components/GroupsPage/GroupsPage';
 import { GroupPage } from './components/GroupPage/GroupPage';
 import { LandingPage } from './components/LandingPage/LandingPage';
@@ -205,8 +206,14 @@ function App() {
     );
   }
 
-  const handleNavigate = (page: 'dashboard' | 'feed' | 'profile' | 'groups') => {
-    const path = page === 'dashboard' ? '/' : page === 'feed' ? '/feed' : `/${page}`;
+  const handleNavigate = (page: 'dashboard' | 'feed' | 'profile' | 'groups' | 'ranking') => {
+    const path = page === 'dashboard'
+      ? '/'
+      : page === 'feed'
+        ? '/feed'
+        : page === 'ranking'
+          ? '/ranking'
+          : `/${page}`;
     navigate(path);
   };
 
@@ -358,6 +365,21 @@ function App() {
                 onToggleTheme={toggleTheme}
                 onNavigate={handleNavigate}
               />
+            ) : (
+              <LockedPage
+                title={t('locked.section')}
+                subtitle={t('locked.groupsSubtitle')}
+                onLogin={handleLogin}
+                preview={<GroupsPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/ranking"
+          element={
+            session ? (
+              <GlobalRankingPage session={session} />
             ) : (
               <LockedPage
                 title={t('locked.section')}

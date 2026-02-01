@@ -31,5 +31,8 @@
   "home": "หน้าแรก",
   "groups": "กลุ่ม",
   "guest": "ผู้เยี่ยมชม",
-  "navigation": "เมนูหลัก"
+  "navigation": "เมนูหลัก",
+  "ranking": "อันดับ",
+  "globalRanking": "อันดับโลก",
+  "globalRankingSubtitle": "ดูผู้นำของชุมชน"
 }

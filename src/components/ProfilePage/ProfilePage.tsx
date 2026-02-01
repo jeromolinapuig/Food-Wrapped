@@ -76,6 +76,7 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
       { value: 'THB', label: '฿ Baht' },
       { value: 'USD', label: '$ USD' },
       { value: 'GBP', label: '£ GBP' },
+      { value: 'AED', label: 'د.إ AED' },
     ],
     []
   );

@@ -32,5 +32,8 @@
   "home": "Inicio",
   "groups": "Grupos",
   "guest": "Invitado",
-  "navigation": "Navegación principal"
+  "navigation": "Navegación principal",
+  "ranking": "Ranking",
+  "globalRanking": "Ranking global",
+  "globalRankingSubtitle": "Mira quién lidera la comunidad."
 }

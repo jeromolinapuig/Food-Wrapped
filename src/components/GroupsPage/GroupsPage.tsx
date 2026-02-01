@@ -18,7 +18,7 @@ type GroupsPageProps = {
   session: Session;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups') => void;
+  onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups' | 'ranking') => void;
 };
 
 const readSessionCache = <T,>(key: string) => {

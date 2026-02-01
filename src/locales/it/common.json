@@ -31,5 +31,8 @@
   "home": "Home",
   "groups": "Gruppi",
   "guest": "Ospite",
-  "navigation": "Navigazione principale"
+  "navigation": "Navigazione principale",
+  "ranking": "Classifica",
+  "globalRanking": "Classifica globale",
+  "globalRankingSubtitle": "Scopri i leader della community."
 }

@@ -1,4 +1,4 @@
-import { DynamicFeed, Groups, Home, PersonOutline } from '@mui/icons-material';
+import { DynamicFeed, EmojiEvents, Groups, Home, PersonOutline } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -29,11 +29,13 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
       const returnTo = state?.returnTo ?? '';
       if (returnTo.startsWith('/groups')) return 'groups';
       if (returnTo.startsWith('/feed')) return 'feed';
+      if (returnTo.startsWith('/ranking')) return 'ranking';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
     if (location.pathname.startsWith('/feed')) return 'feed';
     if (location.pathname.startsWith('/groups')) return 'groups';
+    if (location.pathname.startsWith('/ranking')) return 'ranking';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [location.pathname]);
@@ -134,6 +136,15 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
           {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
         </span>
         <span className="bw-bottom-nav-label">{t('common.groups', { defaultValue: 'Groups' })}</span>
+      </button>
+      <button
+        type="button"
+        className={`bw-bottom-nav-item ${activeKey === 'ranking' ? 'is-active' : ''}`}
+        onClick={() => handleClick('/ranking')}
+        aria-label={t('common.ranking', { defaultValue: 'Ranking' })}
+      >
+        <span className="bw-bottom-nav-icon"><EmojiEvents /></span>
+        <span className="bw-bottom-nav-label">{t('common.ranking', { defaultValue: 'Ranking' })}</span>
       </button>
       <button
         type="button"

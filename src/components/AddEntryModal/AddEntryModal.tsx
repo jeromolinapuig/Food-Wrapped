@@ -129,6 +129,7 @@ export function AddEntryModal({
       { value: 'THB', label: '฿ THB' },
       { value: 'USD', label: '$ USD' },
       { value: 'GBP', label: '£ GBP' },
+      { value: 'AED', label: 'د.إ AED' },
     ],
     []
   );

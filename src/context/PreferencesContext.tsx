@@ -27,6 +27,8 @@ const localeToCurrency: Record<string, string> = {
   es_MX: 'EUR',
   en: 'USD',
   en_GB: 'GBP',
+  en_AE: 'AED',
+  ar_AE: 'AED',
   fr: 'EUR',
   it: 'EUR',
   de: 'EUR',
