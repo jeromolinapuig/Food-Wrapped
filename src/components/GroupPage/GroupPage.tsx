@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
+import { usePreferences } from '../../context/PreferencesContext';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import type { GroupMember } from '../../types/groups';
@@ -31,6 +32,7 @@ type DbEntryRow = {
   datetime: string;
   rating: number | null;
   price: number | null;
+  currency: string | null;
   is_burger: boolean;
   restaurant_id: string | null;
   burger_id: string | null;
@@ -48,6 +50,7 @@ type GroupPageProps = {
 
 export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>) {
   const { t } = useTranslation();
+  const { currency: viewerCurrency, convertAmount, formatCurrency } = usePreferences();
   const navigate = useNavigate();
   const [groupName, setGroupName] = useState<string | null>(null);
   const [memberIds, setMemberIds] = useState<string[]>([]);
@@ -178,6 +181,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
           datetime,
           rating,
           price,
+          currency,
           is_burger,
           restaurant_id,
           burger_id,
@@ -243,7 +247,10 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     const burgerTypes: BurgerTypeStats = { beef: 0, chicken: 0, vegan: 0 };
 
     for (const entry of entries) {
-      if (entry.price != null) totalSpent += entry.price;
+      if (entry.price != null) {
+        const entryCurrency = entry.currency ?? 'EUR';
+        totalSpent += convertAmount(entry.price, entryCurrency, viewerCurrency);
+      }
       if (entry.is_burger) burgerCount++;
 
       if (entry.rating != null) {
@@ -299,7 +306,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       favoriteRestaurant,
       burgerTypes,
     };
-  }, [entries]);
+  }, [convertAmount, entries, viewerCurrency]);
 
   const rankingRows = useMemo(() => {
     const base = new Map<string, { spent: number; burgers: number }>();
@@ -309,7 +316,10 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
     entries.forEach((entry) => {
       const current = base.get(entry.user_id) ?? { spent: 0, burgers: 0 };
-      current.spent += entry.price ?? 0;
+      if (entry.price != null) {
+        const entryCurrency = entry.currency ?? 'EUR';
+        current.spent += convertAmount(entry.price, entryCurrency, viewerCurrency);
+      }
       if (entry.is_burger) {
         current.burgers += 1;
       }
@@ -331,7 +341,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     });
 
     return rows;
-  }, [entries, members, rankingMetric]);
+  }, [convertAmount, entries, members, rankingMetric, viewerCurrency]);
 
   const title = groupName ?? 'Grupo';
   const sectionTitle = activeTab === 'posts' ? t('groups.postsCount', { count: postsCount }) : t('groups.ranking');
@@ -379,7 +389,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
               <>
                 <StatCard
                   icon={<Euro fontSize="small" />}
-                  value={`${stats.totalSpent.toFixed(2)}\u20AC`}
+                  value={formatCurrency(stats.totalSpent, { fromCurrency: viewerCurrency, toCurrency: viewerCurrency })}
                   label={t('groups.totalSpent')}
                   onClick={() => handleSelectRanking('spent')}
                   isActive={activeTab === 'ranking' && rankingMetric === 'spent'}
@@ -447,7 +457,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   const label = member.displayName || member.username || 'usuario';
                   const value =
                     rankingMetric === 'spent'
-                      ? `${member.totalSpent.toFixed(2)}\u20AC`
+                      ? formatCurrency(member.totalSpent, { fromCurrency: viewerCurrency, toCurrency: viewerCurrency })
                       : `${member.totalBurgers}`;
                   return (
                     <button

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabaseClient';
+import { usePreferences } from '../../context/PreferencesContext';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
@@ -23,6 +24,7 @@ type RankingEntryRow = {
   user_id: string;
   datetime: string;
   price: number | null;
+  currency: string | null;
   is_burger: boolean;
 };
 
@@ -40,6 +42,7 @@ type MonthOption = {
 
 export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>) {
   const { t } = useTranslation();
+  const { currency: viewerCurrency, convertAmount, formatCurrency } = usePreferences();
   const [entries, setEntries] = useState<RankingEntryRow[]>([]);
   const [members, setMembers] = useState<RankingMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +60,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
 
     const { data: entriesData, error: entriesError } = await supabase
       .from('entries')
-      .select('user_id, datetime, price, is_burger')
+      .select('user_id, datetime, price, currency, is_burger')
       .eq('visibility', 'public')
       .gte('datetime', from)
       .lt('datetime', to)
@@ -192,7 +195,10 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     const activeUserIds = new Set(filteredEntries.map((entry) => entry.user_id));
     filteredEntries.forEach((entry) => {
       const current = base.get(entry.user_id) ?? { spent: 0, burgers: 0 };
-      current.spent += entry.price ?? 0;
+      if (entry.price != null) {
+        const entryCurrency = entry.currency ?? 'EUR';
+        current.spent += convertAmount(entry.price, entryCurrency, viewerCurrency);
+      }
       if (entry.is_burger) current.burgers += 1;
       base.set(entry.user_id, current);
       const entryTime = new Date(entry.datetime).getTime();
@@ -238,7 +244,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     });
 
     return rows;
-  }, [filteredEntries, members, rankingMetric]);
+  }, [convertAmount, filteredEntries, members, rankingMetric, viewerCurrency]);
 
   const renderMedal = (index: number) => {
     if (index === 0) return { src: '/gold_medal.png', alt: t('common.goldMedal', { defaultValue: 'Medalla de oro' }) };
@@ -306,7 +312,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
               const label = member.displayName || member.username || 'usuario';
               const value =
                 rankingMetric === 'spent'
-                  ? `${member.totalSpent.toFixed(2)}\u20AC`
+                  ? formatCurrency(member.totalSpent, { fromCurrency: viewerCurrency, toCurrency: viewerCurrency })
                   : `${member.totalBurgers}`;
               const medal = renderMedal(index);
               return (

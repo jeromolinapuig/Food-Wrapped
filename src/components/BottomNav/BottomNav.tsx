@@ -169,7 +169,9 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
             <span className="bw-bottom-nav-initial">{initial}</span>
           )}
         </span>
-        <span className="bw-bottom-nav-label">{isGuest ? t('common.guest', { defaultValue: 'Guest' }) : ''}</span>
+        <span className="bw-bottom-nav-label">
+          {isGuest ? t('common.guest', { defaultValue: 'Guest' }) : t('common.profile', { defaultValue: 'Profile' })}
+        </span>
       </button>
     </nav>
   );
