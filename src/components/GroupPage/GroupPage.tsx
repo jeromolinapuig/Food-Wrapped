@@ -9,6 +9,7 @@ import '../../styles/layout.css';
 import '../../styles/shared.css';
 import type { GroupMember } from '../../types/groups';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { getCurrentMonthValue } from '../../utils/datetime';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
@@ -61,7 +62,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [error, setError] = useState<string | null>(null);
   const [groupMissing, setGroupMissing] = useState(false);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>(() => getCurrentMonthValue());
   const [activeTab, setActiveTab] = useState<'posts' | 'ranking'>('posts');
   const [rankingMetric, setRankingMetric] = useState<'spent' | 'burgers'>('spent');
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);

@@ -8,6 +8,7 @@ import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { getCurrentMonthValue } from '../../utils/datetime';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import { useTranslation } from 'react-i18next';
@@ -51,7 +52,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<'all' | string>('all');
+  const [monthFilter, setMonthFilter] = useState<'all' | string>(() => getCurrentMonthValue());
   const [profile, setProfile] = useState<{
     username: string | null;
     displayName: string | null;
@@ -403,4 +404,3 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     </AppShell>
   );
 }
-

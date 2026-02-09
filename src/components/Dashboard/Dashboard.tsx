@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { PageHeader } from '../common/PageHeader';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useTranslation } from 'react-i18next';
+import { getCurrentMonthValue } from '../../utils/datetime';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -167,7 +168,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>(() => getCurrentMonthValue());
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [mutating, setMutating] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);

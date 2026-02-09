@@ -5,3 +5,6 @@ export const formatLocalDateTime = (date: Date) =>
   new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
+
+export const getCurrentMonthValue = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;

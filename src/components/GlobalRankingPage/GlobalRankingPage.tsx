@@ -6,6 +6,7 @@ import { i18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabaseClient';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { getCurrentMonthValue } from '../../utils/datetime';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
@@ -47,7 +48,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
   const [members, setMembers] = useState<RankingMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [monthFilter, setMonthFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState(() => getCurrentMonthValue());
   const [rankingMetric, setRankingMetric] = useState<'spent' | 'burgers'>('spent');
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
 
@@ -157,7 +158,8 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       seen.add(value);
     });
-    const values = Array.from(seen).sort((a, b) => b.localeCompare(a));
+    seen.add(getCurrentMonthValue());
+    const values = Array.from(seen).sort((a, b) => a.localeCompare(b));
     const options: MonthOption[] = [{ value: 'all', label: t('feedTabs.all') }];
     values.forEach((value) => {
       const [yearStr, monthStr] = value.split('-');

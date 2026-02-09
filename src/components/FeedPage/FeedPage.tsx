@@ -12,6 +12,7 @@ import { BackButton } from '../common/BackButton';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { PageHeader } from '../common/PageHeader';
 import { UserCard } from '../common/UserCard';
+import { getCurrentMonthValue } from '../../utils/datetime';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './FeedPage.css';
@@ -69,7 +70,7 @@ export function FeedPage({
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [focusedFeedUser, setFocusedFeedUser] = useState<{ id: string; username: string | null; displayName: string | null } | null>(null);
-  const [userMonthFilter, setUserMonthFilter] = useState<'all' | string>('all');
+  const [userMonthFilter, setUserMonthFilter] = useState<'all' | string>(() => getCurrentMonthValue());
   const currentUserId = session?.user.id ?? null;
   const followsCacheKey = currentUserId ? `bw-feed-follows-${currentUserId}` : null;
   const isGuest = !session;
