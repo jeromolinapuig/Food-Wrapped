@@ -125,6 +125,10 @@
   z-index: 49;
 }
 
+:root[data-theme="dark"] .bw-bottom-nav-menu-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
 .bw-bottom-nav-menu {
   position: fixed;
   bottom: 84px;
@@ -141,6 +145,11 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 50;
   min-width: 180px;
+}
+
+:root[data-theme="dark"] .bw-bottom-nav-menu {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
 }
 
 .bw-bottom-nav-menu-item {
