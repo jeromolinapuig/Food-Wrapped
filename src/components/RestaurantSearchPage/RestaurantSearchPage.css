@@ -1,0 +1,83 @@
+.bw-restaurant-search {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.bw-restaurant-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bw-restaurant-card {
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.bw-restaurant-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bw-restaurant-card-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--bw-text);
+}
+
+.bw-restaurant-card-subtitle {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+}
+
+.bw-restaurant-card-action {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bw-accent);
+}
+
+.bw-restaurant-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.bw-restaurant-selected-label {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+}
+
+.bw-restaurant-selected-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bw-restaurant-tabs {
+  margin-top: 4px;
+}
+
+.bw-feed-tabs-trio .bw-feed-tab {
+  flex: 1;
+  text-align: center;
+}
+
+.bw-restaurant-feed {
+  margin-top: 6px;
+}
+
+.bw-restaurant-error {
+  font-size: 12px;
+  color: #d7264d;
+}
+

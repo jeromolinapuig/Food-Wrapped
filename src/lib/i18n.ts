@@ -148,6 +148,13 @@ import frComments from '../locales/fr/comments.json';
 import itComments from '../locales/it/comments.json';
 import deComments from '../locales/de/comments.json';
 
+import enRestaurantSearch from '../locales/en/restaurantSearch.json';
+import esRestaurantSearch from '../locales/es/restaurantSearch.json';
+import thRestaurantSearch from '../locales/th/restaurantSearch.json';
+import frRestaurantSearch from '../locales/fr/restaurantSearch.json';
+import itRestaurantSearch from '../locales/it/restaurantSearch.json';
+import deRestaurantSearch from '../locales/de/restaurantSearch.json';
+
 const resources = {
   en: {
     common: enCommon,
@@ -170,7 +177,8 @@ const resources = {
     groups: enGroups,
     groupManage: enGroupManage,
     createGroup: enCreateGroup,
-    comments: enComments
+    comments: enComments,
+    restaurantSearch: enRestaurantSearch
   },
   es: {
     common: esCommon,
@@ -193,7 +201,8 @@ const resources = {
     groups: esGroups,
     groupManage: esGroupManage,
     createGroup: esCreateGroup,
-    comments: esComments
+    comments: esComments,
+    restaurantSearch: esRestaurantSearch
   },
   th: {
     common: thCommon,
@@ -216,7 +225,8 @@ const resources = {
     groups: thGroups,
     groupManage: thGroupManage,
     createGroup: thCreateGroup,
-    comments: thComments
+    comments: thComments,
+    restaurantSearch: thRestaurantSearch
   },
   fr: {
     common: frCommon,
@@ -239,7 +249,8 @@ const resources = {
     groups: frGroups,
     groupManage: frGroupManage,
     createGroup: frCreateGroup,
-    comments: frComments
+    comments: frComments,
+    restaurantSearch: frRestaurantSearch
   },
   it: {
     common: itCommon,
@@ -262,7 +273,8 @@ const resources = {
     groups: itGroups,
     groupManage: itGroupManage,
     createGroup: itCreateGroup,
-    comments: itComments
+    comments: itComments,
+    restaurantSearch: itRestaurantSearch
   },
   de: {
     common: deCommon,
@@ -285,7 +297,8 @@ const resources = {
     groups: deGroups,
     groupManage: deGroupManage,
     createGroup: deCreateGroup,
-    comments: deComments
+    comments: deComments,
+    restaurantSearch: deRestaurantSearch
   }
 };
 
@@ -328,7 +341,8 @@ i18n
       'groups',
       'groupManage',
       'createGroup',
-      'comments'
+      'comments',
+      'restaurantSearch'
     ],
     interpolation: { escapeValue: false },
     returnNull: false,

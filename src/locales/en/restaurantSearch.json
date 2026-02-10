@@ -1,0 +1,18 @@
+{
+  "title": "Restaurants",
+  "subtitle": "Search a restaurant and explore posts",
+  "searchLabel": "Search restaurant",
+  "searchPlaceholder": "e.g. Burger Town",
+  "searching": "Searching restaurants...",
+  "empty": "No restaurants match that name.",
+  "selectedLabel": "Selected restaurant",
+  "change": "Change",
+  "cardSubtitle": "View posts",
+  "cardAction": "View",
+  "tabs.mine": "You ({{count}})",
+  "tabs.friends": "Friends",
+  "tabs.all": "All",
+  "errors.load": "Could not load restaurants.",
+  "lockedTitle": "Restaurants",
+  "lockedSubtitle": "Log in to search restaurants."
+}

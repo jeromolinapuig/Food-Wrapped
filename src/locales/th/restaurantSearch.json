@@ -1,0 +1,18 @@
+{
+  "title": "ร้านอาหาร",
+  "subtitle": "ค้นหาร้านอาหารและดูโพสต์",
+  "searchLabel": "ค้นหาร้านอาหาร",
+  "searchPlaceholder": "เช่น Burger Town",
+  "searching": "กำลังค้นหาร้านอาหาร...",
+  "empty": "ไม่พบร้านอาหารชื่อนี้",
+  "selectedLabel": "ร้านที่เลือก",
+  "change": "เปลี่ยน",
+  "cardSubtitle": "ดูโพสต์",
+  "cardAction": "ดู",
+  "tabs.mine": "คุณ ({{count}})",
+  "tabs.friends": "เพื่อน",
+  "tabs.all": "ทั้งหมด",
+  "errors.load": "ไม่สามารถโหลดร้านอาหารได้",
+  "lockedTitle": "ร้านอาหาร",
+  "lockedSubtitle": "เข้าสู่ระบบเพื่อค้นหาร้านอาหาร"
+}

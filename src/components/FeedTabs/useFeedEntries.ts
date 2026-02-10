@@ -11,6 +11,8 @@ type UseFeedEntriesOptions = {
   focusUserId?: string | null;
   userIdsFilter?: string[] | null;
   entryIdsFilter?: string[] | null;
+  restaurantIdFilter?: string | null;
+  forcedTab?: FeedTab | null;
   ignorePrivacy: boolean;
   onCountChange?: (count: number) => void;
   headerOnly: boolean;
@@ -79,6 +81,8 @@ export function useFeedEntries({
   focusUserId,
   userIdsFilter,
   entryIdsFilter,
+  restaurantIdFilter,
+  forcedTab,
   ignorePrivacy,
   onCountChange,
   headerOnly,
@@ -87,7 +91,8 @@ export function useFeedEntries({
   monthFilter,
   onMonthFilterChange,
 }: UseFeedEntriesOptions): UseFeedEntriesResult {
-  const [activeTab, setActiveTab] = useState<FeedTab>('global');
+  const [activeTabState, setActiveTabState] = useState<FeedTab>('global');
+  const activeTab = forcedTab ?? activeTabState;
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -109,10 +114,12 @@ export function useFeedEntries({
   const viewerId = currentUserId ?? null;
   const viewerKey = viewerId ?? 'guest';
   const isUserFeed = Boolean(focusUserId);
+  const isSelfFeed = Boolean(focusUserId && viewerId && focusUserId === viewerId);
   const hasEntryFilter = entryIdsFilter !== undefined && entryIdsFilter !== null;
   const isCustomList = Boolean(userIdsFilter?.length) || hasEntryFilter;
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
+  const restaurantKey = restaurantIdFilter ?? 'all';
 
   const entryIdsKey = useMemo(() => {
     if (!hasEntryFilter) return '';
@@ -126,13 +133,16 @@ export function useFeedEntries({
   }, [userIdsFilter]);
 
   const monthCacheKey = useMemo(() => {
-    if (focusUserId) return `bw-feed-months-${focusUserId}`;
-    if (entryIdsKey) return `bw-feed-months-entries-${entryIdsKey}`;
-    if (isCustomList) return `bw-feed-months-group-${userIdsKey}`;
-    return null;
-  }, [focusUserId, entryIdsKey, isCustomList, userIdsKey]);
+    let baseKey: string | null = null;
+    if (focusUserId) baseKey = `bw-feed-months-${focusUserId}`;
+    else if (entryIdsKey) baseKey = `bw-feed-months-entries-${entryIdsKey}`;
+    else if (isCustomList) baseKey = `bw-feed-months-group-${userIdsKey}`;
+    if (!baseKey) return null;
+    return `${baseKey}-${restaurantKey}`;
+  }, [focusUserId, entryIdsKey, isCustomList, userIdsKey, restaurantKey]);
 
-  const entriesCacheKey = `bw-feed-entries-${viewerKey}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}`;
+  const entriesCacheKey =
+    `bw-feed-entries-${viewerKey}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}-${restaurantKey}`;
 
   useEffect(() => {
     entriesRef.current = entries;
@@ -235,13 +245,19 @@ export function useFeedEntries({
       userIdsForQuery = [focusUserId];
     } else if (activeTab === 'following') {
       if (viewerId) {
-        const { data: followsData, error: followsError } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', viewerId);
+        const [{ data: outData, error: outError }, { data: incData, error: incError }] = await Promise.all([
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', viewerId),
+          supabase
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', viewerId),
+        ]);
 
-        if (followsError) {
-          setError(followsError.message);
+        if (outError || incError) {
+          setError(outError?.message ?? incError?.message ?? 'Error cargando amigos.');
           if (!append) {
             setEntries([]);
             setCursor(null);
@@ -253,7 +269,9 @@ export function useFeedEntries({
           return;
         }
 
-        userIdsForQuery = (followsData ?? []).map((row) => (row as { following_id: string }).following_id);
+        const outgoing = new Set((outData ?? []).map((row) => (row as { following_id: string }).following_id));
+        const incoming = new Set((incData ?? []).map((row) => (row as { follower_id: string }).follower_id));
+        userIdsForQuery = [...outgoing].filter((id) => incoming.has(id));
         if (!userIdsForQuery.length) {
           if (!append) {
             setEntries([]);
@@ -305,11 +323,17 @@ export function useFeedEntries({
     } else if (isCustomList && userIdsForQuery) {
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
     } else if (focusUserId) {
-      query = query.eq('visibility', 'public').eq('user_id', focusUserId);
+      query = isSelfFeed
+        ? query.eq('user_id', focusUserId)
+        : query.eq('visibility', 'public').eq('user_id', focusUserId);
     } else if (activeTab === 'global') {
       query = query.eq('visibility', 'public');
     } else if (activeTab === 'following' && userIdsForQuery) {
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
+    }
+
+    if (restaurantIdFilter) {
+      query = query.eq('restaurant_id', restaurantIdFilter);
     }
 
     if ((focusUserId || isCustomList) && effectiveMonthFilter !== 'all') {
@@ -508,6 +532,7 @@ export function useFeedEntries({
     isCustomList,
     onCountChange,
     pageSize,
+    restaurantIdFilter,
     userIdsFilter,
   ]);
 
@@ -553,9 +578,12 @@ export function useFeedEntries({
       let query = supabase
         .from('entries')
         .select('datetime')
-        .eq('visibility', 'public')
         .order('datetime', { ascending: false })
         .limit(500);
+
+      if (!isSelfFeed) {
+        query = query.eq('visibility', 'public');
+      }
 
       if (entryIdsFilter?.length) {
         query = query.in('id', entryIdsFilter);
@@ -563,6 +591,9 @@ export function useFeedEntries({
         query = query.eq('user_id', focusUserId);
       } else if (isCustomList && userIdsFilter?.length) {
         query = query.in('user_id', userIdsFilter);
+      }
+      if (restaurantIdFilter) {
+        query = query.eq('restaurant_id', restaurantIdFilter);
       }
 
       const { data, error } = await query;
@@ -601,7 +632,17 @@ export function useFeedEntries({
     return () => {
       cancelled = true;
     };
-  }, [entryIdsFilter, focusUserId, hasEntryFilter, hideHeader, isCustomList, monthCacheKey, userIdsFilter, i18n.language]);
+  }, [
+    entryIdsFilter,
+    focusUserId,
+    hasEntryFilter,
+    hideHeader,
+    isCustomList,
+    monthCacheKey,
+    restaurantIdFilter,
+    userIdsFilter,
+    i18n.language,
+  ]);
 
   useEffect(() => {
     if (headerOnly) return;
@@ -668,15 +709,22 @@ export function useFeedEntries({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
         (payload) => { /* NOSONAR */
-          const row = (payload.new ?? payload.old) as { user_id?: string; visibility?: string | null } | null;
+          const row = (payload.new ?? payload.old) as {
+            user_id?: string;
+            visibility?: string | null;
+            restaurant_id?: string | null;
+          } | null;
           if (isCustomList) {
             if (!row?.user_id || !userIdsFilter?.includes(row.user_id)) return;
             if (row?.visibility && row.visibility !== 'public') return;
+            if (restaurantIdFilter && row?.restaurant_id !== restaurantIdFilter) return;
           } else if (focusUserId) {
             if (row?.user_id !== focusUserId) return;
             if (row?.visibility && row.visibility !== 'public') return;
+            if (restaurantIdFilter && row?.restaurant_id !== restaurantIdFilter) return;
           } else if (activeTab === 'global') {
             if (row?.visibility && row.visibility !== 'public') return;
+            if (restaurantIdFilter && row?.restaurant_id !== restaurantIdFilter) return;
           }
           if (document.visibilityState !== 'visible') return;
           const now = Date.now();
@@ -690,7 +738,7 @@ export function useFeedEntries({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, focusUserId, headerOnly, isCustomList, loadEntries, userIdsFilter, viewerKey]);
+  }, [activeTab, focusUserId, headerOnly, isCustomList, loadEntries, restaurantIdFilter, userIdsFilter, viewerKey]);
 
   useRevalidateOnFocus(
     () => {
@@ -724,7 +772,7 @@ export function useFeedEntries({
 
   return {
     activeTab,
-    setActiveTab,
+    setActiveTab: forcedTab ? () => {} : setActiveTabState,
     entries,
     loading,
     loadingMore,

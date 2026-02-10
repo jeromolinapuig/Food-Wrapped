@@ -1,0 +1,18 @@
+{
+  "title": "Ristoranti",
+  "subtitle": "Cerca un ristorante ed esplora i post",
+  "searchLabel": "Cerca ristorante",
+  "searchPlaceholder": "Es: Burger Town",
+  "searching": "Ricerca ristoranti...",
+  "empty": "Nessun ristorante con questo nome.",
+  "selectedLabel": "Ristorante selezionato",
+  "change": "Cambia",
+  "cardSubtitle": "Vedi i post",
+  "cardAction": "Vedi",
+  "tabs.mine": "Tu ({{count}})",
+  "tabs.friends": "Amici",
+  "tabs.all": "Tutti",
+  "errors.load": "Impossibile caricare i ristoranti.",
+  "lockedTitle": "Ristoranti",
+  "lockedSubtitle": "Accedi per cercare ristoranti."
+}

@@ -9,7 +9,7 @@ import { FeedEntryCard } from './FeedEntryCard';
 import { FeedHeader } from './FeedHeader';
 import { useEntryReactions } from './useEntryReactions';
 import { useFeedEntries } from './useFeedEntries';
-import type { FeedEntry } from './types';
+import type { FeedEntry, FeedTab } from './types';
 import { useTranslation } from 'react-i18next';
 import { ZoomableImage } from '../common/ZoomableImage';
 import '../../styles/shared.css';
@@ -27,6 +27,8 @@ type FeedTabsProps = {
   focusUserId?: string | null;
   userIdsFilter?: string[] | null;
   entryIdsFilter?: string[] | null;
+  restaurantIdFilter?: string | null;
+  forcedTab?: FeedTab | null;
   ignorePrivacy?: boolean;
   onCountChange?: (count: number) => void;
   hideHeader?: boolean;
@@ -51,6 +53,8 @@ export function FeedTabs({
   focusUserId,
   userIdsFilter,
   entryIdsFilter,
+  restaurantIdFilter,
+  forcedTab,
   ignorePrivacy = false,
   onCountChange,
   hideHeader = false,
@@ -89,6 +93,8 @@ export function FeedTabs({
     focusUserId,
     userIdsFilter,
     entryIdsFilter,
+    restaurantIdFilter,
+    forcedTab,
     ignorePrivacy,
     onCountChange,
     headerOnly,

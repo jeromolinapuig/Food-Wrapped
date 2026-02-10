@@ -17,6 +17,7 @@ import { PrivacyPage } from './components/PrivacyPage/PrivacyPage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
+import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
@@ -420,6 +421,21 @@ function App() {
               <LockedPage
                 title={t('locked.section')}
                 subtitle={t('locked.savedSubtitle')}
+                onLogin={handleLogin}
+                preview={<FeedPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/restaurants"
+          element={
+            session ? (
+              <RestaurantSearchPage session={session} />
+            ) : (
+              <LockedPage
+                title={t('restaurantSearch.lockedTitle', { defaultValue: 'Restaurantes' })}
+                subtitle={t('restaurantSearch.lockedSubtitle', { defaultValue: 'Inicia sesión para buscar restaurantes.' })}
                 onLogin={handleLogin}
                 preview={<FeedPlaceholder />}
               />
