@@ -285,7 +285,6 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
       <PageHeader
         title={t('restaurantSearch.title', { defaultValue: 'Restaurantes' })}
         subtitle={t('restaurantSearch.subtitle', { defaultValue: 'Busca un restaurante y explora las publicaciones' })}
-        leading={<BackButton onClick={() => navigate('/')} />}
       />
       <main className="bw-main">
         <section className="bw-restaurant-search">

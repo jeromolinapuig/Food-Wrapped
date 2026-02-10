@@ -1,4 +1,4 @@
-import { DynamicFeed, EmojiEvents, Groups, Home, PersonOutline } from '@mui/icons-material';
+import { DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -20,6 +20,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<string>('?');
   const [inviteCount, setInviteCount] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
   const isGuest = !session;
   const userId = session?.user.id ?? null;
 
@@ -29,13 +30,15 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
       const returnTo = state?.returnTo ?? '';
       if (returnTo.startsWith('/groups')) return 'groups';
       if (returnTo.startsWith('/feed')) return 'feed';
-      if (returnTo.startsWith('/ranking')) return 'ranking';
+      if (returnTo.startsWith('/ranking')) return 'more';
+      if (returnTo.startsWith('/restaurants')) return 'more';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
     if (location.pathname.startsWith('/feed')) return 'feed';
     if (location.pathname.startsWith('/groups')) return 'groups';
-    if (location.pathname.startsWith('/ranking')) return 'ranking';
+    if (location.pathname.startsWith('/ranking')) return 'more';
+    if (location.pathname.startsWith('/restaurants')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [location.pathname]);
@@ -103,7 +106,23 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
     { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
   );
 
-  const handleClick = (path: string) => navigate(path);
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
+
+  const handleClick = (path: string) => {
+    setMoreOpen(false);
+    navigate(path);
+  };
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [moreOpen]);
 
   return (
     <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
@@ -137,15 +156,53 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
         </span>
         <span className="bw-bottom-nav-label">{t('common.groups', { defaultValue: 'Groups' })}</span>
       </button>
-      <button
-        type="button"
-        className={`bw-bottom-nav-item ${activeKey === 'ranking' ? 'is-active' : ''}`}
-        onClick={() => handleClick('/ranking')}
-        aria-label={t('common.ranking', { defaultValue: 'Ranking' })}
-      >
-        <span className="bw-bottom-nav-icon"><EmojiEvents /></span>
-        <span className="bw-bottom-nav-label">{t('common.ranking', { defaultValue: 'Ranking' })}</span>
-      </button>
+      <div className={`bw-bottom-nav-more ${activeKey === 'more' ? 'is-active' : ''}`}>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'more' ? 'is-active' : ''}`}
+          onClick={() => setMoreOpen((prev) => !prev)}
+          aria-label={t('common.more', { defaultValue: 'More' })}
+          aria-haspopup="menu"
+          aria-expanded={moreOpen}
+        >
+          <span className="bw-bottom-nav-icon"><MoreHoriz /></span>
+          <span className="bw-bottom-nav-label">{t('common.more', { defaultValue: 'More' })}</span>
+        </button>
+        {moreOpen && (
+          <>
+            <button
+              type="button"
+              className="bw-bottom-nav-menu-backdrop"
+              onClick={() => setMoreOpen(false)}
+              aria-label={t('common.close', { defaultValue: 'Close' })}
+            />
+            <div className="bw-bottom-nav-menu" role="menu">
+              <button
+                type="button"
+                className="bw-bottom-nav-menu-item"
+                role="menuitem"
+                onClick={() => handleClick('/ranking')}
+              >
+                <span className="bw-bottom-nav-menu-icon"><EmojiEvents fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-label">
+                  {t('common.ranking', { defaultValue: 'Ranking' })}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="bw-bottom-nav-menu-item"
+                role="menuitem"
+                onClick={() => handleClick('/restaurants')}
+              >
+                <span className="bw-bottom-nav-menu-icon"><Store fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-label">
+                  {t('common.restaurants', { defaultValue: 'Restaurants' })}
+                </span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}

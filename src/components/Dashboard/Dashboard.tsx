@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, House, LunchDining, Notifications, Star, Store } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LunchDining, Notifications, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -613,14 +613,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           logoAlt="Burger Wrapped"
           actions={(
             <>
-              <button
-                type="button"
-                className="bw-icon-button"
-                onClick={() => navigate('/restaurants')}
-                aria-label="Buscar restaurantes"
-              >
-                <Store />
-              </button>
               <button
                 type="button"
                 className="bw-icon-button bw-notify-button"

@@ -35,6 +35,8 @@
   "guest": "Guest",
   "navigation": "Primary navigation",
   "ranking": "Ranking",
+  "restaurants": "Restaurants",
+  "more": "More",
   "globalRanking": "Global ranking",
   "globalRankingSubtitle": "See who leads the community."
 }
