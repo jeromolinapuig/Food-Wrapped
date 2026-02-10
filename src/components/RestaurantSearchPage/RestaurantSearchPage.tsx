@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { AppShell } from '../common/AppShell';
-import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import '../../styles/shared.css';
