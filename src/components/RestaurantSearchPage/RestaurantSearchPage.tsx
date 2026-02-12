@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { AppShell } from '../common/AppShell';
@@ -16,6 +16,11 @@ type RestaurantOption = {
 
 type RestaurantSearchPageProps = {
   session: Session;
+};
+
+type RestaurantSearchLocationState = {
+  selectedRestaurantId?: string;
+  selectedRestaurantName?: string;
 };
 
 const normalizeName = (value: string) =>
@@ -36,6 +41,7 @@ const normalizeCompact = (value: string) =>
 
 export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageProps>) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedTerm, setDebouncedTerm] = useState('');
@@ -46,6 +52,17 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
   const [activeTab, setActiveTab] = useState<'mine' | 'friends' | 'all'>('mine');
   const [mineCount, setMineCount] = useState(0);
   const [mutualIds, setMutualIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    const state = location.state as RestaurantSearchLocationState | null;
+    const selectedRestaurantId = state?.selectedRestaurantId?.trim();
+    const selectedRestaurantName = state?.selectedRestaurantName?.trim();
+    if (!selectedRestaurantId || !selectedRestaurantName) return;
+
+    setSelectedRestaurant({ id: selectedRestaurantId, name: selectedRestaurantName });
+    setActiveTab('mine');
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -326,21 +343,21 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
                     className={`bw-feed-tab ${activeTab === 'mine' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('mine')}
                   >
-                    {t('restaurantSearch.tabs.mine', { count: mineCount, defaultValue: 'Tu ({{count}})' })}
+                    {t('restaurantSearch.tabsMine', { count: mineCount, defaultValue: 'Tu ({{count}})' })}
                   </button>
                   <button
                     type="button"
                     className={`bw-feed-tab ${activeTab === 'friends' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('friends')}
                   >
-                    {t('restaurantSearch.tabs.friends', { defaultValue: 'Amigos' })}
+                    {t('restaurantSearch.tabsFriends', { defaultValue: 'Amigos' })}
                   </button>
                   <button
                     type="button"
                     className={`bw-feed-tab ${activeTab === 'all' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('all')}
                   >
-                    {t('restaurantSearch.tabs.all', { defaultValue: 'Todos' })}
+                    {t('restaurantSearch.tabsAll', { defaultValue: 'Todos' })}
                   </button>
                 </div>
               </div>

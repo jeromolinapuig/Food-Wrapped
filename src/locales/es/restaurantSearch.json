@@ -9,9 +9,9 @@
   "change": "Cambiar",
   "cardSubtitle": "Ver publicaciones",
   "cardAction": "Ver",
-  "tabs.mine": "Tu ({{count}})",
-  "tabs.friends": "Amigos",
-  "tabs.all": "Todos",
+  "tabsMine": "Tu ({{count}})",
+  "tabsFriends": "Amigos",
+  "tabsAll": "Todos",
   "errors.load": "No se pudieron cargar restaurantes.",
   "lockedTitle": "Restaurantes",
   "lockedSubtitle": "Inicia sesión para buscar restaurantes."

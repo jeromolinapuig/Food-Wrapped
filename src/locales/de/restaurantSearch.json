@@ -9,9 +9,9 @@
   "change": "Ändern",
   "cardSubtitle": "Beiträge ansehen",
   "cardAction": "Ansehen",
-  "tabs.mine": "Du ({{count}})",
-  "tabs.friends": "Freunde",
-  "tabs.all": "Alle",
+  "tabsMine": "Du ({{count}})",
+  "tabsFriends": "Freunde",
+  "tabsAll": "Alle",
   "errors.load": "Restaurants konnten nicht geladen werden.",
   "lockedTitle": "Restaurants",
   "lockedSubtitle": "Melde dich an, um Restaurants zu suchen."

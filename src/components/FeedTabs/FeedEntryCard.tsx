@@ -9,6 +9,7 @@ import {
   StarBorder,
   StarHalf,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from '../common/Avatar';
 import { EntryComments } from '../Comments/EntryComments';
@@ -81,6 +82,7 @@ export function FeedEntryCard({
   onSubmitComment,
   onRequestDeleteComment,
 }: Readonly<FeedEntryCardProps>) {
+  const navigate = useNavigate();
   const date = new Date(entry.datetime);
   const formattedDate = date.toLocaleString(undefined, {
     year: 'numeric',
@@ -103,6 +105,16 @@ export function FeedEntryCard({
   const likeDisabled = isReadOnly || isLikePending;
   const saveDisabled = isReadOnly || isSavePending;
   const actionLockLabel = isReadOnly ? t('feed.lockAction') : undefined;
+  const canOpenRestaurant = !isHomemade && Boolean(entry.restaurantId && entry.restaurantName);
+  const handleOpenRestaurant = () => {
+    if (!entry.restaurantId || !entry.restaurantName) return;
+    navigate('/restaurants', {
+      state: {
+        selectedRestaurantId: entry.restaurantId,
+        selectedRestaurantName: entry.restaurantName,
+      },
+    });
+  };
 
   return (
     <div className="bw-feed-entry-wrap">
@@ -148,6 +160,14 @@ export function FeedEntryCard({
                   <img src="/homemade.png" alt="Casera" className="bw-feed-homemade-icon" />
                   <span>{restaurantLabel}</span>
                 </span>
+              ) : canOpenRestaurant ? (
+                <button
+                  type="button"
+                  className="bw-feed-restaurant-link"
+                  onClick={handleOpenRestaurant}
+                >
+                  {restaurantLabel}
+                </button>
               ) : (
                 restaurantLabel
               )}

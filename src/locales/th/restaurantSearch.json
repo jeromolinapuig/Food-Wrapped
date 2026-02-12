@@ -9,9 +9,9 @@
   "change": "เปลี่ยน",
   "cardSubtitle": "ดูโพสต์",
   "cardAction": "ดู",
-  "tabs.mine": "คุณ ({{count}})",
-  "tabs.friends": "เพื่อน",
-  "tabs.all": "ทั้งหมด",
+  "tabsMine": "คุณ ({{count}})",
+  "tabsFriends": "เพื่อน",
+  "tabsAll": "ทั้งหมด",
   "errors.load": "ไม่สามารถโหลดร้านอาหารได้",
   "lockedTitle": "ร้านอาหาร",
   "lockedSubtitle": "เข้าสู่ระบบเพื่อค้นหาร้านอาหาร"

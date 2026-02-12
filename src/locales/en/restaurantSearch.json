@@ -9,9 +9,9 @@
   "change": "Change",
   "cardSubtitle": "View posts",
   "cardAction": "View",
-  "tabs.mine": "You ({{count}})",
-  "tabs.friends": "Friends",
-  "tabs.all": "All",
+  "tabsMine": "You ({{count}})",
+  "tabsFriends": "Friends",
+  "tabsAll": "All",
   "errors.load": "Could not load restaurants.",
   "lockedTitle": "Restaurants",
   "lockedSubtitle": "Log in to search restaurants."
