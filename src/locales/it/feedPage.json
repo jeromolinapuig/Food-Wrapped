@@ -6,6 +6,8 @@
   "searching": "Ricerca...",
   "noUsers": "Nessun utente trovato.",
   "postsOf": "Post di @{{user}}",
+  "backToFeed": "Torna al feed principale",
+  "followBack": "Ricambia il follow",
   "confirmFollow": "Vuoi davvero seguire @{{user}}?",
   "confirmUnfollow": "Vuoi davvero smettere di seguire @{{user}}?",
   "yes": "Sì",
