@@ -298,7 +298,7 @@ export function FeedPage({
                       return;
                     }
                   }}
-                  ariaLabel="Volver al feed general"
+                  ariaLabel={t('feedPage.backToFeed', { defaultValue: 'Back to main feed' })}
                 />
                 <div className="bw-feed-focus-text">
           <div className="bw-feed-focus-name">{t('feedPage.postsOf', { user: effectiveFocusedUser.username ?? 'user' })}</div>
@@ -385,12 +385,12 @@ export function FeedPage({
                     }}
                     title={
                       isMutual
-                        ? 'Ya se siguen mutuamente'
+                        ? t('followList.mutual', { defaultValue: 'You follow each other' })
                         : isOutgoing
-                          ? 'Dejar de seguir'
+                          ? t('followList.unfollow', { defaultValue: 'Unfollow' })
                           : isIncoming
-                            ? 'Seguir de vuelta'
-                            : 'Seguir'
+                            ? t('feedPage.followBack', { defaultValue: 'Follow back' })
+                            : t('followList.follow', { defaultValue: 'Follow' })
                     }
                   >
                     {isMutual ? (
@@ -405,11 +405,17 @@ export function FeedPage({
                 return (
                   <UserCard
                     key={user.id}
-                    handle={user.username ?? 'usuario'}
+                    handle={user.username ?? 'user'}
                     avatarUrl={user.avatar_url}
                     avatarAlt={user.username ?? ''}
                     avatarInitial={(user.username ?? '?').charAt(0).toUpperCase()}
-                    meta={isMutual ? 'Os segu?s mutuamente' : isIncoming ? 'Te sigue' : null}
+                    meta={
+                      isMutual
+                        ? t('followList.mutual', { defaultValue: 'You follow each other' })
+                        : isIncoming
+                          ? t('followList.followsYou', { defaultValue: 'Follows you' })
+                          : null
+                    }
                     bio={user.bio}
                     infoButton
                     onInfoClick={() => setProfileModalUserId(user.id)}

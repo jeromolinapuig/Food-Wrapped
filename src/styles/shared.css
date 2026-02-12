@@ -1,4 +1,44 @@
 /* Shared UI primitives */
+:root {
+  --bw-avatar-shape: circle(50% at 50% 50%);
+  --bw-avatar-border: 0;
+  --bw-avatar-heart-shape: polygon(
+    50% 92%,
+    43% 86%,
+    36% 79%,
+    28% 71%,
+    21% 62%,
+    15% 52%,
+    11% 42%,
+    10% 33%,
+    13% 24%,
+    19% 17%,
+    27% 13%,
+    35% 13%,
+    42% 16%,
+    47% 22%,
+    50% 27%,
+    53% 22%,
+    58% 16%,
+    65% 13%,
+    73% 13%,
+    81% 17%,
+    87% 24%,
+    90% 33%,
+    89% 42%,
+    85% 52%,
+    79% 62%,
+    72% 71%,
+    64% 79%,
+    57% 86%
+  );
+  --bw-avatar-heart-border: 3px;
+}
+
+:root[data-avatar-shape="heart"] {
+  --bw-avatar-shape: var(--bw-avatar-heart-shape);
+  --bw-avatar-border: var(--bw-avatar-heart-border);
+}
 
 .bw-card {
   background: var(--bw-surface);
@@ -159,9 +199,12 @@
 .bw-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 0;
+  clip-path: var(--bw-avatar-shape, circle(50% at 50% 50%));
+  padding: var(--bw-avatar-border, 0);
+  box-sizing: border-box;
   overflow: hidden;
-  background: var(--bw-card-bg);
+  background: var(--bw-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -170,6 +213,7 @@
 .bw-avatar-image {
   width: 100%;
   height: 100%;
+  clip-path: var(--bw-avatar-shape, circle(50% at 50% 50%));
   object-fit: cover;
   display: block;
 }
@@ -177,6 +221,7 @@
 .bw-avatar-placeholder {
   width: 100%;
   height: 100%;
+  clip-path: var(--bw-avatar-shape, circle(50% at 50% 50%));
   display: flex;
   align-items: center;
   justify-content: center;
