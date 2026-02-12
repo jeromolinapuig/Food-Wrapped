@@ -382,13 +382,12 @@
 .bw-comment-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
   flex-shrink: 0;
-  background: var(--bw-card-bg);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.bw-comment-avatar .bw-avatar {
+  width: 100%;
+  height: 100%;
 }
 
 .bw-comment-avatar .bw-avatar-image,

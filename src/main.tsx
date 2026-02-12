@@ -8,6 +8,13 @@ import App from './App.tsx';
 import { Analytics } from '@vercel/analytics/react';
 import { PreferencesProvider } from './context/PreferencesContext';
 
+const heartAvatarEnabled = String(import.meta.env.VITE_HEART_AVATAR ?? '').toLowerCase() === 'true';
+if (heartAvatarEnabled) {
+  document.documentElement.dataset.avatarShape = 'heart';
+} else {
+  delete document.documentElement.dataset.avatarShape;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
