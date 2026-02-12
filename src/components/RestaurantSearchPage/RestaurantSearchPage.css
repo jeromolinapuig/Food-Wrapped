@@ -81,3 +81,39 @@
   color: #d7264d;
 }
 
+.bw-fab-wrapper {
+  position: sticky;
+  bottom: 85px;
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.bw-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--bw-accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.bw-fab:active {
+  transform: translateY(1px);
+}
+
+.bw-fab-plus {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bw-fab-label {
+  font-size: 15px;
+}

@@ -58,6 +58,7 @@ type AddEntryModalProps = {
   session: Session;
   theme: 'light' | 'dark';
   mode: 'create' | 'edit';
+  initialRestaurant?: RestaurantOption | null;
   entry?: {
     id: string;
     datetime: string;
@@ -84,6 +85,7 @@ export function AddEntryModal({
   session,
   theme,
   mode,
+  initialRestaurant,
   entry,
 }: AddEntryModalProps) {
   const { t } = useTranslation();
@@ -192,9 +194,9 @@ export function AddEntryModal({
       setPhotoNaturalSize(null);
     } else {
       setDatetimeInput(nowString);
-      setRestaurantInput('');
+      setRestaurantInput(initialRestaurant?.name ?? '');
       setRestaurantSuggestions([]);
-      setSelectedRestaurant(null);
+      setSelectedRestaurant(initialRestaurant ?? null);
       setIsBurger(true);
       setBurgerType('beef');
       setBurgerSource('restaurant');
@@ -217,7 +219,7 @@ export function AddEntryModal({
       setPhotoNaturalSize(null);
     }
     setFormError(null);
-  }, [open, mode, entry]);
+  }, [open, mode, entry, defaultCurrency, initialRestaurant]);
 
   const requestClose = () => {
     if (formLoading) return;

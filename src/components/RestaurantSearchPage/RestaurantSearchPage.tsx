@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
+import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import '../../styles/shared.css';
 import './RestaurantSearchPage.css';
@@ -16,6 +17,7 @@ type RestaurantOption = {
 
 type RestaurantSearchPageProps = {
   session: Session;
+  theme: 'light' | 'dark';
 };
 
 type RestaurantSearchLocationState = {
@@ -39,7 +41,7 @@ const normalizeCompact = (value: string) =>
     .trim()
     .toLowerCase();
 
-export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageProps>) {
+export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSearchPageProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -52,6 +54,8 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
   const [activeTab, setActiveTab] = useState<'mine' | 'friends' | 'all'>('mine');
   const [mineCount, setMineCount] = useState(0);
   const [mutualIds, setMutualIds] = useState<Set<string> | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [refreshFeedKey, setRefreshFeedKey] = useState(0);
 
   useEffect(() => {
     const state = location.state as RestaurantSearchLocationState | null;
@@ -262,6 +266,11 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
     navigate(`/posts/${entryId}`, { state: { returnTo: '/restaurants' } });
   };
 
+  const handleAddSaved = async () => {
+    setRefreshFeedKey((prev) => prev + 1);
+    setIsAddModalOpen(false);
+  };
+
   const renderResults = () => {
     if (loading) {
       return <p className="bw-helper">{t('restaurantSearch.searching', { defaultValue: 'Buscando restaurantes...' })}</p>;
@@ -364,7 +373,7 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
 
               <div className="bw-restaurant-feed">
                 <FeedTabs
-                  key={`${selectedRestaurant.id}-${activeTab}`}
+                  key={`${selectedRestaurant.id}-${activeTab}-${refreshFeedKey}`}
                   currentUserId={session.user.id}
                   focusUserId={activeTab === 'mine' ? session.user.id : null}
                   restaurantIdFilter={selectedRestaurant.id}
@@ -372,6 +381,7 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
                   monthFilter="all"
                   hideHeader
                   onOpenEntry={handleOpenEntry}
+                  refreshKey={refreshFeedKey}
                 />
               </div>
             </>
@@ -380,6 +390,29 @@ export function RestaurantSearchPage({ session }: Readonly<RestaurantSearchPageP
           )}
         </section>
       </main>
+
+      {selectedRestaurant && (
+        <div className="bw-fab-wrapper">
+          <button
+            className="bw-fab"
+            onClick={() => setIsAddModalOpen(true)}
+            aria-label={t('common.addEntry')}
+          >
+            <span className="bw-fab-plus">+</span>
+            <span className="bw-fab-label">{t('common.add')}</span>
+          </button>
+        </div>
+      )}
+
+      <AddEntryModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSaved={handleAddSaved}
+        session={session}
+        theme={theme}
+        mode="create"
+        initialRestaurant={selectedRestaurant}
+      />
     </AppShell>
   );
 }

@@ -431,7 +431,7 @@ function App() {
           path="/restaurants"
           element={
             session ? (
-              <RestaurantSearchPage session={session} />
+              <RestaurantSearchPage session={session} theme={theme} />
             ) : (
               <LockedPage
                 title={t('restaurantSearch.lockedTitle', { defaultValue: 'Restaurantes' })}
