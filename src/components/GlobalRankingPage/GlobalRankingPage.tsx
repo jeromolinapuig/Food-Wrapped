@@ -1,6 +1,7 @@
 import { Euro, LunchDining } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabaseClient';
@@ -43,6 +44,7 @@ type MonthOption = {
 
 export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currency: viewerCurrency, convertAmount, formatCurrency } = usePreferences();
   const [entries, setEntries] = useState<RankingEntryRow[]>([]);
   const [members, setMembers] = useState<RankingMember[]>([]);
@@ -255,6 +257,16 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     return null;
   };
 
+  const handleViewPosts = useCallback(
+    (user: { id: string; username: string | null; displayName: string | null }) => {
+      setProfileModalUserId(null);
+      navigate(`/users/${user.id}`, {
+        state: { returnTo: '/ranking', returnProfileUserId: null },
+      });
+    },
+    [navigate]
+  );
+
   return (
     <AppShell>
       <PageHeader
@@ -354,6 +366,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
         userId={profileModalUserId}
         session={session}
         onClose={() => setProfileModalUserId(null)}
+        onViewPosts={handleViewPosts}
       />
     </AppShell>
   );
