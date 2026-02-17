@@ -33,11 +33,14 @@
   width: 78px;
   height: 78px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #ff3b8d, #ff6fb5);
+  background: linear-gradient(135deg, rgba(255, 179, 71, 0.75), rgba(255, 90, 165, 0.75));
   display: grid;
   place-items: center;
   margin: 0 auto 12px;
-  box-shadow: 0 10px 24px rgba(255, 59, 141, 0.24);
+  box-shadow: 0 18px 36px rgba(255, 90, 165, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .landing-logo {
@@ -225,6 +228,14 @@
 
 :root[data-theme='dark'] .landing-feature-icon {
   background: linear-gradient(135deg, #2a1b2a, #2d2040);
+}
+
+:root[data-theme='dark'] .landing-logo-wrap {
+  background: linear-gradient(135deg, rgba(106, 42, 26, 0.7), rgba(107, 23, 67, 0.7));
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 :root[data-theme='dark'] .landing-tag {
