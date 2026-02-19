@@ -1,6 +1,7 @@
 import {
   Bookmark,
   BookmarkBorder,
+  ChatBubbleOutline,
   Delete,
   Edit,
   Favorite,
@@ -233,6 +234,18 @@ export function FeedEntryCard({
                     {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
                     <span className="bw-feed-action-count">{reactions.likeCount}</span>
                   </button>
+                  {onOpenEntry && (
+                    <button
+                      type="button"
+                      className="bw-feed-action"
+                      onClick={() => onOpenEntry(entry.id)}
+                      title={t('comments.viewComments')}
+                      aria-label={t('comments.viewComments')}
+                    >
+                      <ChatBubbleOutline fontSize="small" />
+                      {commentCount > 0 && <span className="bw-feed-action-count">{commentCount}</span>}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
@@ -274,7 +287,6 @@ export function FeedEntryCard({
 
         <EntryComments
           variant="inline"
-          entryId={entry.id}
           entryUserId={entry.userId}
           viewerId={viewerId}
           commentMode={commentMode}
@@ -288,12 +300,10 @@ export function FeedEntryCard({
           onDraftChange={onCommentDraftChange}
           onSubmit={onSubmitComment}
           onRequestDelete={onRequestDeleteComment}
-          onOpenEntry={onOpenEntry}
         />
       </article>
       <EntryComments
         variant="card"
-        entryId={entry.id}
         entryUserId={entry.userId}
         viewerId={viewerId}
         commentMode={commentMode}

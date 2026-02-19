@@ -4,7 +4,6 @@ import type { CommentMode, EntryComment } from './types';
 
 type EntryCommentsProps = {
   variant: 'inline' | 'card';
-  entryId: string;
   entryUserId: string;
   viewerId: string | null;
   commentMode: CommentMode;
@@ -18,7 +17,6 @@ type EntryCommentsProps = {
   onDraftChange: (value: string) => void;
   onSubmit: () => void;
   onRequestDelete: (comment: EntryComment) => void;
-  onOpenEntry?: (entryId: string) => void;
 };
 
 const getPreviewCommentLimit = (comments: EntryComment[]) => {
@@ -31,7 +29,6 @@ const getPreviewCommentLimit = (comments: EntryComment[]) => {
 
 export function EntryComments({
   variant,
-  entryId,
   entryUserId,
   viewerId,
   commentMode,
@@ -45,11 +42,10 @@ export function EntryComments({
   onDraftChange,
   onSubmit,
   onRequestDelete,
-  onOpenEntry,
 }: Readonly<EntryCommentsProps>) {
   const { t } = useTranslation();
   const shouldShowComments =
-    commentMode === 'full' || Boolean(error) || commentCount > 0 || (commentMode === 'preview' && Boolean(onOpenEntry));
+    commentMode === 'full' || Boolean(error) || commentCount > 0;
 
   if (variant === 'inline' && (commentMode !== 'preview' || !shouldShowComments)) return null;
   if (variant === 'card' && (commentMode !== 'full' || !shouldShowComments)) return null;
@@ -103,15 +99,6 @@ export function EntryComments({
                 );
               })}
             </div>
-          )}
-          {onOpenEntry && (
-            <button
-              type="button"
-              className="bw-link-button bw-link-inline bw-comment-link"
-              onClick={() => onOpenEntry(entryId)}
-            >
-              {t('comments.viewComments')}
-            </button>
           )}
         </div>
       </div>

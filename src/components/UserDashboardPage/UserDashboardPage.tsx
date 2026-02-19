@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -48,6 +49,7 @@ type UserDashboardPageProps = {
 
 export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDashboardPageProps>) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -396,6 +398,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                 hideHeader
                 monthFilter={monthFilter}
                 onMonthFilterChange={setMonthFilter}
+                onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: `/users/${userId}` } })}
               />
             </section>
             </>
