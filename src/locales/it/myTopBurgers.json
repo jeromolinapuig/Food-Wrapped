@@ -1,0 +1,18 @@
+﻿{
+  "title": "I miei top burgers",
+  "subtitle": "Ristorante -> burger",
+  "sortLabel": "Ordina i burger per",
+  "sortRating": "Voto",
+  "sortPrice": "Prezzo",
+  "loading": "Caricamento burger...",
+  "empty": "Non hai ancora burger da ristorante.",
+  "unknownRestaurant": "Ristorante senza nome",
+  "unknownBurger": "Burger senza nome",
+  "rating": "Voto",
+  "price": "Prezzo",
+  "eatenOneTime": "L'hai mangiata 1 volta",
+  "eatenManyTimes": "L'hai mangiata {{count}} volte",
+  "lastEaten": "L'hai mangiata l'ultima volta il {{date}}",
+  "noPhoto": "Senza foto",
+  "lockedSubtitle": "Accedi per vedere la tua classifica personale dei burger."
+}

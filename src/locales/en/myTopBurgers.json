@@ -1,0 +1,18 @@
+﻿{
+  "title": "My top burgers",
+  "subtitle": "Restaurant -> burger",
+  "sortLabel": "Sort burgers by",
+  "sortRating": "Rating",
+  "sortPrice": "Price",
+  "loading": "Loading burgers...",
+  "empty": "You still have no restaurant burgers.",
+  "unknownRestaurant": "Unnamed restaurant",
+  "unknownBurger": "Unnamed burger",
+  "rating": "Rating",
+  "price": "Price",
+  "eatenOneTime": "You have eaten it 1 time",
+  "eatenManyTimes": "You have eaten it {{count}} times",
+  "lastEaten": "You last ate it on {{date}}",
+  "noPhoto": "No photo",
+  "lockedSubtitle": "Log in to see your personal burger ranking."
+}

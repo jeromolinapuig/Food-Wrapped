@@ -18,6 +18,7 @@ import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardP
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
+import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
@@ -436,6 +437,21 @@ function App() {
               <LockedPage
                 title={t('restaurantSearch.lockedTitle', { defaultValue: 'Restaurantes' })}
                 subtitle={t('restaurantSearch.lockedSubtitle', { defaultValue: 'Inicia sesión para buscar restaurantes.' })}
+                onLogin={handleLogin}
+                preview={<FeedPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/my-top-burgers"
+          element={
+            session ? (
+              <MyTopBurgersPage session={session} />
+            ) : (
+              <LockedPage
+                title={t('myTopBurgers.title', { defaultValue: 'Mi top burgers' })}
+                subtitle={t('myTopBurgers.lockedSubtitle', { defaultValue: 'Inicia sesión para ver tu ranking personal de hamburguesas.' })}
                 onLogin={handleLogin}
                 preview={<FeedPlaceholder />}
               />

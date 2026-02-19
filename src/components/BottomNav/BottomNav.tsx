@@ -1,4 +1,4 @@
-import { DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
+import { DynamicFeed, EmojiEvents, Groups, Home, LocalDining, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -32,6 +32,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
       if (returnTo.startsWith('/feed')) return 'feed';
       if (returnTo.startsWith('/ranking')) return 'more';
       if (returnTo.startsWith('/restaurants')) return 'more';
+      if (returnTo.startsWith('/my-top-burgers')) return 'more';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
@@ -39,6 +40,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
     if (location.pathname.startsWith('/groups')) return 'groups';
     if (location.pathname.startsWith('/ranking')) return 'more';
     if (location.pathname.startsWith('/restaurants')) return 'more';
+    if (location.pathname.startsWith('/my-top-burgers')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [location.pathname]);
@@ -197,6 +199,17 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
                 <span className="bw-bottom-nav-menu-icon"><Store fontSize="small" /></span>
                 <span className="bw-bottom-nav-menu-label">
                   {t('common.restaurants', { defaultValue: 'Restaurants' })}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="bw-bottom-nav-menu-item"
+                role="menuitem"
+                onClick={() => handleClick('/my-top-burgers')}
+              >
+                <span className="bw-bottom-nav-menu-icon"><LocalDining fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-label">
+                  {t('myTopBurgers.title', { defaultValue: 'Mi top burgers' })}
                 </span>
               </button>
             </div>

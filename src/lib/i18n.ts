@@ -154,6 +154,12 @@ import thRestaurantSearch from '../locales/th/restaurantSearch.json';
 import frRestaurantSearch from '../locales/fr/restaurantSearch.json';
 import itRestaurantSearch from '../locales/it/restaurantSearch.json';
 import deRestaurantSearch from '../locales/de/restaurantSearch.json';
+import enMyTopBurgers from '../locales/en/myTopBurgers.json';
+import esMyTopBurgers from '../locales/es/myTopBurgers.json';
+import thMyTopBurgers from '../locales/th/myTopBurgers.json';
+import frMyTopBurgers from '../locales/fr/myTopBurgers.json';
+import itMyTopBurgers from '../locales/it/myTopBurgers.json';
+import deMyTopBurgers from '../locales/de/myTopBurgers.json';
 
 const resources = {
   en: {
@@ -178,7 +184,8 @@ const resources = {
     groupManage: enGroupManage,
     createGroup: enCreateGroup,
     comments: enComments,
-    restaurantSearch: enRestaurantSearch
+    restaurantSearch: enRestaurantSearch,
+    myTopBurgers: enMyTopBurgers
   },
   es: {
     common: esCommon,
@@ -202,7 +209,8 @@ const resources = {
     groupManage: esGroupManage,
     createGroup: esCreateGroup,
     comments: esComments,
-    restaurantSearch: esRestaurantSearch
+    restaurantSearch: esRestaurantSearch,
+    myTopBurgers: esMyTopBurgers
   },
   th: {
     common: thCommon,
@@ -226,7 +234,8 @@ const resources = {
     groupManage: thGroupManage,
     createGroup: thCreateGroup,
     comments: thComments,
-    restaurantSearch: thRestaurantSearch
+    restaurantSearch: thRestaurantSearch,
+    myTopBurgers: thMyTopBurgers
   },
   fr: {
     common: frCommon,
@@ -250,7 +259,8 @@ const resources = {
     groupManage: frGroupManage,
     createGroup: frCreateGroup,
     comments: frComments,
-    restaurantSearch: frRestaurantSearch
+    restaurantSearch: frRestaurantSearch,
+    myTopBurgers: frMyTopBurgers
   },
   it: {
     common: itCommon,
@@ -274,7 +284,8 @@ const resources = {
     groupManage: itGroupManage,
     createGroup: itCreateGroup,
     comments: itComments,
-    restaurantSearch: itRestaurantSearch
+    restaurantSearch: itRestaurantSearch,
+    myTopBurgers: itMyTopBurgers
   },
   de: {
     common: deCommon,
@@ -298,7 +309,8 @@ const resources = {
     groupManage: deGroupManage,
     createGroup: deCreateGroup,
     comments: deComments,
-    restaurantSearch: deRestaurantSearch
+    restaurantSearch: deRestaurantSearch,
+    myTopBurgers: deMyTopBurgers
   }
 };
 
@@ -342,7 +354,8 @@ i18n
       'groupManage',
       'createGroup',
       'comments',
-      'restaurantSearch'
+      'restaurantSearch',
+      'myTopBurgers'
     ],
     interpolation: { escapeValue: false },
     returnNull: false,
