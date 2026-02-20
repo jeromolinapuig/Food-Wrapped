@@ -1,15 +1,18 @@
 import {
   Bookmark,
-  BookmarkBorder,
   ChatBubbleOutline,
   Delete,
+  Download,
   Edit,
   Favorite,
   FavoriteBorder,
+  MoreVert,
   Star,
   StarBorder,
   StarHalf,
 } from '@mui/icons-material';
+import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { useState, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from '../common/Avatar';
@@ -17,6 +20,7 @@ import { EntryComments } from '../Comments/EntryComments';
 import type { CommentMode, EntryComment } from '../Comments/types';
 import type { FeedEntry } from './types';
 import { usePreferences } from '../../context/PreferencesContext';
+import { downloadEntryPostImage } from '../../utils/downloadEntryPostImage';
 
 type EntryReactions = { likeCount: number; liked: boolean; saved: boolean };
 
@@ -83,6 +87,8 @@ export function FeedEntryCard({
   onSubmitComment,
   onRequestDeleteComment,
 }: Readonly<FeedEntryCardProps>) {
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [isDownloadPending, setIsDownloadPending] = useState(false);
   const navigate = useNavigate();
   const date = new Date(entry.datetime);
   const formattedDate = date.toLocaleString(undefined, {
@@ -107,6 +113,9 @@ export function FeedEntryCard({
   const saveDisabled = isReadOnly || isSavePending;
   const actionLockLabel = isReadOnly ? t('feed.lockAction') : undefined;
   const canOpenRestaurant = !isHomemade && Boolean(entry.restaurantId && entry.restaurantName);
+  const hasPhoto = Boolean(entry.photoUrl);
+  const canDownloadPost = hasPhoto && isSelf;
+  const isMenuOpen = Boolean(menuAnchorEl);
   const handleOpenRestaurant = () => {
     if (!entry.restaurantId || !entry.restaurantName) return;
     navigate('/restaurants', {
@@ -115,6 +124,35 @@ export function FeedEntryCard({
         selectedRestaurantName: entry.restaurantName,
       },
     });
+  };
+  const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
+  };
+  const handleToggleSaveFromMenu = () => {
+    handleCloseMenu();
+    onToggleSave(entry.id);
+  };
+  const handleDownloadPost = async () => {
+    handleCloseMenu();
+    if (!canDownloadPost) return;
+    if (isDownloadPending) return;
+    setIsDownloadPending(true);
+    try {
+      await downloadEntryPostImage({
+        restaurantName: restaurantLabel,
+        burgerName: isHomemade ? null : entry.burgerName,
+        ratingValue: entry.rating ? entry.rating.toFixed(1) : t('feed.noRating'),
+        photoUrl: entry.photoUrl,
+        notes: entry.additionalNotes,
+      });
+    } catch (error) {
+      console.error('Error downloading post image', error);
+    } finally {
+      setIsDownloadPending(false);
+    }
   };
 
   return (
@@ -150,7 +188,47 @@ export function FeedEntryCard({
               </div>
             </button>
           )}
-          <div className="bw-feed-datetime">{formattedDate}</div>
+          <div className="bw-feed-header-meta">
+            <div className="bw-feed-datetime">{formattedDate}</div>
+            <IconButton
+              size="small"
+              className="bw-feed-menu-trigger"
+              onClick={handleOpenMenu}
+              aria-label={t('feed.moreOptions', { defaultValue: 'More options' })}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen ? 'true' : undefined}
+            >
+              <MoreVert fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchorEl}
+              open={isMenuOpen}
+              onClose={handleCloseMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem onClick={handleToggleSaveFromMenu} disabled={saveDisabled}>
+                <ListItemIcon>
+                  <Bookmark fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>
+                  {reactions.saved ? t('feed.unsave') : t('feed.save')}
+                </ListItemText>
+              </MenuItem>
+              {canDownloadPost && (
+                <MenuItem onClick={() => void handleDownloadPost()} disabled={isDownloadPending}>
+                  <ListItemIcon>
+                    <Download fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {isDownloadPending
+                      ? t('feed.downloadingPost', { defaultValue: 'Downloading post...' })
+                      : t('feed.downloadPost', { defaultValue: 'Download post' })}
+                  </ListItemText>
+                </MenuItem>
+              )}
+            </Menu>
+          </div>
         </div>
 
         <div className="bw-feed-body">
@@ -246,16 +324,6 @@ export function FeedEntryCard({
                       {commentCount > 0 && <span className="bw-feed-action-count">{commentCount}</span>}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className={`bw-feed-action ${reactions.saved ? 'is-active' : ''}`}
-                    onClick={() => onToggleSave(entry.id)}
-                    disabled={saveDisabled}
-                    aria-pressed={reactions.saved}
-                    title={actionLockLabel ?? (reactions.saved ? t('feed.unsave') : t('feed.save'))}
-                  >
-                    {reactions.saved ? <Bookmark fontSize="small" /> : <BookmarkBorder fontSize="small" />}
-                  </button>
                 </div>
               </div>
               <div className="bw-feed-footer-right">

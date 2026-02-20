@@ -151,6 +151,16 @@
   text-align: right;
 }
 
+.bw-feed-header-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bw-feed-menu-trigger {
+  color: var(--bw-text-muted);
+}
+
 .bw-feed-body {
   display: flex;
   flex-direction: column;
