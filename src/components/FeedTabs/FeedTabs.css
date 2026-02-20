@@ -158,7 +158,19 @@
 }
 
 .bw-feed-menu-trigger {
-  color: var(--bw-text-muted);
+  color: var(--bw-text) !important;
+}
+
+.bw-feed-menu-trigger .MuiSvgIcon-root {
+  color: inherit;
+}
+
+:root[data-theme="dark"] .bw-feed-menu-trigger {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"] .bw-feed-menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .bw-feed-body {
