@@ -135,13 +135,14 @@ function safeFilenamePart(value: string) {
     .slice(0, 50);
 }
 
-function isAppleMobile() {
+function isMobileDevice() {
   const ua = navigator.userAgent || '';
   const platform = navigator.platform || '';
   const touchPoints = navigator.maxTouchPoints || 0;
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isIPadOS = platform === 'MacIntel' && touchPoints > 1;
-  return isIOS || isIPadOS;
+  const isAndroid = /Android/i.test(ua);
+  return isIOS || isIPadOS || isAndroid;
 }
 
 async function shareImageFile(blob: Blob, fileName: string) {
@@ -309,7 +310,7 @@ export async function downloadEntryPostImage({
   const burger = safeFilenamePart(burgerName || 'burger');
   const filename = `burger-wrapped-${restaurant}-${burger}.png`;
 
-  if (isAppleMobile()) {
+  if (isMobileDevice()) {
     try {
       const didShare = await shareImageFile(blob, filename);
       if (didShare) return;
