@@ -2,11 +2,11 @@ import {
   Bookmark,
   ChatBubbleOutline,
   Delete,
-  Download,
   Edit,
   Favorite,
   FavoriteBorder,
   MoreVert,
+  Share,
   Star,
   StarBorder,
   StarHalf,
@@ -114,7 +114,7 @@ export function FeedEntryCard({
   const actionLockLabel = isReadOnly ? t('feed.lockAction') : undefined;
   const canOpenRestaurant = !isHomemade && Boolean(entry.restaurantId && entry.restaurantName);
   const hasPhoto = Boolean(entry.photoUrl);
-  const canDownloadPost = hasPhoto && isSelf;
+  const canSharePost = hasPhoto && isSelf;
   const isMenuOpen = Boolean(menuAnchorEl);
   const handleOpenRestaurant = () => {
     if (!entry.restaurantId || !entry.restaurantName) return;
@@ -135,9 +135,9 @@ export function FeedEntryCard({
     handleCloseMenu();
     onToggleSave(entry.id);
   };
-  const handleDownloadPost = async () => {
+  const handleSharePost = async () => {
     handleCloseMenu();
-    if (!canDownloadPost) return;
+    if (!canSharePost) return;
     if (isDownloadPending) return;
     setIsDownloadPending(true);
     try {
@@ -215,15 +215,15 @@ export function FeedEntryCard({
                   {reactions.saved ? t('feed.unsave') : t('feed.save')}
                 </ListItemText>
               </MenuItem>
-              {canDownloadPost && (
-                <MenuItem onClick={() => void handleDownloadPost()} disabled={isDownloadPending}>
+              {canSharePost && (
+                <MenuItem onClick={() => void handleSharePost()} disabled={isDownloadPending}>
                   <ListItemIcon>
-                    <Download fontSize="small" />
+                    <Share fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>
                     {isDownloadPending
-                      ? t('feed.downloadingPost', { defaultValue: 'Downloading post...' })
-                      : t('feed.downloadPost', { defaultValue: 'Download post' })}
+                      ? t('feed.sharingPost', { defaultValue: 'Sharing post...' })
+                      : t('feed.sharePost', { defaultValue: 'Share post' })}
                   </ListItemText>
                 </MenuItem>
               )}
