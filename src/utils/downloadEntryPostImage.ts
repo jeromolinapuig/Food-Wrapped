@@ -135,6 +135,26 @@ function safeFilenamePart(value: string) {
     .slice(0, 50);
 }
 
+function isAppleMobile() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const touchPoints = navigator.maxTouchPoints || 0;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isIPadOS = platform === 'MacIntel' && touchPoints > 1;
+  return isIOS || isIPadOS;
+}
+
+async function shareImageFile(blob: Blob, fileName: string) {
+  if (!('share' in navigator) || !('canShare' in navigator)) return false;
+  const file = new File([blob], fileName, { type: 'image/png' });
+  if (!navigator.canShare({ files: [file] })) return false;
+  await navigator.share({
+    files: [file],
+    title: fileName,
+  });
+  return true;
+}
+
 export async function downloadEntryPostImage({
   restaurantName,
   burgerName,
@@ -287,9 +307,26 @@ export async function downloadEntryPostImage({
 
   const restaurant = safeFilenamePart(restaurantName || 'restaurant');
   const burger = safeFilenamePart(burgerName || 'burger');
+  const filename = `burger-wrapped-${restaurant}-${burger}.png`;
+
+  if (isAppleMobile()) {
+    try {
+      const didShare = await shareImageFile(blob, filename);
+      if (didShare) return;
+    } catch {
+      // If share is cancelled or unavailable, keep default download fallback.
+    }
+  }
+
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `burger-wrapped-${restaurant}-${burger}.png`;
+  const objectUrl = URL.createObjectURL(blob);
+  link.href = objectUrl;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  link.remove();
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 60_000);
 }
