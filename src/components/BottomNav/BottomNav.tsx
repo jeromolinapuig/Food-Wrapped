@@ -11,9 +11,16 @@ import { useTranslation } from 'react-i18next';
 type BottomNavProps = {
   session: Session | null;
   onRequireLogin?: () => void;
+  adminModeEnabled?: boolean;
+  isAdmin?: boolean;
 };
 
-export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>) {
+export function BottomNav({
+  session,
+  onRequireLogin,
+  adminModeEnabled = false,
+  isAdmin = false,
+}: Readonly<BottomNavProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -25,6 +32,12 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   const userId = session?.user.id ?? null;
 
   const activeKey = useMemo(() => {
+    if (adminModeEnabled && isAdmin) {
+      if (location.pathname.startsWith('/admin/users')) return 'admin-users';
+      if (location.pathname.startsWith('/admin/reports')) return 'admin-reports';
+      if (location.pathname.startsWith('/profile')) return 'profile';
+      return 'admin-feed';
+    }
     if (location.pathname.startsWith('/users')) {
       const state = location.state as { returnTo?: string } | null;
       const returnTo = state?.returnTo ?? '';
@@ -43,10 +56,10 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
     if (location.pathname.startsWith('/my-top-burgers')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
-  }, [location.pathname]);
+  }, [adminModeEnabled, isAdmin, location.pathname]);
 
   const loadProfile = useCallback(async () => {
-    if (!session) return;
+    if (!session || (adminModeEnabled && isAdmin)) return;
     const { data, error } = await supabase
       .from('profiles')
       .select('avatar_url, username, display_name')
@@ -63,7 +76,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
     const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
     setAvatarUrl(profile.avatar_url);
     setInitial(base.charAt(0).toUpperCase());
-  }, [session]);
+  }, [adminModeEnabled, isAdmin, session]);
 
   useEffect(() => {
     startTransition(() => {
@@ -72,7 +85,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   }, [loadProfile]);
 
   const loadInvites = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || (adminModeEnabled && isAdmin)) return;
     const { count, error } = await supabase
       .from('group_invitations')
       .select('id', { count: 'exact', head: true })
@@ -84,7 +97,7 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
     }
 
     setInviteCount(count ?? 0);
-  }, [userId]);
+  }, [adminModeEnabled, isAdmin, userId]);
 
   useEffect(() => {
     startTransition(() => {
@@ -118,13 +131,59 @@ export function BottomNav({ session, onRequireLogin }: Readonly<BottomNavProps>)
   };
 
   useEffect(() => {
+    if (adminModeEnabled && isAdmin) return;
     if (!moreOpen) return;
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMoreOpen(false);
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [moreOpen]);
+  }, [adminModeEnabled, isAdmin, moreOpen]);
+
+  if (adminModeEnabled && isAdmin) {
+    return (
+      <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'admin-feed' ? 'is-active' : ''}`}
+          onClick={() => navigate('/admin/feed')}
+          aria-label="Admin Feed"
+        >
+          <span className="bw-bottom-nav-icon"><DynamicFeed /></span>
+          <span className="bw-bottom-nav-label">Feed</span>
+        </button>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'admin-users' ? 'is-active' : ''}`}
+          onClick={() => navigate('/admin/users')}
+          aria-label="Admin Usuarios"
+        >
+          <span className="bw-bottom-nav-icon"><Groups /></span>
+          <span className="bw-bottom-nav-label">Usuarios</span>
+        </button>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'admin-reports' ? 'is-active' : ''}`}
+          onClick={() => navigate('/admin/reports')}
+          aria-label="Admin Reportes"
+        >
+          <span className="bw-bottom-nav-icon"><EmojiEvents /></span>
+          <span className="bw-bottom-nav-label">Reportes</span>
+        </button>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}
+          onClick={() => navigate('/profile')}
+          aria-label={t('profile.title')}
+        >
+          <span className="bw-bottom-nav-icon"><PersonOutline /></span>
+          <span className="bw-bottom-nav-label">
+            {t('common.profile', { defaultValue: 'Profile' })}
+          </span>
+        </button>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>

@@ -15,6 +15,9 @@ import { LandingPage } from './components/LandingPage/LandingPage';
 import { ProfilePage } from './components/ProfilePage/ProfilePage';
 import { PrivacyPage } from './components/PrivacyPage/PrivacyPage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
+import { AdminFeedPage } from './components/AdminFeedPage/AdminFeedPage';
+import { AdminReportsPage } from './components/AdminReportsPage/AdminReportsPage';
+import { AdminUsersPage } from './components/AdminUsersPage/AdminUsersPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
@@ -30,7 +33,7 @@ type Theme = 'light' | 'dark';
 type FeedReturnPage = 'dashboard' | 'feed' | 'profile';
 type FocusUser = { id: string; username: string | null; displayName: string | null };
 type FeedLocationState = { openProfileUserId?: string | null };
-type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: string | null };
+type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: string | null; adminView?: boolean };
 type PostLocationState = { returnTo?: string };
 type AuthMetadata = { username?: string; username_set?: boolean };
 type AppMetadata = { provider?: string; providers?: string[] };
@@ -45,6 +48,8 @@ const deriveDefaultUsername = (email?: string | null) => {
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [requiresUsername, setRequiresUsername] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminModeEnabled, setAdminModeEnabled] = useState(false);
   const [feedFocusUser, setFeedFocusUser] = useState<FocusUser | null>(null);
   const [feedOpenProfileUserId, setFeedOpenProfileUserId] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -161,6 +166,48 @@ function App() {
   }, [location.pathname, session]);
 
   useEffect(() => {
+    let cancelled = false;
+    const loadAdminStatus = async () => {
+      if (!session) {
+        setIsAdmin(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single();
+      if (cancelled) return;
+      if (error) {
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin(Boolean((data as { is_admin?: boolean | null } | null)?.is_admin));
+    };
+    void loadAdminStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminModeEnabled(false);
+      window.localStorage.removeItem('bw-admin-mode');
+      return;
+    }
+    const stored = window.localStorage.getItem('bw-admin-mode') === '1';
+    setAdminModeEnabled(stored);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!session) return;
+    if (location.pathname.startsWith('/admin') && (!isAdmin || !adminModeEnabled)) {
+      navigate('/profile', { replace: true });
+    }
+  }, [adminModeEnabled, isAdmin, location.pathname, navigate, session]);
+
+  useEffect(() => {
     if (!session || !requiresUsername) return;
     if (location.pathname === '/setup-username') return;
     navigate('/setup-username', { replace: true });
@@ -220,6 +267,12 @@ function App() {
   };
 
   const handleLogin = () => navigate('/login');
+  const handleAdminModeChange = (enabled: boolean) => {
+    if (!isAdmin) return;
+    setAdminModeEnabled(enabled);
+    window.localStorage.setItem('bw-admin-mode', enabled ? '1' : '0');
+    navigate(enabled ? '/admin/feed' : '/profile');
+  };
 
   const handleOpenUserDashboard = (
     user: { id: string; username: string | null; displayName: string | null },
@@ -253,6 +306,7 @@ function App() {
         onToggleTheme={toggleTheme}
         onNavigate={handleNavigate}
         userId={userId}
+        isAdminView={Boolean(routeState?.adminView && isAdmin)}
         onBack={() => {
           if (returnTo === '/feed' && returnProfileUserId) {
             routeNavigate('/feed', { state: { openProfileUserId: returnProfileUserId } });
@@ -343,6 +397,8 @@ function App() {
                 session={session}
                 theme={theme}
                 onToggleTheme={toggleTheme}
+                adminModeEnabled={adminModeEnabled}
+                onAdminModeChange={handleAdminModeChange}
                 onOpenUserDashboard={(user) =>
                   handleOpenUserDashboard(user, { returnPage: 'profile', returnProfileUserId: null })
                 }
@@ -467,11 +523,30 @@ function App() {
           path="/setup-username"
           element={session ? <UsernameSetupScreen /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/admin/feed"
+          element={session && isAdmin && adminModeEnabled ? <AdminFeedPage session={session} /> : <Navigate to="/profile" replace />}
+        />
+        <Route
+          path="/admin/users"
+          element={session && isAdmin && adminModeEnabled ? <AdminUsersPage session={session} /> : <Navigate to="/profile" replace />}
+        />
+        <Route
+          path="/admin/reports"
+          element={session && isAdmin && adminModeEnabled ? <AdminReportsPage session={session} /> : <Navigate to="/profile" replace />}
+        />
         <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isLoginRoute && <BottomNav session={session} onRequireLogin={handleLogin} />}
+      {!isLoginRoute && (
+        <BottomNav
+          session={session}
+          onRequireLogin={handleLogin}
+          isAdmin={isAdmin}
+          adminModeEnabled={adminModeEnabled}
+        />
+      )}
     </>
   );
 }

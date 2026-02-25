@@ -6,6 +6,8 @@ type EntryCommentsProps = {
   variant: 'inline' | 'card';
   entryUserId: string;
   viewerId: string | null;
+  canComment?: boolean;
+  canModerateComments?: boolean;
   commentMode: CommentMode;
   comments: EntryComment[];
   commentCount: number;
@@ -31,6 +33,8 @@ export function EntryComments({
   variant,
   entryUserId,
   viewerId,
+  canComment = true,
+  canModerateComments = false,
   commentMode,
   comments,
   commentCount,
@@ -61,7 +65,7 @@ export function EntryComments({
           {!!visibleComments.length && (
             <div className="bw-comment-list">
               {visibleComments.map((comment) => {
-                const canDelete = Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
+                const canDelete = canModerateComments || Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
                 const commentName = comment.displayName || comment.username;
                 const initial = comment.username?.[0]?.toUpperCase() ?? '?';
                 const content = (
@@ -115,7 +119,7 @@ export function EntryComments({
         {!!visibleComments.length && (
           <div className="bw-comment-list">
             {visibleComments.map((comment) => {
-              const canDelete = Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
+              const canDelete = canModerateComments || Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
               const commentName = comment.displayName || comment.username;
               const commentDate = new Date(comment.createdAt).toLocaleString(undefined, {
                 month: 'short',
@@ -164,7 +168,7 @@ export function EntryComments({
         {!isLoading && !visibleComments.length && (
           <p className="bw-helper">{t('comments.beFirst')}</p>
         )}
-        {viewerId ? (
+        {viewerId && canComment ? (
           <form
             className="bw-comment-form"
             onSubmit={(event) => {

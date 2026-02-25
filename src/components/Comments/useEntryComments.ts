@@ -15,6 +15,8 @@ type UseEntryCommentsOptions = {
   headerOnly: boolean;
   refreshKey: number;
   viewerId: string | null;
+  canComment?: boolean;
+  canModerateComments?: boolean;
   maxCommentLength?: number;
 };
 
@@ -39,6 +41,8 @@ export function useEntryComments({
   headerOnly,
   refreshKey,
   viewerId,
+  canComment = true,
+  canModerateComments = false,
   maxCommentLength: maxCommentLengthProp,
 }: UseEntryCommentsOptions): UseEntryCommentsResult {
   const [entryComments, setEntryComments] = useState<Record<string, EntryComment[]>>({});
@@ -226,7 +230,7 @@ export function useEntryComments({
 
   const submitComment = useCallback(
     async (entryId: string) => {
-      if (!viewerId) return;
+      if (!viewerId || !canComment) return;
       const raw = commentDrafts[entryId] ?? '';
       const body = raw.trim();
       if (!body) return;
@@ -248,11 +252,12 @@ export function useEntryComments({
       await loadEntryComments(entryId);
       setCommentActioning((prev) => ({ ...prev, [entryId]: false }));
     },
-    [commentDrafts, loadEntryComments, maxCommentLength, viewerId]
+    [canComment, commentDrafts, loadEntryComments, maxCommentLength, viewerId]
   );
 
   const deleteComment = useCallback(async () => {
     if (!commentConfirm) return;
+    if (!viewerId && !canModerateComments) return;
     const { entryId, comment } = commentConfirm;
     setCommentActioning((prev) => ({ ...prev, [comment.id]: true }));
     const { error } = await supabase
@@ -275,7 +280,7 @@ export function useEntryComments({
     }));
     setCommentActioning((prev) => ({ ...prev, [comment.id]: false }));
     setCommentConfirm(null);
-  }, [commentConfirm]);
+  }, [canModerateComments, commentConfirm, viewerId]);
 
   const setCommentDraft = useCallback((entryId: string, value: string) => {
     setCommentDrafts((prev) => ({ ...prev, [entryId]: value }));

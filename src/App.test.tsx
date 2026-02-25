@@ -49,6 +49,7 @@ vi.mock('./components/LandingPage/LandingPage', () => ({ LandingPage: () => <div
 vi.mock('./components/ProfilePage/ProfilePage', () => ({ ProfilePage: () => <div>profile-page</div> }));
 vi.mock('./components/PrivacyPage/PrivacyPage', () => ({ PrivacyPage: () => <div>privacy-page</div> }));
 vi.mock('./components/UserDashboardPage/UserDashboardPage', () => ({ UserDashboardPage: () => <div>user-dashboard-page</div> }));
+vi.mock('./components/AdminReportsPage/AdminReportsPage', () => ({ AdminReportsPage: () => <div>admin-reports-page</div> }));
 vi.mock('./components/SavedPostsPage/SavedPostsPage', () => ({ SavedPostsPage: () => <div>saved-posts-page</div> }));
 vi.mock('./components/PostPage/PostPage', () => ({ PostPage: () => <div>post-page</div> }));
 vi.mock('./components/RestaurantSearchPage/RestaurantSearchPage', () => ({ RestaurantSearchPage: () => <div>restaurant-search-page</div> }));

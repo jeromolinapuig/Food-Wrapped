@@ -10,6 +10,7 @@ import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import { useTranslation } from 'react-i18next';
@@ -44,10 +45,11 @@ type UserDashboardPageProps = {
   onToggleTheme: () => void;
   onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups' | 'ranking') => void;
   userId: string;
+  isAdminView?: boolean;
   onBack: () => void;
 };
 
-export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDashboardPageProps>) {
+export function UserDashboardPage({ session, userId, isAdminView = false, onBack }: Readonly<UserDashboardPageProps>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
@@ -92,6 +94,12 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
   }, [loadProfile]);
 
   useEffect(() => {
+    if (isAdminView) {
+      startTransition(() => {
+        setPrivacyBlocked(false);
+      });
+      return;
+    }
     if (!profile) return;
     if (!profile.isPrivate) {
       startTransition(() => {
@@ -133,7 +141,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     return () => {
       cancelled = true;
     };
-  }, [profile, userId, viewerId]);
+  }, [isAdminView, profile, userId, viewerId]);
 
   const loadEntries = useCallback(async () => {
     if (privacyBlocked) {
@@ -170,7 +178,9 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
       .eq('user_id', userId)
       .order('datetime', { ascending: false });
 
-    if (viewerId !== userId) {
+    query = whereNotDeleted(query);
+
+    if (!isAdminView && viewerId !== userId) {
       query = query.eq('visibility', 'public');
     }
 
@@ -184,7 +194,7 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
     }
 
     setLoading(false);
-  }, [privacyBlocked, userId, viewerId]);
+  }, [isAdminView, privacyBlocked, userId, viewerId]);
 
   useEffect(() => {
     startTransition(() => {
@@ -382,7 +392,9 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
                   <FeedTabs
                     currentUserId={viewerId}
                     isReadOnly={!viewerId}
+                    adminMode={isAdminView}
                     focusUserId={userId}
+                    ignorePrivacy={isAdminView}
                     onCountChange={setPostsCount}
                     headerOnly
                     monthFilter={monthFilter}
@@ -393,7 +405,9 @@ export function UserDashboardPage({ session, userId, onBack }: Readonly<UserDash
               <FeedTabs
                 currentUserId={viewerId}
                 isReadOnly={!viewerId}
+                adminMode={isAdminView}
                 focusUserId={userId}
+                ignorePrivacy={isAdminView}
                 onCountChange={setPostsCount}
                 hideHeader
                 monthFilter={monthFilter}

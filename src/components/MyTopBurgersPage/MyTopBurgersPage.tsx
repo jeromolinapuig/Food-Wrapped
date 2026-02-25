@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Euro, Star } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { ZoomableImage } from '../common/ZoomableImage';
@@ -93,7 +94,7 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('entries')
         .select(
           `
@@ -110,7 +111,10 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
         .eq('user_id', session.user.id)
         .eq('is_burger', true)
         .eq('burger_origin', 'restaurant')
-        .not('restaurant_id', 'is', null);
+        ;
+      query = whereNotDeleted(query);
+      query = query.not('restaurant_id', 'is', null);
+      const { data, error } = await query;
 
       if (cancelled) return;
 

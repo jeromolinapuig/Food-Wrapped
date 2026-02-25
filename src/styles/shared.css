@@ -518,6 +518,16 @@
   width: 100%;
 }
 
+.bw-slide-confirm {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bw-slide-confirm input[type="range"] {
+  width: 100%;
+}
+
 .bw-helper {
   font-size: 12px;
   color: var(--bw-text-muted);

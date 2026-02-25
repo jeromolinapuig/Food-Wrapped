@@ -3,6 +3,7 @@ import { ChatBubbleOutline, Favorite, GroupAdd, Notifications, PersonAdd } from 
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import '../../styles/shared.css';
 import './NotificationsDrawer.css';
 
@@ -79,12 +80,14 @@ export function NotificationsDrawer({
     setLoading(true);
     setError(null);
 
-    const { data: entryRows, error: entriesError } = await supabase
+    let entriesQuery = supabase
       .from('entries')
       .select('id, datetime')
       .eq('user_id', currentUserId)
-      .order('datetime', { ascending: false })
-      .limit(200);
+      ;
+    entriesQuery = whereNotDeleted(entriesQuery);
+    entriesQuery = entriesQuery.order('datetime', { ascending: false }).limit(200);
+    const { data: entryRows, error: entriesError } = await entriesQuery;
 
     if (entriesError) {
       setError('No se pudieron cargar las notificaciones.');

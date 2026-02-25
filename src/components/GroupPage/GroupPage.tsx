@@ -10,6 +10,7 @@ import '../../styles/shared.css';
 import type { GroupMember } from '../../types/groups';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
@@ -173,7 +174,8 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
     const from = '2026-01-01';
     const to = '2027-01-01';
 
-    const { data, error } = await supabase
+    const query = whereNotDeleted(
+      supabase
       .from('entries')
       .select(
         `
@@ -194,7 +196,9 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       .gte('datetime', from)
       .lt('datetime', to)
       .in('user_id', memberIds)
-      .order('datetime', { ascending: false });
+      .order('datetime', { ascending: false })
+    );
+    const { data, error } = await query;
 
     if (error) {
       setError(error.message);

@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useState, type ReactNode } from 'react';
 import { Close } from '@mui/icons-material';
+import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { LockedContent } from '../common/LoginOverlay';
 import { CommentConfirmDialog } from '../Comments/CommentConfirmDialog';
@@ -20,6 +21,7 @@ import '../EntryCard/EntryCard.css';
 type FeedTabsProps = {
   currentUserId: string | null;
   isReadOnly?: boolean;
+  adminMode?: boolean;
   onRequireLogin?: () => void;
   refreshKey?: number;
   onOpenProfile?: (userId: string) => void;
@@ -46,6 +48,7 @@ type FeedTabsProps = {
 export function FeedTabs({
   currentUserId,
   isReadOnly = false,
+  adminMode = false,
   onRequireLogin,
   refreshKey = 0,
   onOpenProfile,
@@ -90,6 +93,7 @@ export function FeedTabs({
   } = useFeedEntries({
     currentUserId,
     isReadOnly,
+    adminMode,
     focusUserId,
     userIdsFilter,
     entryIdsFilter,
@@ -131,6 +135,8 @@ export function FeedTabs({
     headerOnly,
     refreshKey,
     viewerId,
+    canComment: !isReadOnly && !adminMode,
+    canModerateComments: adminMode,
   });
 
   useEffect(() => {
@@ -176,6 +182,21 @@ export function FeedTabs({
 
   const shouldLockFollowing =
     isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter;
+
+  const handleReportEntry = async (entry: FeedEntry) => {
+    if (!viewerId) return;
+    await supabase
+      .from('entry_reports')
+      .upsert(
+        {
+          entry_id: entry.id,
+          reporter_id: viewerId,
+          reason: 'reportado desde feed',
+          status: 'pending',
+        },
+        { onConflict: 'entry_id,reporter_id' }
+      );
+  };
 
   return (
     <section className="bw-feed">
@@ -246,6 +267,7 @@ export function FeedTabs({
                 isUserFeed={isUserFeed}
                 isReadOnly={isReadOnly}
                 showOwnerActions={showOwnerActions}
+                adminMode={adminMode}
                 reactions={reactions}
                 isLikePending={isLikePending}
                 isSavePending={isSavePending}
@@ -255,6 +277,7 @@ export function FeedTabs({
                 onOpenEntry={onOpenEntry}
                 onEditEntry={onEditEntry}
                 onDeleteEntry={onDeleteEntry}
+                onReportEntry={handleReportEntry}
                 onPreviewPhoto={(url) => setPhotoPreviewUrl(url)}
                 commentMode={commentMode}
                 comments={comments}
