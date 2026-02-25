@@ -3,11 +3,13 @@ import { supabase } from '../../lib/supabaseClient';
 import { i18n } from '../../lib/i18n';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import type { FeedEntry, FeedTab, MonthOption, SupabaseEntryRow } from './types';
 
 type UseFeedEntriesOptions = {
   currentUserId: string | null;
   isReadOnly: boolean;
+  adminMode?: boolean;
   focusUserId?: string | null;
   userIdsFilter?: string[] | null;
   entryIdsFilter?: string[] | null;
@@ -78,6 +80,7 @@ const buildMonthOptions = (values: string[], locale: string, allLabel: string) =
 export function useFeedEntries({
   currentUserId,
   isReadOnly,
+  adminMode = false,
   focusUserId,
   userIdsFilter,
   entryIdsFilter,
@@ -200,7 +203,7 @@ export function useFeedEntries({
     if (append) setLoadingMore(true);
     setError(null);
 
-    if (isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
+    if (!adminMode && isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
       setEntries([]);
       setCursor(null);
       setHasMore(false);
@@ -313,12 +316,22 @@ export function useFeedEntries({
       .order('id', { ascending: false })
       .limit(pageSize);
 
+    query = whereNotDeleted(query);
+
     const appendCursor = cursorRef.current;
     if (append && appendCursor) {
       query = query.or(`datetime.lt.${appendCursor.datetime},and(datetime.eq.${appendCursor.datetime},id.lt.${appendCursor.id})`);
     }
 
-    if (entryIdsForQuery) {
+    if (adminMode) {
+      if (entryIdsForQuery) {
+        query = query.in('id', entryIdsForQuery);
+      } else if (isCustomList && userIdsForQuery) {
+        query = query.in('user_id', userIdsForQuery);
+      } else if (focusUserId) {
+        query = query.eq('user_id', focusUserId);
+      }
+    } else if (entryIdsForQuery) {
       query = query.eq('visibility', 'public').in('id', entryIdsForQuery);
     } else if (isCustomList && userIdsForQuery) {
       query = query.eq('visibility', 'public').in('user_id', userIdsForQuery);
@@ -450,8 +463,8 @@ export function useFeedEntries({
       };
     });
 
-    if (!ignorePrivacy) {
-      mapped = mapped.filter((entry) => {
+      if (!ignorePrivacy && !adminMode) {
+        mapped = mapped.filter((entry) => {
         if (entry.userId === viewerId) return true;
         const profile = profileMap[entry.userId];
         if (!profile?.is_private) return true;
@@ -459,7 +472,7 @@ export function useFeedEntries({
       });
     }
 
-    if (!ignorePrivacy && focusUserId) {
+    if (!ignorePrivacy && !adminMode && focusUserId) {
       const focusProfile = profileMap[focusUserId];
       const isPrivate = Boolean(focusProfile?.is_private);
       let isMutual = mutualIds.has(focusUserId);
@@ -581,7 +594,9 @@ export function useFeedEntries({
         .order('datetime', { ascending: false })
         .limit(500);
 
-      if (!isSelfFeed) {
+      query = whereNotDeleted(query);
+
+      if (!adminMode && !isSelfFeed) {
         query = query.eq('visibility', 'public');
       }
 
@@ -633,6 +648,7 @@ export function useFeedEntries({
       cancelled = true;
     };
   }, [
+    adminMode,
     entryIdsFilter,
     focusUserId,
     hasEntryFilter,
@@ -722,7 +738,7 @@ export function useFeedEntries({
             if (row?.user_id !== focusUserId) return;
             if (row?.visibility && row.visibility !== 'public') return;
             if (restaurantIdFilter && row?.restaurant_id !== restaurantIdFilter) return;
-          } else if (activeTab === 'global') {
+          } else if (activeTab === 'global' && !adminMode) {
             if (row?.visibility && row.visibility !== 'public') return;
             if (restaurantIdFilter && row?.restaurant_id !== restaurantIdFilter) return;
           }
@@ -738,7 +754,7 @@ export function useFeedEntries({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, focusUserId, headerOnly, isCustomList, loadEntries, restaurantIdFilter, userIdsFilter, viewerKey]);
+  }, [activeTab, adminMode, focusUserId, headerOnly, isCustomList, loadEntries, restaurantIdFilter, userIdsFilter, viewerKey]);
 
   useRevalidateOnFocus(
     () => {

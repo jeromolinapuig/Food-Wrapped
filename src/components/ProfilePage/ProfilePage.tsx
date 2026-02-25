@@ -23,6 +23,7 @@ type ProfileData = {
   avatar_url: string | null;
   bio: string | null;
   is_private?: boolean | null;
+  is_admin?: boolean | null;
   preferred_language?: string | null;
   preferred_currency?: string | null;
 };
@@ -32,9 +33,18 @@ type ProfilePageProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenUserDashboard: (user: { id: string; username: string | null; displayName: string | null }) => void;
+  adminModeEnabled?: boolean;
+  onAdminModeChange?: (enabled: boolean) => void;
 };
 
-export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard }: Readonly<ProfilePageProps>) {
+export function ProfilePage({
+  session,
+  theme,
+  onToggleTheme,
+  onOpenUserDashboard,
+  adminModeEnabled = false,
+  onAdminModeChange,
+}: Readonly<ProfilePageProps>) {
   const navigate = useNavigate();
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -602,6 +612,25 @@ export function ProfilePage({ session, theme, onToggleTheme, onOpenUserDashboard
                 </div>
                 <p className="bw-helper" style={{ marginTop: 6 }}>{t('profile.preferencesNote')}</p>
               </div>
+
+              {profile?.is_admin ? (
+                <div className="bw-privacy-toggle">
+                  <div>
+                    <div className="bw-privacy-title">Modo admin</div>
+                    <div className="bw-privacy-text">
+                      Activa este modo para usar la navegacion de administracion.
+                    </div>
+                  </div>
+                  <label className="bw-switch">
+                    <input
+                      type="checkbox"
+                      checked={adminModeEnabled}
+                      onChange={(e) => onAdminModeChange?.(e.target.checked)}
+                    />
+                    <span className="bw-switch-slider" aria-hidden="true" />
+                  </label>
+                </div>
+              ) : null}
 
               <div className="bw-profile-actions">
                 <button

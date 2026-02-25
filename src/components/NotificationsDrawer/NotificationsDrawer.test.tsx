@@ -35,10 +35,12 @@ const setupSupabase = () => {
       return {
         select: () => ({
           eq: () => ({
-            order: () => ({
-              limit: async () => ({
-                data: [{ id: 'entry-1', datetime: '2026-02-01T10:00:00.000Z' }],
-                error: null,
+            eq: () => ({
+              order: () => ({
+                limit: async () => ({
+                  data: [{ id: 'entry-1', datetime: '2026-02-01T10:00:00.000Z' }],
+                  error: null,
+                }),
               }),
             }),
           }),

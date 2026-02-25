@@ -13,11 +13,12 @@ import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { AppShell } from '../common/AppShell';
-import { ConfirmDialog } from '../common/ConfirmDialog';
 import { PageHeader } from '../common/PageHeader';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useTranslation } from 'react-i18next';
 import { getCurrentMonthValue } from '../../utils/datetime';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -212,7 +213,8 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     const from = '2026-01-01';
     const to = '2027-01-01';
 
-    const { data, error } = await supabase
+    const statsQuery = whereNotDeleted(
+      supabase
       .from('entries')
       .select(
         `
@@ -230,7 +232,9 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       .gte('datetime', from)
       .lt('datetime', to)
       .eq('user_id', session.user.id)
-      .order('datetime', { ascending: false });
+      .order('datetime', { ascending: false })
+    );
+    const { data, error } = await statsQuery;
 
     if (error) {
       setError(error.message);
@@ -341,12 +345,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   }, [session.user.id]);
 
   const loadNotificationsMeta = useCallback(async () => {
-    const { data: entryRows, error: entryError } = await supabase
+    const notificationsEntriesQuery = whereNotDeleted(
+      supabase
       .from('entries')
       .select('id')
       .eq('user_id', session.user.id)
       .order('datetime', { ascending: false })
-      .limit(200);
+      .limit(200)
+    );
+    const { data: entryRows, error: entryError } = await notificationsEntriesQuery;
 
     if (entryError) {
       console.error('Error loading notification entries', entryError);
@@ -591,7 +598,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     try {
       const { error: deleteError } = await supabase
         .from('entries')
-        .delete()
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: session.user.id,
+        })
         .eq('id', deleteEntry.id);
       if (deleteError) throw deleteError;
       await loadEntries();
@@ -818,7 +828,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             <button
               className="bw-btn bw-btn-ghost"
               type="button"
-              onClick={() => setDeleteEntry(null)}
+              onClick={() => {
+                if (mutating) return;
+                setDeleteEntry(null);
+              }}
               disabled={mutating}
             >
               Cancelar
@@ -826,10 +839,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             <button
               className="bw-btn bw-btn-danger"
               type="button"
-              onClick={handleDeleteEntry}
+              onClick={() => void handleDeleteEntry()}
               disabled={mutating}
             >
-              {mutating ? 'Eliminando...' : 'Eliminar'}
+              {mutating ? 'Procesando...' : 'Eliminar'}
             </button>
           </>
         )}

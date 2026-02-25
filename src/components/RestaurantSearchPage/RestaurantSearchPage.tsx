@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
@@ -111,11 +112,14 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
         setMineCount(0);
         return;
       }
-      const { count, error } = await supabase
+      const mineCountQuery = whereNotDeleted(
+        supabase
         .from('entries')
         .select('id', { count: 'exact', head: true })
         .eq('restaurant_id', selectedRestaurant.id)
-        .eq('user_id', session.user.id);
+        .eq('user_id', session.user.id)
+      );
+      const { count, error } = await mineCountQuery;
       if (cancelled) return;
       if (error) {
         console.error(error);
@@ -184,10 +188,13 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
       }
 
       const restaurantIds = baseRestaurants.map((r) => r.id);
-      const { data: entryRows, error: entryError } = await supabase
+      const visibleEntriesQuery = whereNotDeleted(
+        supabase
         .from('entries')
         .select('restaurant_id, user_id, visibility')
-        .in('restaurant_id', restaurantIds);
+        .in('restaurant_id', restaurantIds)
+      );
+      const { data: entryRows, error: entryError } = await visibleEntriesQuery;
 
       if (cancelled) return;
       if (entryError) {

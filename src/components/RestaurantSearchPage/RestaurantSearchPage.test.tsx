@@ -112,14 +112,18 @@ const setupSupabase = () => {
           if (options?.head) {
             return {
               eq: () => ({
-                eq: async () => ({ count: 2, error: null }),
+                eq: () => ({
+                  eq: async () => ({ count: 2, error: null }),
+                }),
               }),
             };
           }
           return {
-            in: async () => ({
-              data: [{ restaurant_id: 'r1', user_id: 'user-1', visibility: 'public' }],
-              error: null,
+            in: () => ({
+              eq: async () => ({
+                data: [{ restaurant_id: 'r1', user_id: 'user-1', visibility: 'public' }],
+                error: null,
+              }),
             }),
           };
         },

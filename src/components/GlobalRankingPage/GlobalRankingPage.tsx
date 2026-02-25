@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
+import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
@@ -61,13 +62,16 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     const from = '2026-01-01';
     const to = '2027-01-01';
 
-    const { data: entriesData, error: entriesError } = await supabase
+    const entriesQuery = whereNotDeleted(
+      supabase
       .from('entries')
       .select('user_id, datetime, price, currency, is_burger')
       .eq('visibility', 'public')
       .gte('datetime', from)
       .lt('datetime', to)
-      .order('datetime', { ascending: false });
+      .order('datetime', { ascending: false })
+    );
+    const { data: entriesData, error: entriesError } = await entriesQuery;
 
     if (entriesError) {
       setError(entriesError.message);

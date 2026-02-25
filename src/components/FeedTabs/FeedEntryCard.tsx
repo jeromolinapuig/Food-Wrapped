@@ -30,6 +30,7 @@ type FeedEntryCardProps = {
   isUserFeed: boolean;
   isReadOnly: boolean;
   showOwnerActions: boolean;
+  adminMode?: boolean;
   reactions: EntryReactions;
   isLikePending: boolean;
   isSavePending: boolean;
@@ -39,6 +40,7 @@ type FeedEntryCardProps = {
   onOpenEntry?: (entryId: string) => void;
   onEditEntry?: (entry: FeedEntry) => void;
   onDeleteEntry?: (entry: FeedEntry) => void;
+  onReportEntry?: (entry: FeedEntry) => void;
   onPreviewPhoto: (url: string) => void;
   commentMode: CommentMode;
   comments: EntryComment[];
@@ -65,6 +67,7 @@ export function FeedEntryCard({
   isUserFeed,
   isReadOnly,
   showOwnerActions,
+  adminMode = false,
   reactions,
   isLikePending,
   isSavePending,
@@ -74,6 +77,7 @@ export function FeedEntryCard({
   onOpenEntry,
   onEditEntry,
   onDeleteEntry,
+  onReportEntry,
   onPreviewPhoto,
   commentMode,
   comments,
@@ -105,6 +109,7 @@ export function FeedEntryCard({
   const name = isSelf ? t('common.you') : entry.displayName || entry.username;
   const stars = renderStars(entry.rating);
   const canEdit = showOwnerActions && isSelf;
+  const canAdminEdit = adminMode;
   const isHomemade = entry.burgerOrigin === 'homemade';
   const restaurantLabel = isHomemade
     ? t('feed.homemade')
@@ -115,6 +120,9 @@ export function FeedEntryCard({
   const canOpenRestaurant = !isHomemade && Boolean(entry.restaurantId && entry.restaurantName);
   const hasPhoto = Boolean(entry.photoUrl);
   const canSharePost = hasPhoto && isSelf;
+  const canReport = Boolean(viewerId && !isSelf && !adminMode && onReportEntry);
+  const canComment = !adminMode;
+  const canModerateComments = adminMode;
   const isMenuOpen = Boolean(menuAnchorEl);
   const handleOpenRestaurant = () => {
     if (!entry.restaurantId || !entry.restaurantName) return;
@@ -207,14 +215,28 @@ export function FeedEntryCard({
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem onClick={handleToggleSaveFromMenu} disabled={saveDisabled}>
-                <ListItemIcon>
-                  <Bookmark fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>
-                  {reactions.saved ? t('feed.unsave') : t('feed.save')}
-                </ListItemText>
-              </MenuItem>
+              {!adminMode && (
+                <MenuItem onClick={handleToggleSaveFromMenu} disabled={saveDisabled}>
+                  <ListItemIcon>
+                    <Bookmark fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {reactions.saved ? t('feed.unsave') : t('feed.save')}
+                  </ListItemText>
+                </MenuItem>
+              )}
+              {canReport && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseMenu();
+                    onReportEntry?.(entry);
+                  }}
+                >
+                  <ListItemText>
+                    {t('feed.reportPost', { defaultValue: 'Report post' })}
+                  </ListItemText>
+                </MenuItem>
+              )}
               {canSharePost && (
                 <MenuItem onClick={() => void handleSharePost()} disabled={isDownloadPending}>
                   <ListItemIcon>
@@ -226,6 +248,26 @@ export function FeedEntryCard({
                       : t('feed.sharePost', { defaultValue: 'Share post' })}
                   </ListItemText>
                 </MenuItem>
+              )}
+              {canAdminEdit && (
+                <>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMenu();
+                      onEditEntry?.(entry);
+                    }}
+                  >
+                    <ListItemText>{t('common.edit')}</ListItemText>
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMenu();
+                      onDeleteEntry?.(entry);
+                    }}
+                  >
+                    <ListItemText>{t('common.delete')}</ListItemText>
+                  </MenuItem>
+                </>
               )}
             </Menu>
           </div>
@@ -300,37 +342,39 @@ export function FeedEntryCard({
             </div>
             <div className="bw-feed-footer-row">
               <div className="bw-feed-footer-left">
-                <div className="bw-feed-actions">
-                  <button
-                    type="button"
-                    className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
-                    onClick={() => onToggleLike(entry.id)}
-                    disabled={likeDisabled}
-                    aria-pressed={reactions.liked}
-                    title={actionLockLabel ?? (reactions.liked ? t('feed.unlike') : t('feed.like'))}
-                  >
-                    {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
-                    <span className="bw-feed-action-count">{reactions.likeCount}</span>
-                  </button>
-                  {onOpenEntry && (
+                {!adminMode ? (
+                  <div className="bw-feed-actions">
                     <button
                       type="button"
-                      className="bw-feed-action"
-                      onClick={() => onOpenEntry(entry.id)}
-                      title={t('comments.viewComments')}
-                      aria-label={t('comments.viewComments')}
+                      className={`bw-feed-action ${reactions.liked ? 'is-active' : ''}`}
+                      onClick={() => onToggleLike(entry.id)}
+                      disabled={likeDisabled}
+                      aria-pressed={reactions.liked}
+                      title={actionLockLabel ?? (reactions.liked ? t('feed.unlike') : t('feed.like'))}
                     >
-                      <ChatBubbleOutline fontSize="small" />
-                      {commentCount > 0 && <span className="bw-feed-action-count">{commentCount}</span>}
+                      {reactions.liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                      <span className="bw-feed-action-count">{reactions.likeCount}</span>
                     </button>
-                  )}
-                </div>
+                    {onOpenEntry && (
+                      <button
+                        type="button"
+                        className="bw-feed-action"
+                        onClick={() => onOpenEntry(entry.id)}
+                        title={t('comments.viewComments')}
+                        aria-label={t('comments.viewComments')}
+                      >
+                        <ChatBubbleOutline fontSize="small" />
+                        {commentCount > 0 && <span className="bw-feed-action-count">{commentCount}</span>}
+                      </button>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="bw-feed-footer-right">
                 <div className="bw-feed-price">
                   {formatCurrency(entry.price ?? 0, { fromCurrency: entry.currency ?? 'EUR' })}
                 </div>
-                {canEdit && (
+                {canEdit && !adminMode && (
                   <div className="bw-history-actions">
                     <button
                       className="bw-icon-button"
@@ -357,6 +401,8 @@ export function FeedEntryCard({
           variant="inline"
           entryUserId={entry.userId}
           viewerId={viewerId}
+          canComment={canComment}
+          canModerateComments={canModerateComments}
           commentMode={commentMode}
           comments={comments}
           commentCount={commentCount}
@@ -374,6 +420,8 @@ export function FeedEntryCard({
         variant="card"
         entryUserId={entry.userId}
         viewerId={viewerId}
+        canComment={canComment}
+        canModerateComments={canModerateComments}
         commentMode={commentMode}
         comments={comments}
         commentCount={commentCount}
