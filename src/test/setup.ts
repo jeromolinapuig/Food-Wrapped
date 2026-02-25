@@ -18,6 +18,19 @@ vi.mock('react-i18next', () => ({
   },
 }));
 
+vi.mock('@mui/icons-material', () => {
+  const icon = () => null;
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        if (prop === 'then') return undefined;
+        return icon;
+      },
+    }
+  );
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
