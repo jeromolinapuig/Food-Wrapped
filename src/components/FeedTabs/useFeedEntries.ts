@@ -196,132 +196,17 @@ export function useFeedEntries({
     setPrivacyBlocked(!isMutual);
   }, [focusUserId, ignorePrivacy, viewerId]);
 
-  const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean; append?: boolean }) => { /* NOSONAR */
-    const showLoading = options?.showLoading ?? true;
-    const append = options?.append ?? false;
-    if (showLoading && !append) setLoading(true);
-    if (append) setLoadingMore(true);
-    setError(null);
-
-    if (!adminMode && isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
-      setEntries([]);
-      setCursor(null);
-      setHasMore(false);
-      onCountChange?.(0);
-      setPrivacyBlocked(false);
-      if (!append) setLoading(false);
-      if (append) setLoadingMore(false);
-      return;
-    }
-
-    let userIdsForQuery: string[] | null = null;
-    let entryIdsForQuery: string[] | null = null;
-
-    if (hasEntryFilter) {
-      if (!entryIdsFilter?.length) {
-        if (!append) {
-          setEntries([]);
-          setCursor(null);
-          setHasMore(false);
-        }
-        onCountChange?.(0);
-        if (!append) setLoading(false);
-        if (append) setLoadingMore(false);
-        setPrivacyBlocked(false);
-        return;
-      }
-      entryIdsForQuery = entryIdsFilter;
-    } else if (isCustomList && userIdsFilter?.length) {
-      userIdsForQuery = userIdsFilter;
-    } else if (isCustomList) {
-      if (!append) {
-        setEntries([]);
-        setCursor(null);
-        setHasMore(false);
-      }
-      onCountChange?.(0);
-      if (!append) setLoading(false);
-      if (append) setLoadingMore(false);
-      setPrivacyBlocked(false);
-      return;
-    } else if (focusUserId) {
-      userIdsForQuery = [focusUserId];
-    } else if (activeTab === 'following') {
-      if (viewerId) {
-        const [{ data: outData, error: outError }, { data: incData, error: incError }] = await Promise.all([
-          supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', viewerId),
-          supabase
-            .from('follows')
-            .select('follower_id')
-            .eq('following_id', viewerId),
-        ]);
-
-        if (outError || incError) {
-          setError(outError?.message ?? incError?.message ?? 'Error cargando amigos.');
-          if (!append) {
-            setEntries([]);
-            setCursor(null);
-            setHasMore(false);
-          }
-          onCountChange?.(0);
-          if (!append) setLoading(false);
-          if (append) setLoadingMore(false);
-          return;
-        }
-
-        const outgoing = new Set((outData ?? []).map((row) => (row as { following_id: string }).following_id));
-        const incoming = new Set((incData ?? []).map((row) => (row as { follower_id: string }).follower_id));
-        userIdsForQuery = [...outgoing].filter((id) => incoming.has(id));
-        if (!userIdsForQuery.length) {
-          if (!append) {
-            setEntries([]);
-            setCursor(null);
-            setHasMore(false);
-          }
-          onCountChange?.(0);
-          if (!append) setLoading(false);
-          if (append) setLoadingMore(false);
-          return;
-        }
-      } else {
-        userIdsForQuery = [];
-      }
-    }
-
-    let query = supabase
-      .from('entries')
-      .select(
-        `
-          id,
-          user_id,
-          datetime,
-          price,
-          rating,
-          is_burger,
-          additional_notes,
-          restaurant_id,
-          burger_id,
-          meat_type,
-          burger_origin,
-          photo_url,
-          homemade_ingredients,
-          restaurants ( name ),
-          burgers ( name, meat_type )
-        `
-      )
-      .order('datetime', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(pageSize);
-
-    query = whereNotDeleted(query);
-
-    const appendCursor = cursorRef.current;
-    if (append && appendCursor) {
-      query = query.or(`datetime.lt.${appendCursor.datetime},and(datetime.eq.${appendCursor.datetime},id.lt.${appendCursor.id})`);
-    }
+  const applyFeedFilters = useCallback(<TQuery extends {
+    eq: (column: string, value: unknown) => TQuery;
+    in: (column: string, values: unknown[]) => TQuery;
+    gte: (column: string, value: string) => TQuery;
+    lt: (column: string, value: string) => TQuery;
+  }>(query: TQuery, options?: {
+    userIdsForQuery?: string[] | null;
+    entryIdsForQuery?: string[] | null;
+  }) => {
+    const userIdsForQuery = options?.userIdsForQuery ?? null;
+    const entryIdsForQuery = options?.entryIdsForQuery ?? null;
 
     if (adminMode) {
       if (entryIdsForQuery) {
@@ -359,6 +244,194 @@ export function useFeedEntries({
         query = query.gte('datetime', start.toISOString()).lt('datetime', end.toISOString());
       }
     }
+
+    return query;
+  }, [
+    activeTab,
+    adminMode,
+    effectiveMonthFilter,
+    focusUserId,
+    isCustomList,
+    isSelfFeed,
+    restaurantIdFilter,
+  ]);
+
+  const resolveQueryScope = useCallback(async () => {
+    let userIdsForQuery: string[] | null = null;
+    let entryIdsForQuery: string[] | null = null;
+
+    if (hasEntryFilter) {
+      if (!entryIdsFilter?.length) {
+        return { shouldReturnEmpty: true, userIdsForQuery, entryIdsForQuery };
+      }
+      entryIdsForQuery = entryIdsFilter;
+    } else if (isCustomList && userIdsFilter?.length) {
+      userIdsForQuery = userIdsFilter;
+    } else if (isCustomList) {
+      return { shouldReturnEmpty: true, userIdsForQuery, entryIdsForQuery };
+    } else if (focusUserId) {
+      userIdsForQuery = [focusUserId];
+    } else if (activeTab === 'following') {
+      if (viewerId) {
+        const [{ data: outData, error: outError }, { data: incData, error: incError }] = await Promise.all([
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', viewerId),
+          supabase
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', viewerId),
+        ]);
+
+        if (outError || incError) {
+          return {
+            shouldReturnEmpty: true,
+            userIdsForQuery,
+            entryIdsForQuery,
+            error: outError?.message ?? incError?.message ?? 'Error cargando amigos.',
+          };
+        }
+
+        const outgoing = new Set((outData ?? []).map((row) => (row as { following_id: string }).following_id));
+        const incoming = new Set((incData ?? []).map((row) => (row as { follower_id: string }).follower_id));
+        userIdsForQuery = [...outgoing].filter((id) => incoming.has(id));
+        if (!userIdsForQuery.length) {
+          return { shouldReturnEmpty: true, userIdsForQuery, entryIdsForQuery };
+        }
+      } else {
+        userIdsForQuery = [];
+      }
+    }
+
+    return { shouldReturnEmpty: false, userIdsForQuery, entryIdsForQuery };
+  }, [
+    activeTab,
+    entryIdsFilter,
+    focusUserId,
+    hasEntryFilter,
+    isCustomList,
+    userIdsFilter,
+    viewerId,
+  ]);
+
+  const loadTotalCount = useCallback(async () => {
+    if (!onCountChange) return;
+    if (!adminMode && isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
+      onCountChange(0);
+      return;
+    }
+
+    const scope = await resolveQueryScope();
+    if (scope.error) {
+      onCountChange(0);
+      return;
+    }
+    if (scope.shouldReturnEmpty) {
+      onCountChange(0);
+      return;
+    }
+
+    let countQuery = supabase.from('entries').select('id', { count: 'exact', head: true });
+    countQuery = whereNotDeleted(countQuery);
+    countQuery = applyFeedFilters(countQuery, scope);
+
+    const { count, error } = await countQuery;
+    if (error) {
+      onCountChange(0);
+      return;
+    }
+    onCountChange(count ?? 0);
+  }, [
+    activeTab,
+    adminMode,
+    applyFeedFilters,
+    focusUserId,
+    hasEntryFilter,
+    isCustomList,
+    isReadOnly,
+    onCountChange,
+    resolveQueryScope,
+  ]);
+
+  const loadEntries = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean; append?: boolean }) => { /* NOSONAR */
+    const showLoading = options?.showLoading ?? true;
+    const append = options?.append ?? false;
+    if (showLoading && !append) setLoading(true);
+    if (append) setLoadingMore(true);
+    setError(null);
+
+    if (!adminMode && isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter) {
+      setEntries([]);
+      setCursor(null);
+      setHasMore(false);
+      onCountChange?.(0);
+      setPrivacyBlocked(false);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
+      return;
+    }
+
+    const scope = await resolveQueryScope();
+    if (scope.error) {
+      setError(scope.error);
+      if (!append) {
+        setEntries([]);
+        setCursor(null);
+        setHasMore(false);
+      }
+      onCountChange?.(0);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
+      return;
+    }
+    if (scope.shouldReturnEmpty) {
+      if (!append) {
+        setEntries([]);
+        setCursor(null);
+        setHasMore(false);
+      }
+      onCountChange?.(0);
+      if (!append) setLoading(false);
+      if (append) setLoadingMore(false);
+      setPrivacyBlocked(false);
+      return;
+    }
+    const { userIdsForQuery, entryIdsForQuery } = scope;
+
+    let query = supabase
+      .from('entries')
+      .select(
+        `
+          id,
+          user_id,
+          datetime,
+          price,
+          rating,
+          is_burger,
+          additional_notes,
+          restaurant_id,
+          burger_id,
+          meat_type,
+          burger_origin,
+          photo_url,
+          homemade_ingredients,
+          restaurants ( name ),
+          burgers ( name, meat_type )
+        `
+      )
+      .order('datetime', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(pageSize);
+
+    query = whereNotDeleted(query);
+
+    const appendCursor = cursorRef.current;
+    if (append && appendCursor) {
+      query = query.or(`datetime.lt.${appendCursor.datetime},and(datetime.eq.${appendCursor.datetime},id.lt.${appendCursor.id})`);
+    }
+
+    query = applyFeedFilters(query, { userIdsForQuery, entryIdsForQuery });
 
     const { data, error } = await query;
 
@@ -522,7 +595,6 @@ export function useFeedEntries({
     setEntries(deduped);
     setCursor(nextCursor);
     setHasMore((data ?? []).length === pageSize);
-    onCountChange?.(deduped.length);
     if (!options?.skipCache) {
       try {
         sessionStorage.setItem(entriesCacheKey, JSON.stringify(deduped));
@@ -545,8 +617,8 @@ export function useFeedEntries({
     isCustomList,
     onCountChange,
     pageSize,
-    restaurantIdFilter,
-    userIdsFilter,
+    applyFeedFilters,
+    resolveQueryScope,
   ]);
 
   useEffect(() => {
@@ -673,7 +745,6 @@ export function useFeedEntries({
           if (!isCancelled && parsed.length) {
             startTransition(() => {
               setEntries(parsed);
-              onCountChange?.(parsed.length);
               setLoading(false);
               setError(null);
               if (focusUserId && !ignorePrivacy) {
@@ -718,6 +789,11 @@ export function useFeedEntries({
   }, [checkFocusPrivacy, entriesCacheKey, focusUserId, headerOnly, ignorePrivacy, loadEntries, onCountChange, refreshKey]);
 
   useEffect(() => {
+    if (headerOnly || !onCountChange) return;
+    void loadTotalCount();
+  }, [headerOnly, loadTotalCount, onCountChange, refreshKey]);
+
+  useEffect(() => {
     if (headerOnly) return;
     const channel = supabase
       .channel(`feed-entries-${viewerKey}`)
@@ -746,6 +822,7 @@ export function useFeedEntries({
           const now = Date.now();
           if (now - lastRealtimeRef.current < 60000) return;
           lastRealtimeRef.current = now;
+          void loadTotalCount();
           loadEntries({ showLoading: false, skipCache: true });
         }
       )
@@ -754,16 +831,17 @@ export function useFeedEntries({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, adminMode, focusUserId, headerOnly, isCustomList, loadEntries, restaurantIdFilter, userIdsFilter, viewerKey]);
+  }, [activeTab, adminMode, focusUserId, headerOnly, isCustomList, loadEntries, loadTotalCount, restaurantIdFilter, userIdsFilter, viewerKey]);
 
   useRevalidateOnFocus(
     () => {
       if (headerOnly) return;
       setHasMore(true);
       setCursor(null);
+      void loadTotalCount();
       loadEntries({ showLoading: false, skipCache: true });
     },
-    [headerOnly, loadEntries],
+    [headerOnly, loadEntries, loadTotalCount],
     { minIntervalMs: 180000, maxStaleMs: 900000, debounceMs: 500 }
   );
 

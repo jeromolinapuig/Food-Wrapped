@@ -9,7 +9,6 @@ import '../../styles/layout.css';
 import '../../styles/shared.css';
 import type { GroupMember } from '../../types/groups';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
-import { getCurrentMonthValue } from '../../utils/datetime';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
@@ -63,7 +62,6 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
   const [error, setError] = useState<string | null>(null);
   const [groupMissing, setGroupMissing] = useState(false);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<string>(() => getCurrentMonthValue());
   const [activeTab, setActiveTab] = useState<'posts' | 'ranking'>('posts');
   const [rankingMetric, setRankingMetric] = useState<'spent' | 'burgers'>('spent');
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
@@ -447,8 +445,8 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                   ignorePrivacy
                   onCountChange={setPostsCount}
                   hideHeader
-                  monthFilter={monthFilter}
-                  onMonthFilterChange={setMonthFilter}
+                  hideMonthFilter
+                  monthFilter="all"
                   onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: `/groups/${groupId}` } })}
                   onOpenProfile={(userId) => setProfileModalUserId(userId)}
                 />
