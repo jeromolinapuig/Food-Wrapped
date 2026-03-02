@@ -381,12 +381,18 @@ export function useFeedEntries({
 
     let profileMap: Record<
       string,
-      { username: string | null; display_name: string | null; avatar_url: string | null; is_private: boolean | null }
+      {
+        username: string | null;
+        display_name: string | null;
+        avatar_url: string | null;
+        equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+        is_private: boolean | null;
+      }
     > = {};
     if (userIds.length) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, is_private')
+        .select('id, username, display_name, avatar_url, equipped_frame, is_private')
         .in('id', userIds);
       profileMap = Object.fromEntries(
         (profilesData ?? []).map((p) => [
@@ -395,6 +401,7 @@ export function useFeedEntries({
             username: (p as { username: string | null }).username,
             display_name: (p as { display_name: string | null }).display_name,
             avatar_url: (p as { avatar_url: string | null }).avatar_url,
+            equipped_frame: ((p as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
             is_private: (p as { is_private: boolean | null }).is_private,
           },
         ])
@@ -404,7 +411,7 @@ export function useFeedEntries({
     if (focusUserId && !ignorePrivacy && !profileMap[focusUserId]) {
       const { data: focusProfile } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, is_private')
+        .select('id, username, display_name, avatar_url, equipped_frame, is_private')
         .eq('id', focusUserId)
         .single();
       if (focusProfile) {
@@ -412,6 +419,7 @@ export function useFeedEntries({
           username: (focusProfile as { username: string | null }).username,
           display_name: (focusProfile as { display_name: string | null }).display_name,
           avatar_url: (focusProfile as { avatar_url: string | null }).avatar_url,
+          equipped_frame: ((focusProfile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
           is_private: (focusProfile as { is_private: boolean | null }).is_private,
         };
       }
@@ -446,6 +454,7 @@ export function useFeedEntries({
         username: profile?.username ?? 'usuario',
         displayName: profile?.display_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
+        avatarFrame: profile?.equipped_frame ?? null,
         datetime: entry.datetime,
         price: entry.price ?? 0,
         currency: (entry as { currency?: string | null }).currency ?? 'EUR',
@@ -704,6 +713,11 @@ export function useFeedEntries({
           }
         }
       });
+      // Revalidate in background so cached entries (including avatar frame changes)
+      // don't remain stale after navigating between pages.
+      startTransition(() => {
+        void loadEntries({ showLoading: false });
+      });
     } else {
       startTransition(() => {
         setHasMore(true);
@@ -716,6 +730,37 @@ export function useFeedEntries({
       isCancelled = true;
     };
   }, [checkFocusPrivacy, entriesCacheKey, focusUserId, headerOnly, ignorePrivacy, loadEntries, onCountChange, refreshKey]);
+
+  useEffect(() => {
+    if (headerOnly) return;
+    const handleFrameUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ userId?: string; frameKey?: 'gold' | 'silver' | 'bronze' | null }>;
+      const changedUserId = custom.detail?.userId;
+      if (!changedUserId) return;
+      const nextFrame = custom.detail?.frameKey ?? null;
+      setEntries((prev) => {
+        let changed = false;
+        const next = prev.map((entry) => {
+          if (entry.userId !== changedUserId) return entry;
+          if (entry.avatarFrame === nextFrame) return entry;
+          changed = true;
+          return { ...entry, avatarFrame: nextFrame };
+        });
+        if (changed) {
+          try {
+            sessionStorage.setItem(entriesCacheKey, JSON.stringify(next));
+          } catch {
+            // Ignore cache write errors.
+          }
+        }
+        return changed ? next : prev;
+      });
+    };
+    window.addEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    return () => {
+      window.removeEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    };
+  }, [entriesCacheKey, headerOnly]);
 
   useEffect(() => {
     if (headerOnly) return;

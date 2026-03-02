@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { ModalBase } from '../common/ModalBase';
+import { Avatar } from '../common/Avatar';
 import '../../styles/shared.css';
 import '../ProfilePage/ProfilePage.css';
 import './UserProfileModal.css';
@@ -24,6 +25,7 @@ type PublicProfile = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  equipped_frame?: 'gold' | 'silver' | 'bronze' | null;
   bio: string | null;
   is_private?: boolean | null;
 };
@@ -62,7 +64,7 @@ export function UserProfileModal({
         setError(null);
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, username, display_name, avatar_url, bio, is_private')
+          .select('id, username, display_name, avatar_url, equipped_frame, bio, is_private')
           .eq('id', userId)
           .single();
         if (cancelled) return;
@@ -92,7 +94,7 @@ export function UserProfileModal({
       const [{ data: profileData, error: profileError }, { data: followData, error: followError }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, username, display_name, avatar_url, bio, is_private')
+          .select('id, username, display_name, avatar_url, equipped_frame, bio, is_private')
           .eq('id', userId)
           .single(),
         supabase
@@ -215,13 +217,13 @@ export function UserProfileModal({
         {!loading && profile && (
           <div className="bw-profile-form" style={{ gap: 14 }}>
             <div className="bw-profile-header" style={{ marginBottom: 4 }}>
-              <div className="bw-avatar bw-avatar-lg">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt={displayName} className="bw-avatar-image" />
-                ) : (
-                  <div className="bw-avatar-placeholder">{(profile.username ?? '?').charAt(0).toUpperCase()}</div>
-                )}
-              </div>
+              <Avatar
+                url={profile.avatar_url}
+                frameKey={profile.equipped_frame ?? null}
+                alt={displayName}
+                initial={(profile.username ?? '?').charAt(0).toUpperCase()}
+                size="lg"
+              />
               <div className="bw-profile-header-body">
                 <h1 className="bw-profile-username" style={{ margin: 0, fontSize: 22 }}>
                   @{profile.username ?? 'usuario'}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Avatar } from './Avatar';
 
 type PageHeaderProps = {
   title: ReactNode;
@@ -8,6 +9,7 @@ type PageHeaderProps = {
   logoSrc?: string;
   logoAlt?: string;
   logoVariant?: 'square' | 'avatar';
+  logoFrameKey?: 'gold' | 'silver' | 'bronze' | null;
 };
 
 export function PageHeader({
@@ -18,6 +20,7 @@ export function PageHeader({
   logoSrc = '/logo.png',
   logoAlt = 'My Bite Story',
   logoVariant = 'square',
+  logoFrameKey = null,
 }: Readonly<PageHeaderProps>) {
   const iconClassName = ['bw-header-icon', logoVariant === 'avatar' ? 'is-avatar' : null]
     .filter(Boolean)
@@ -27,7 +30,11 @@ export function PageHeader({
     <header className="bw-header">
       {leading}
       <div className={iconClassName}>
-        <img src={logoSrc} alt={logoAlt} />
+        {logoVariant === 'avatar' ? (
+          <Avatar url={logoSrc} alt={logoAlt} frameKey={logoFrameKey} className="bw-header-avatar-core" />
+        ) : (
+          <img src={logoSrc} alt={logoAlt} />
+        )}
       </div>
       <div style={{ flex: 1 }}>
         <h1 className="bw-title">{title}</h1>

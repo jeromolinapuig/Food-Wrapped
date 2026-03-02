@@ -9,6 +9,7 @@ import { GroupInvitesModal } from '../GroupInvitesModal/GroupInvitesModal';
 import { CreateGroupModal } from '../CreateGroupModal/CreateGroupModal';
 import { GroupManageModal } from '../GroupManageModal/GroupManageModal';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { Avatar } from '../common/Avatar';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../FollowListModal/FollowListModal.css';
@@ -129,7 +130,12 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
 
     const profileMap = new Map<
       string,
-      { username: string | null; displayName: string | null; avatarUrl: string | null }
+      {
+        username: string | null;
+        displayName: string | null;
+        avatarUrl: string | null;
+        avatarFrame: 'gold' | 'silver' | 'bronze' | null;
+      }
     >();
     const memberUserIds = Array.from(
       new Set((allMembers ?? []).map((row) => (row as { user_id: string }).user_id))
@@ -138,7 +144,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
     if (memberUserIds.length) {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', memberUserIds);
 
       if (profilesError) {
@@ -152,6 +158,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
           username: (profile as { username: string | null }).username,
           displayName: (profile as { display_name: string | null }).display_name,
           avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+          avatarFrame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
         });
       });
     }
@@ -170,6 +177,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
             id: userId,
             initial: base.charAt(0).toUpperCase(),
             avatarUrl: profile?.avatarUrl ?? null,
+            avatarFrame: profile?.avatarFrame ?? null,
           };
         });
 
@@ -423,11 +431,12 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
                   <div className="bw-group-avatars">
                     {group.membersPreview.map((member) => (
                       <div key={`${group.id}-${member.id}`} className="bw-group-avatar">
-                        {member.avatarUrl ? (
-                          <img src={member.avatarUrl} alt={member.initial} />
-                        ) : (
-                          member.initial
-                        )}
+                        <Avatar
+                          url={member.avatarUrl}
+                          frameKey={member.avatarFrame ?? null}
+                          alt={member.initial}
+                          initial={member.initial}
+                        />
                       </div>
                     ))}
                   </div>

@@ -14,6 +14,7 @@ import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
+import { Avatar } from '../common/Avatar';
 import '../Dashboard/Dashboard.css';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import { StatCard } from '../StatCard/StatCard';
@@ -122,7 +123,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url')
+      .select('id, username, display_name, avatar_url, equipped_frame')
       .in('id', uniqueMemberIds);
 
     if (profilesError) {
@@ -137,6 +138,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       username: (profile as { username: string | null }).username,
       displayName: (profile as { display_name: string | null }).display_name,
       avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+      avatarFrame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
     }));
     setMembers(mapped);
     setMembersLoaded(true);
@@ -474,11 +476,12 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
                       <div className="bw-ranking-left">
                         <div className="bw-ranking-index">{index + 1}</div>
                         <div className="bw-ranking-avatar">
-                          {member.avatarUrl ? (
-                            <img src={member.avatarUrl} alt={label} />
-                          ) : (
-                            <span>{label.charAt(0).toUpperCase()}</span>
-                          )}
+                          <Avatar
+                            url={member.avatarUrl}
+                            frameKey={member.avatarFrame ?? null}
+                            alt={label}
+                            initial={label.charAt(0).toUpperCase()}
+                          />
                         </div>
                         <div className="bw-ranking-name">{label}</div>
                       </div>

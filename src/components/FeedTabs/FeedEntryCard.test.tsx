@@ -55,6 +55,7 @@ const baseEntry: FeedEntry = {
   username: 'user1',
   displayName: 'User 1',
   avatarUrl: null,
+  avatarFrame: null,
   datetime: '2026-02-01T10:00:00.000Z',
   restaurantName: 'Burger Place',
   burgerName: 'Smash',

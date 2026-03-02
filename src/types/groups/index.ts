@@ -2,6 +2,7 @@ export type GroupMemberPreview = {
   id: string;
   initial: string;
   avatarUrl: string | null;
+  avatarFrame?: 'gold' | 'silver' | 'bronze' | null;
 };
 
 export type GroupCard = {
@@ -26,6 +27,7 @@ export type GroupMember = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame?: 'gold' | 'silver' | 'bronze' | null;
   isOwner?: boolean;
 };
 

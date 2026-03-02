@@ -13,6 +13,7 @@ import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
 import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
+import { Avatar } from '../common/Avatar';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../Dashboard/Dashboard.css';
@@ -36,6 +37,7 @@ type RankingMember = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
 };
 
 type MonthOption = {
@@ -93,7 +95,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
 
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url')
+      .select('id, username, display_name, avatar_url, equipped_frame')
       .in('id', userIds);
 
     if (profilesError) {
@@ -104,12 +106,18 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       return;
     }
 
-    const profileMap = new Map<string, { username: string | null; display_name: string | null; avatar_url: string | null }>();
+    const profileMap = new Map<string, {
+      username: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+      equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+    }>();
     (profilesData ?? []).forEach((profile) => {
       profileMap.set((profile as { id: string }).id, {
         username: (profile as { username: string | null }).username,
         display_name: (profile as { display_name: string | null }).display_name,
         avatar_url: (profile as { avatar_url: string | null }).avatar_url,
+        equipped_frame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       });
     });
 
@@ -120,6 +128,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
         username: profile?.username ?? null,
         displayName: profile?.display_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
+        avatarFrame: profile?.equipped_frame ?? null,
       };
     });
 
@@ -349,11 +358,12 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
                       )}
                     </div>
                     <div className="bw-ranking-avatar">
-                      {member.avatarUrl ? (
-                        <img src={member.avatarUrl} alt={label} />
-                      ) : (
-                        <span>{label.charAt(0).toUpperCase()}</span>
-                      )}
+                      <Avatar
+                        url={member.avatarUrl}
+                        frameKey={member.avatarFrame ?? null}
+                        alt={label}
+                        initial={label.charAt(0).toUpperCase()}
+                      />
                     </div>
                     <div className="bw-ranking-name">{label}</div>
                   </div>

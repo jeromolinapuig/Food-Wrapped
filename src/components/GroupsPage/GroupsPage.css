@@ -101,6 +101,18 @@
   display: block;
 }
 
+.bw-group-avatar .bw-avatar-wrap,
+.bw-group-avatar .bw-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.bw-group-avatar .bw-avatar-frame {
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+}
+
 .bw-group-avatar:first-child {
   margin-left: 0;
 }

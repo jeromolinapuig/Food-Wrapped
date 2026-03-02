@@ -15,6 +15,7 @@ const baseComment = {
   username: 'author',
   displayName: 'Author',
   avatarUrl: null,
+  avatarFrame: null,
   createdAt: '2026-02-01T10:00:00.000Z',
 };
 

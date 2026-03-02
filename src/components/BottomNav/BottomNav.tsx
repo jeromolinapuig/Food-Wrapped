@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, startTransition } from 'reac
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { Avatar } from '../common/Avatar';
 import './BottomNav.css';
 import '../../styles/shared.css';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +26,7 @@ export function BottomNav({
   const location = useLocation();
   const { t } = useTranslation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFrame, setAvatarFrame] = useState<'gold' | 'silver' | 'bronze' | null>(null);
   const [initial, setInitial] = useState<string>('?');
   const [inviteCount, setInviteCount] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -62,19 +64,26 @@ export function BottomNav({
     if (!session || (adminModeEnabled && isAdmin)) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('avatar_url, username, display_name')
+      .select('avatar_url, equipped_frame, username, display_name')
       .eq('id', session.user.id)
       .single();
 
     if (error || !data) {
       setAvatarUrl(null);
+      setAvatarFrame(null);
       setInitial(session.user.email?.charAt(0).toUpperCase() ?? '?');
       return;
     }
 
-    const profile = data as { avatar_url: string | null; username: string | null; display_name: string | null };
+    const profile = data as {
+      avatar_url: string | null;
+      equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+      username: string | null;
+      display_name: string | null;
+    };
     const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
     setAvatarUrl(profile.avatar_url);
+    setAvatarFrame(profile.equipped_frame ?? null);
     setInitial(base.charAt(0).toUpperCase());
   }, [adminModeEnabled, isAdmin, session]);
 
@@ -83,6 +92,19 @@ export function BottomNav({
       void loadProfile();
     });
   }, [loadProfile]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const handleFrameUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ userId?: string; frameKey?: 'gold' | 'silver' | 'bronze' | null }>;
+      if (custom.detail?.userId !== userId) return;
+      setAvatarFrame(custom.detail?.frameKey ?? null);
+    };
+    window.addEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    return () => {
+      window.removeEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    };
+  }, [userId]);
 
   const loadInvites = useCallback(async () => {
     if (!userId || (adminModeEnabled && isAdmin)) return;
@@ -292,10 +314,14 @@ export function BottomNav({
             <span className="bw-bottom-nav-icon">
               <PersonOutline />
             </span>
-          ) : avatarUrl ? (
-            <img src={avatarUrl} alt="Mi perfil" />
           ) : (
-            <span className="bw-bottom-nav-initial">{initial}</span>
+            <Avatar
+              url={avatarUrl}
+              initial={initial}
+              frameKey={avatarFrame}
+              alt="Mi perfil"
+              className="bw-bottom-nav-avatar-core"
+            />
           )}
         </span>
         <span className="bw-bottom-nav-label">

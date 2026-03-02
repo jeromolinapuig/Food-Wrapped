@@ -6,6 +6,7 @@ export type FeedEntry = {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
   datetime: string;
   price: number;
   currency: string | null;

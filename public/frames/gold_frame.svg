@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <!-- Metallic gold gradient for the outer ring -->
+    <linearGradient id="goldOuter" x1="120" y1="80" x2="392" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7A5A12"></stop>
+      <stop offset="0.22" stop-color="#D9B24C"></stop>
+      <stop offset="0.42" stop-color="#FFF1B0"></stop>
+      <stop offset="0.62" stop-color="#C9972D"></stop>
+      <stop offset="1" stop-color="#8B6616"></stop>
+    </linearGradient>
+
+    <!-- Subtle highlight band for a polished look -->
+    <linearGradient id="goldSheen" x1="170" y1="90" x2="342" y2="422" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"></stop>
+      <stop offset="0.28" stop-color="#FFFFFF" stop-opacity="0.08"></stop>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"></stop>
+      <stop offset="0.78" stop-color="#FFFFFF" stop-opacity="0.10"></stop>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.25"></stop>
+    </linearGradient>
+
+    <!-- Light gold for inner thin ring -->
+    <linearGradient id="goldInner" x1="160" y1="110" x2="352" y2="402" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF6C8"></stop>
+      <stop offset="0.5" stop-color="#F1D27A"></stop>
+      <stop offset="1" stop-color="#FFE9A3"></stop>
+    </linearGradient>
+
+    <!-- Soft glow for sparkles (no heavy shadows) -->
+    <radialGradient id="sparkGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"></stop>
+      <stop offset="0.35" stop-color="#FFF7CF" stop-opacity="0.75"></stop>
+      <stop offset="1" stop-color="#FFF7CF" stop-opacity="0"></stop>
+    </radialGradient>
+
+    <!-- Mask: keep only the ring area, center fully transparent -->
+    <mask id="ringMask">
+      <rect width="512" height="512" fill="black"></rect>
+      <!-- Outer visible area -->
+      <circle cx="256" cy="256" r="238" fill="white"></circle>
+      <!-- Cut out center (transparent) -->
+      <circle cx="256" cy="256" r="210" fill="black"></circle>
+      <!-- Crown area allowed to show -->
+      <rect x="216" y="28" width="80" height="80" fill="white"></rect>
+    </mask>
+  </defs>
+
+  <!-- OUTER RING (28px) -->
+  <g mask="url(#ringMask)">
+    <!-- Base metallic ring -->
+    <circle cx="256" cy="256" r="224" fill="none" stroke="url(#goldOuter)" stroke-width="28"></circle>
+
+    <!-- Polished sheen band (subtle) -->
+    <circle cx="256" cy="256" r="224" fill="none" stroke="url(#goldSheen)" stroke-width="10" opacity="0.55"></circle>
+  
+  </g>
+  
+  <!-- Sparkles (4-6), subtle, distributed diagonally -->
+  <g mask="url(#ringMask)" opacity="0.9">
+    <!-- Sparkle 1 (top-left) -->
+    <g transform="translate(150 150) rotate(-20)">
+      <circle cx="0" cy="0" r="14" fill="url(#sparkGlow)" opacity="0.7"></circle>
+      <path d="M0 -10 L2 -2 L10 0 L2 2 L0 10 L-2 2 L-10 0 L-2 -2 Z" fill="#FFFFFF" opacity="0.85"></path>
+    </g>
+
+    <!-- Sparkle 2 (upper-mid) -->
+    <g transform="translate(305 140) rotate(15)">
+      <circle cx="0" cy="0" r="11" fill="url(#sparkGlow)" opacity="0.55"></circle>
+      <path d="M0 -8 L1.6 -1.6 L8 0 L1.6 1.6 L0 8 L-1.6 1.6 L-8 0 L-1.6 -1.6 Z" fill="#FFFFFF" opacity="0.8"></path>
+    </g>
+
+    <!-- Sparkle 3 (center) -->
+    <g transform="translate(220 260) rotate(30)">
+      <circle cx="0" cy="0" r="10" fill="url(#sparkGlow)" opacity="0.45"></circle>
+      <path d="M0 -7 L1.4 -1.4 L7 0 L1.4 1.4 L0 7 L-1.4 1.4 L-7 0 L-1.4 -1.4 Z" fill="#FFFFFF" opacity="0.75"></path>
+    </g>
+
+    <!-- Sparkle 4 (lower-right) -->
+    <g transform="translate(355 325) rotate(-10)">
+      <circle cx="0" cy="0" r="13" fill="url(#sparkGlow)" opacity="0.6"></circle>
+      <path d="M0 -9 L1.8 -1.8 L9 0 L1.8 1.8 L0 9 L-1.8 1.8 L-9 0 L-1.8 -1.8 Z" fill="#FFFFFF" opacity="0.82"></path>
+    </g>
+
+    <!-- Sparkle 5 (bottom-left, tiny) -->
+    <g transform="translate(170 360) rotate(25)">
+      <circle cx="0" cy="0" r="8" fill="url(#sparkGlow)" opacity="0.35"></circle>
+      <path d="M0 -6 L1.2 -1.2 L6 0 L1.2 1.2 L0 6 L-1.2 1.2 L-6 0 L-1.2 -1.2 Z" fill="#FFFFFF" opacity="0.7"></path>
+    </g>
+  </g>
+
+  <!-- Ensure center is fully transparent: no fill elements here -->
+</svg>

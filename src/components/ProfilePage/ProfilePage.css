@@ -115,6 +115,135 @@
   gap: 12px;
 }
 
+.bw-profile-avatar-trigger {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bw-profile-avatar-shell {
+  position: relative;
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+}
+
+.bw-profile-avatar-frame {
+  position: absolute;
+  inset: -5px;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+  pointer-events: none;
+}
+
+.bw-profile-avatar-modal {
+  max-width: 460px;
+  height: 65vh;
+  max-height: 65vh;
+}
+
+.bw-profile-avatar-options {
+  display: grid;
+  gap: 12px;
+}
+
+.bw-profile-frame-list {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.bw-profile-frame-item {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--bw-card-bg);
+  color: var(--bw-text);
+  border-radius: 16px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.bw-profile-frame-item.is-selected {
+  border-color: var(--bw-accent);
+}
+
+.bw-profile-frame-item.is-locked {
+  opacity: 0.75;
+}
+
+.bw-profile-frame-preview-shell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+}
+
+.bw-profile-frame-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bw-accent-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-profile-frame-preview-none {
+  border: 1px dashed var(--bw-text-muted);
+  color: var(--bw-text-muted);
+  font-weight: 700;
+}
+
+.bw-profile-frame-preview-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bw-profile-frame-preview-overlay {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  pointer-events: none;
+}
+
+.bw-profile-frame-lock {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #c62828;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-profile-frame-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.bw-profile-frame-name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bw-profile-frame-rule {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+  line-height: 1.2;
+}
+
 .bw-privacy-toggle {
   display: flex;
   align-items: center;

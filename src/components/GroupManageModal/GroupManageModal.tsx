@@ -5,6 +5,7 @@ import type { GroupMemberWithRole } from '../../types/groups';
 import type { UserSummary } from '../../types/profiles';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { Avatar } from '../common/Avatar';
 import '../../styles/shared.css';
 import '../GroupsPage/GroupsPage.css';
 
@@ -88,7 +89,7 @@ export function GroupManageModal({
       const memberIdList = Array.from(memberIds);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', memberIdList);
 
       if (cancelled) return;
@@ -106,6 +107,7 @@ export function GroupManageModal({
           username: (profile as { username: string | null }).username,
           displayName: (profile as { display_name: string | null }).display_name,
           avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+          avatarFrame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
           isOwner: id === ownerId,
         };
       });
@@ -131,7 +133,7 @@ export function GroupManageModal({
 
       const { data: friendsData, error: friendsError } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', inviteCandidates);
 
       if (cancelled) return;
@@ -147,6 +149,7 @@ export function GroupManageModal({
         username: (profile as { username: string | null }).username,
         displayName: (profile as { display_name: string | null }).display_name,
         avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+        avatarFrame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       }));
       setFriends(mappedFriends);
       setLoading(false);
@@ -323,15 +326,13 @@ export function GroupManageModal({
                     return (
                       <div key={member.id} className="bw-group-member-row">
                         <div className="bw-group-member-info">
-                          <div className="bw-avatar bw-avatar-sm">
-                            {member.avatarUrl ? (
-                              <img src={member.avatarUrl} alt={name} className="bw-avatar-image" />
-                            ) : (
-                              <div className="bw-avatar-placeholder">
-                                {(member.username ?? '?').charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            </div>
+                          <Avatar
+                            url={member.avatarUrl}
+                            frameKey={member.avatarFrame ?? null}
+                            alt={name}
+                            initial={(member.username ?? '?').charAt(0).toUpperCase()}
+                            size="sm"
+                          />
                             <div>
                               <div className="bw-user-name">@{member.username ?? t('common.user', { defaultValue: 'user' })}</div>
                               <div className="bw-user-meta">{name}</div>
@@ -381,15 +382,13 @@ export function GroupManageModal({
                           onClick={() => toggleSelected(friend.id)}
                         >
                           <div className="bw-user-info">
-                            <div className="bw-avatar bw-avatar-sm">
-                              {friend.avatarUrl ? (
-                                <img src={friend.avatarUrl} alt={displayName} className="bw-avatar-image" />
-                              ) : (
-                                <div className="bw-avatar-placeholder">
-                                  {(friend.username ?? '?').charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
+                            <Avatar
+                              url={friend.avatarUrl}
+                              frameKey={friend.avatarFrame ?? null}
+                              alt={displayName}
+                              initial={(friend.username ?? '?').charAt(0).toUpperCase()}
+                              size="sm"
+                            />
                             <div>
                               <div className="bw-user-name">@{friend.username ?? t('common.user', { defaultValue: 'user' })}</div>
                               <div className="bw-user-meta">{displayName}</div>

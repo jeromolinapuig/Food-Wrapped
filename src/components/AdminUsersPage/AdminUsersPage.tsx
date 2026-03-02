@@ -17,6 +17,7 @@ type AdminUserRow = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  equipped_frame: 'gold' | 'silver' | 'bronze' | null;
   bio: string | null;
   is_private: boolean | null;
   is_admin: boolean | null;
@@ -34,7 +35,7 @@ export function AdminUsersPage({ session }: Readonly<AdminUsersPageProps>) {
       setLoading(true);
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, is_private, is_admin')
+        .select('id, username, display_name, avatar_url, equipped_frame, bio, is_private, is_admin')
         .order('username', { ascending: true })
         .limit(500);
       if (cancelled) return;
@@ -85,6 +86,7 @@ export function AdminUsersPage({ session }: Readonly<AdminUsersPageProps>) {
                   key={user.id}
                   handle={user.username ?? 'usuario'}
                   avatarUrl={user.avatar_url}
+                  avatarFrame={user.equipped_frame}
                   avatarAlt={user.username ?? 'usuario'}
                   avatarInitial={(user.username ?? '?').charAt(0).toUpperCase()}
                   meta={user.is_admin ? 'Admin' : user.is_private ? 'Privado' : 'Público'}

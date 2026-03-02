@@ -92,6 +92,22 @@
   clip-path: inherit;
 }
 
+.bw-bottom-nav-avatar .bw-avatar-wrap {
+  width: 28px;
+  height: 28px;
+}
+
+.bw-bottom-nav-avatar .bw-avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.bw-bottom-nav-avatar .bw-avatar-frame {
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+}
+
 .bw-bottom-nav-initial {
   width: 100%;
   height: 100%;
