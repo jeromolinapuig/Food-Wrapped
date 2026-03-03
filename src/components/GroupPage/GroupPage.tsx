@@ -315,6 +315,8 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
   const rankingRows = useMemo(() => {
     const base = new Map<string, { spent: number; burgers: number }>();
+    const lastEatenMap = new Map<string, number>();
+    const restaurantSetMap = new Map<string, Set<string>>();
     members.forEach((member) => {
       base.set(member.id, { spent: 0, burgers: 0 });
     });
@@ -327,8 +329,18 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
       }
       if (entry.is_burger) {
         current.burgers += 1;
+        if (entry.restaurant_id) {
+          const currentRestaurants = restaurantSetMap.get(entry.user_id) ?? new Set<string>();
+          currentRestaurants.add(entry.restaurant_id);
+          restaurantSetMap.set(entry.user_id, currentRestaurants);
+        }
       }
       base.set(entry.user_id, current);
+      const entryTime = new Date(entry.datetime).getTime();
+      const prevTime = lastEatenMap.get(entry.user_id);
+      if (prevTime === undefined || entryTime > prevTime) {
+        lastEatenMap.set(entry.user_id, entryTime);
+      }
     });
 
     const rows = members.map((member) => {
@@ -337,12 +349,22 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
         ...member,
         totalSpent: totals.spent,
         totalBurgers: totals.burgers,
+        lastEaten: lastEatenMap.get(member.id) ?? 0,
+        distinctRestaurants: restaurantSetMap.get(member.id)?.size ?? 0,
       };
     });
 
     rows.sort((a, b) => {
-      if (rankingMetric === 'spent') return b.totalSpent - a.totalSpent;
-      return b.totalBurgers - a.totalBurgers;
+      if (rankingMetric === 'spent') {
+        const primary = b.totalSpent - a.totalSpent;
+        if (primary !== 0) return primary;
+        return a.lastEaten - b.lastEaten;
+      }
+      const primary = b.totalBurgers - a.totalBurgers;
+      if (primary !== 0) return primary;
+      if (a.lastEaten !== b.lastEaten) return a.lastEaten - b.lastEaten;
+      if (b.distinctRestaurants !== a.distinctRestaurants) return b.distinctRestaurants - a.distinctRestaurants;
+      return a.id.localeCompare(b.id);
     });
 
     return rows;

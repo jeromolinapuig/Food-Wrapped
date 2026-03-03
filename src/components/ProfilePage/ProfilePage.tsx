@@ -95,12 +95,6 @@ export function ProfilePage({
   });
   const [monthlyRank, setMonthlyRank] = useState<number | null>(null);
   const [framesLoading, setFramesLoading] = useState(false);
-  const previousUnlockedRef = useRef<Record<FrameOption['key'], boolean>>({
-    gold: false,
-    silver: false,
-    bronze: false,
-  });
-  const autoEquipInFlightRef = useRef(false);
   const languageOptions = useMemo(
     () => [
       { value: 'en', label: 'English' },
@@ -124,7 +118,6 @@ export function ProfilePage({
   );
   const profileCacheKey = `bw-profile-${session.user.id}`;
   const followCountsCacheKey = `bw-profile-follow-counts-${session.user.id}`;
-  const frameStorageKey = `bw-avatar-frame-${session.user.id}`;
   const parseFrameKey = (value: string | null | undefined): FrameOption['key'] | null => {
     if (value === 'gold' || value === 'silver' || value === 'bronze') return value;
     return null;
@@ -232,7 +225,7 @@ export function ProfilePage({
     }
   }, [followCountsCacheKey, session.user.id]);
 
-  const loadFrameEligibility = useCallback(async () => {
+  const loadCurrentMonthRank = useCallback(async () => {
     setFramesLoading(true);
     const now = new Date();
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -243,11 +236,11 @@ export function ProfilePage({
       .select('user_id, rating, restaurant_id, datetime')
       .eq('is_burger', true)
       .eq('visibility', 'public')
+      .is('deleted_at', null)
       .gte('datetime', monthStart.toISOString())
       .lt('datetime', monthEnd.toISOString());
 
     if (error) {
-      setUnlockedFrames({ gold: false, silver: false, bronze: false });
       setMonthlyRank(null);
       setFramesLoading(false);
       return;
@@ -261,7 +254,6 @@ export function ProfilePage({
     }[];
 
     if (!rows.length) {
-      setUnlockedFrames({ gold: false, silver: false, bronze: false });
       setMonthlyRank(null);
       setFramesLoading(false);
       return;
@@ -294,28 +286,63 @@ export function ProfilePage({
     const ranking = Array.from(byUser.entries()).map(([userId, stats]) => ({
       userId,
       burgers: stats.burgers,
-      avgRating: stats.ratingCount ? stats.ratingSum / stats.ratingCount : 0,
       restaurantCount: stats.restaurants.size,
       lastTs: stats.lastTs,
     }));
 
     ranking.sort((a, b) => {
       if (b.burgers !== a.burgers) return b.burgers - a.burgers;
-      if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
+      if (a.lastTs !== b.lastTs) return a.lastTs - b.lastTs;
       if (b.restaurantCount !== a.restaurantCount) return b.restaurantCount - a.restaurantCount;
-      return a.lastTs - b.lastTs;
+      return a.userId.localeCompare(b.userId);
     });
 
     const index = ranking.findIndex((row) => row.userId === session.user.id);
-    const rank = index >= 0 ? index + 1 : null;
-    setMonthlyRank(rank);
-    setUnlockedFrames({
-      gold: rank === 1,
-      silver: rank != null && rank <= 2,
-      bronze: rank != null && rank <= 3,
-    });
+    setMonthlyRank(index >= 0 ? index + 1 : null);
     setFramesLoading(false);
   }, [session.user.id]);
+
+  const loadAvailableMonthlyFrame = useCallback(async () => {
+    const { data: latestRows, error: latestError } = await supabase
+      .from('monthly_frame_results')
+      .select('year_month')
+      .order('year_month', { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      if (latestError.code !== '42P01') {
+        console.error('Error loading latest monthly frame results', latestError);
+      }
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const latestMonth = (latestRows?.[0] as { year_month?: string | null } | undefined)?.year_month ?? null;
+    if (!latestMonth) {
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('monthly_frame_results')
+      .select('frame_key')
+      .eq('year_month', latestMonth)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading available monthly frame', error);
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const allowed = parseFrameKey((data as { frame_key?: string | null } | null)?.frame_key ?? null);
+    setUnlockedFrames({
+      gold: allowed === 'gold',
+      silver: allowed === 'silver',
+      bronze: allowed === 'bronze',
+    });
+  }, [parseFrameKey, session.user.id]);
 
   const persistEquippedFrame = useCallback(async (key: FrameOption['key'] | null) => {
     const { data, error: updateError } = await supabase
@@ -339,23 +366,22 @@ export function ProfilePage({
   useRevalidateOnFocus(() => {
     loadProfile({ showLoading: false, skipCache: true });
     loadFollowCounts();
-    loadFrameEligibility();
-  }, [loadFollowCounts, loadFrameEligibility, loadProfile], { minIntervalMs: 120000, maxStaleMs: 600000, debounceMs: 500 });
+    loadAvailableMonthlyFrame();
+    loadCurrentMonthRank();
+  }, [loadAvailableMonthlyFrame, loadCurrentMonthRank, loadFollowCounts, loadProfile], { minIntervalMs: 120000, maxStaleMs: 600000, debounceMs: 500 });
 
   useEffect(() => {
     const profileFrame = parseFrameKey(profile?.equipped_frame);
-    if (profileFrame) {
-      setEquippedFrameKey(profileFrame);
-      window.localStorage.setItem(frameStorageKey, profileFrame);
-      return;
-    }
-    const storedFrame = parseFrameKey(window.localStorage.getItem(frameStorageKey));
-    setEquippedFrameKey(storedFrame);
-  }, [frameStorageKey, profile?.equipped_frame]);
+    setEquippedFrameKey(profileFrame);
+  }, [parseFrameKey, profile?.equipped_frame]);
 
   useEffect(() => {
-    loadFrameEligibility();
-  }, [loadFrameEligibility]);
+    void loadAvailableMonthlyFrame();
+  }, [loadAvailableMonthlyFrame]);
+
+  useEffect(() => {
+    loadCurrentMonthRank();
+  }, [loadCurrentMonthRank]);
 
   useEffect(() => {
     const cachedCounts = sessionStorage.getItem(followCountsCacheKey);
@@ -418,52 +444,8 @@ export function ProfilePage({
     if (!equippedFrameKey) return;
     if (unlockedFrames[equippedFrameKey]) return;
     setEquippedFrameKey(null);
-    window.localStorage.removeItem(frameStorageKey);
     void persistEquippedFrame(null).catch(() => {});
-  }, [equippedFrameKey, frameStorageKey, persistEquippedFrame, unlockedFrames]);
-
-  useEffect(() => {
-    const previous = previousUnlockedRef.current;
-    const gainedUnlock =
-      (!previous.gold && unlockedFrames.gold) ||
-      (!previous.silver && unlockedFrames.silver) ||
-      (!previous.bronze && unlockedFrames.bronze);
-    previousUnlockedRef.current = unlockedFrames;
-
-    if (!gainedUnlock) return;
-    const bestUnlocked: FrameOption['key'] | null = unlockedFrames.gold
-      ? 'gold'
-      : unlockedFrames.silver
-        ? 'silver'
-        : unlockedFrames.bronze
-          ? 'bronze'
-          : null;
-
-    if (!bestUnlocked || equippedFrameKey === bestUnlocked || autoEquipInFlightRef.current) return;
-
-    const autoEquip = async () => {
-      autoEquipInFlightRef.current = true;
-      const previousFrame = equippedFrameKey;
-      setEquippedFrameKey(bestUnlocked);
-      try {
-        await persistEquippedFrame(bestUnlocked);
-        window.localStorage.setItem(frameStorageKey, bestUnlocked);
-        window.dispatchEvent(
-          new CustomEvent('bw-avatar-frame-updated', {
-            detail: { userId: session.user.id, frameKey: bestUnlocked },
-          })
-        );
-      } catch (err) {
-        setEquippedFrameKey(previousFrame ?? null);
-        const msg = err instanceof Error ? err.message : 'No se pudo equipar automaticamente la decoracion.';
-        setError(msg);
-      } finally {
-        autoEquipInFlightRef.current = false;
-      }
-    };
-
-    void autoEquip();
-  }, [equippedFrameKey, frameStorageKey, persistEquippedFrame, session.user.id, unlockedFrames]);
+  }, [equippedFrameKey, persistEquippedFrame, unlockedFrames]);
 
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const equippedFrameUrl = useMemo(
@@ -478,15 +460,10 @@ export function ProfilePage({
     setEquippedFrameKey(key);
     try {
       await persistEquippedFrame(key);
-      if (key) {
-        window.localStorage.setItem(frameStorageKey, key);
-      } else {
-        window.localStorage.removeItem(frameStorageKey);
-      }
       window.dispatchEvent(
         new CustomEvent('bw-avatar-frame-updated', {
           detail: { userId: session.user.id, frameKey: key },
-        })
+          })
       );
       setFramePickerOpen(false);
     } catch (err) {
@@ -499,7 +476,7 @@ export function ProfilePage({
   const handleOpenFramePicker = () => {
     setAvatarOptionsOpen(false);
     setFramePickerOpen(true);
-    void loadFrameEligibility();
+    void loadCurrentMonthRank();
   };
 
   const hasChanges = useMemo(() => {

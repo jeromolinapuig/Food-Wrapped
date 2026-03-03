@@ -30,6 +30,7 @@ type RankingEntryRow = {
   price: number | null;
   currency: string | null;
   is_burger: boolean;
+  restaurant_id?: string | null;
 };
 
 type RankingMember = {
@@ -67,7 +68,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     const entriesQuery = whereNotDeleted(
       supabase
       .from('entries')
-      .select('user_id, datetime, price, currency, is_burger')
+      .select('user_id, datetime, price, currency, is_burger, restaurant_id')
       .eq('visibility', 'public')
       .gte('datetime', from)
       .lt('datetime', to)
@@ -205,6 +206,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
   const rankingRows = useMemo(() => {
     const base = new Map<string, { spent: number; burgers: number }>();
     const lastEatenMap = new Map<string, number>();
+    const restaurantSetMap = new Map<string, Set<string>>();
     members.forEach((member) => {
       base.set(member.id, { spent: 0, burgers: 0 });
     });
@@ -218,6 +220,11 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       }
       if (entry.is_burger) current.burgers += 1;
       base.set(entry.user_id, current);
+      if (entry.is_burger && (entry as { restaurant_id?: string | null }).restaurant_id) {
+        const currentRestaurants = restaurantSetMap.get(entry.user_id) ?? new Set<string>();
+        currentRestaurants.add((entry as { restaurant_id?: string | null }).restaurant_id as string);
+        restaurantSetMap.set(entry.user_id, currentRestaurants);
+      }
       const entryTime = new Date(entry.datetime).getTime();
       const prevTime = lastEatenMap.get(entry.user_id);
       if (prevTime === undefined || entryTime > prevTime) {
@@ -234,17 +241,22 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
           totalSpent: totals.spent,
           totalBurgers: totals.burgers,
           lastEaten: lastEatenMap.get(member.id) ?? 0,
+          distinctRestaurants: restaurantSetMap.get(member.id)?.size ?? 0,
           rank: 0,
         };
       });
 
     rows.sort((a, b) => {
-      const primary =
-        rankingMetric === 'spent'
-          ? b.totalSpent - a.totalSpent
-          : b.totalBurgers - a.totalBurgers;
+      if (rankingMetric === 'spent') {
+        const primary = b.totalSpent - a.totalSpent;
+        if (primary !== 0) return primary;
+        return a.lastEaten - b.lastEaten;
+      }
+      const primary = b.totalBurgers - a.totalBurgers;
       if (primary !== 0) return primary;
-      return a.lastEaten - b.lastEaten;
+      if (a.lastEaten !== b.lastEaten) return a.lastEaten - b.lastEaten;
+      if (b.distinctRestaurants !== a.distinctRestaurants) return b.distinctRestaurants - a.distinctRestaurants;
+      return a.id.localeCompare(b.id);
     });
 
     let lastValue: number | null = null;
