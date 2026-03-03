@@ -440,13 +440,6 @@ export function ProfilePage({
     return lockBodyScroll();
   }, [avatarOptionsOpen, framePickerOpen]);
 
-  useEffect(() => {
-    if (!equippedFrameKey) return;
-    if (unlockedFrames[equippedFrameKey]) return;
-    setEquippedFrameKey(null);
-    void persistEquippedFrame(null).catch(() => {});
-  }, [equippedFrameKey, persistEquippedFrame, unlockedFrames]);
-
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
   const equippedFrameUrl = useMemo(
     () => FRAME_OPTIONS.find((frame) => frame.key === equippedFrameKey)?.src ?? null,
