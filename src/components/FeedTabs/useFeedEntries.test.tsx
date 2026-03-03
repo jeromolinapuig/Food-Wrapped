@@ -43,41 +43,45 @@ const setupSupabase = () => {
 
   supabaseMock.from.mockImplementation((table: string) => {
     if (table === 'entries') {
-      const payload = {
-        data: [
-          {
-            id: 'e1',
-            user_id: 'u1',
-            datetime: '2026-02-01T10:00:00.000Z',
-            price: 10,
-            rating: 4,
-            is_burger: true,
-            additional_notes: null,
-            restaurant_id: 'r1',
-            burger_id: 'b1',
-            meat_type: 'beef',
-            burger_origin: 'restaurant',
-            photo_url: null,
-            homemade_ingredients: null,
-            restaurants: { name: 'Rest' },
-            burgers: { name: 'Burger', meat_type: 'beef' },
-          },
-        ],
-        error: null,
-      };
-      const promise = Promise.resolve(payload);
-      const query = {
-        order: () => query,
-        limit: () => query,
-        eq: () => query,
-        in: () => query,
-        gte: () => query,
-        lt: () => query,
-        or: () => query,
-        then: promise.then.bind(promise),
-      };
       return {
-        select: () => query,
+        select: (_columns?: string, options?: { count?: 'exact'; head?: boolean }) => {
+          const payload = options?.head
+            ? { count: 34, error: null, data: null }
+            : {
+                data: [
+                  {
+                    id: 'e1',
+                    user_id: 'u1',
+                    datetime: '2026-02-01T10:00:00.000Z',
+                    price: 10,
+                    rating: 4,
+                    is_burger: true,
+                    additional_notes: null,
+                    restaurant_id: 'r1',
+                    burger_id: 'b1',
+                    meat_type: 'beef',
+                    burger_origin: 'restaurant',
+                    photo_url: null,
+                    homemade_ingredients: null,
+                    restaurants: { name: 'Rest' },
+                    burgers: { name: 'Burger', meat_type: 'beef' },
+                  },
+                ],
+                error: null,
+              };
+          const promise = Promise.resolve(payload);
+          const query = {
+            order: () => query,
+            limit: () => query,
+            eq: () => query,
+            in: () => query,
+            gte: () => query,
+            lt: () => query,
+            or: () => query,
+            then: promise.then.bind(promise),
+          };
+          return query;
+        },
       };
     }
     if (table === 'profiles') {
@@ -151,6 +155,9 @@ describe('useFeedEntries', () => {
         username: 'user1',
         restaurantName: 'Rest',
       });
+    });
+    await waitFor(() => {
+      expect(onCountChange).toHaveBeenCalledWith(34);
     });
   });
 });

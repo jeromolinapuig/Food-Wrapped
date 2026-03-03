@@ -5,6 +5,7 @@ type FeedHeaderProps = {
   hideHeader: boolean;
   isUserFeed: boolean;
   isCustomList: boolean;
+  hideMonthFilter?: boolean;
   activeTab: FeedTab;
   onTabChange: (tab: FeedTab) => void;
   isReadOnly: boolean;
@@ -19,6 +20,7 @@ export function FeedHeader({
   hideHeader,
   isUserFeed,
   isCustomList,
+  hideMonthFilter = false,
   activeTab,
   onTabChange,
   isReadOnly,
@@ -66,7 +68,7 @@ export function FeedHeader({
         <p className="bw-helper" style={{ textAlign: 'center', marginTop: -6 }}>{authNotice}</p>
       )}
 
-      {!hideHeader && (isUserFeed || isCustomList) && (
+      {!hideHeader && !hideMonthFilter && (isUserFeed || isCustomList) && (
         <div className="bw-feed-filter bw-feed-filter-inline">
           <div className="bw-select-wrap">
             <select

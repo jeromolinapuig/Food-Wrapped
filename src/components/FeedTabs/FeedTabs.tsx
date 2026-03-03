@@ -34,6 +34,7 @@ type FeedTabsProps = {
   ignorePrivacy?: boolean;
   onCountChange?: (count: number) => void;
   hideHeader?: boolean;
+  hideMonthFilter?: boolean;
   headerOnly?: boolean;
   monthFilter?: string;
   onMonthFilterChange?: (value: string) => void;
@@ -61,6 +62,7 @@ export function FeedTabs({
   ignorePrivacy = false,
   onCountChange,
   hideHeader = false,
+  hideMonthFilter = false,
   headerOnly = false,
   monthFilter,
   onMonthFilterChange,
@@ -204,6 +206,7 @@ export function FeedTabs({
         hideHeader={hideHeader}
         isUserFeed={isUserFeed}
         isCustomList={isCustomList}
+        hideMonthFilter={hideMonthFilter}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isReadOnly={isReadOnly}

@@ -399,7 +399,6 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
                     adminMode={isAdminView}
                     focusUserId={userId}
                     ignorePrivacy={isAdminView}
-                    onCountChange={setPostsCount}
                     headerOnly
                     monthFilter={monthFilter}
                     onMonthFilterChange={setMonthFilter}

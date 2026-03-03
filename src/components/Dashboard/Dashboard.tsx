@@ -722,7 +722,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
                 <FeedTabs
                   currentUserId={session.user.id}
                   focusUserId={session.user.id}
-                  onCountChange={setPostsCount}
                   headerOnly
                   monthFilter={monthFilter}
                   onMonthFilterChange={setMonthFilter}

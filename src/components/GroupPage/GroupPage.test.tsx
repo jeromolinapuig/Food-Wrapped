@@ -5,6 +5,7 @@ import { GroupPage } from './GroupPage';
 import { supabase } from '../../lib/supabaseClient';
 
 const navigateMock = vi.fn();
+const feedTabsSpy = vi.fn();
 
 vi.mock('@mui/icons-material', () => ({
   Euro: () => null,
@@ -97,7 +98,10 @@ vi.mock('../FeedTabs/FeedTabs', () => ({
   FeedTabs: (props: {
     onOpenEntry?: (entryId: string) => void;
     onOpenProfile?: (userId: string) => void;
+    monthFilter?: string;
+    hideMonthFilter?: boolean;
   }) => {
+    feedTabsSpy(props);
     return (
       <div>
         <button type="button" onClick={() => props.onOpenEntry?.('entry-77')}>
@@ -132,6 +136,7 @@ describe('GroupPage', () => {
   beforeEach(() => {
     const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
     navigateMock.mockReset();
+    feedTabsSpy.mockReset();
     fromMock.mockReset();
     fromMock.mockImplementation((table: string) => {
       const queue = tableQueues.get(table) ?? [];
@@ -229,5 +234,11 @@ describe('GroupPage', () => {
     expect(navigateMock).toHaveBeenCalledWith('/users/u2', {
       state: { returnTo: '/groups/g1', returnProfileUserId: null },
     });
+    expect(feedTabsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hideMonthFilter: true,
+        monthFilter: 'all',
+      })
+    );
   });
 });

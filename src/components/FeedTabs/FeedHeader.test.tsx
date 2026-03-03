@@ -11,6 +11,7 @@ describe('FeedHeader', () => {
         hideHeader={false}
         isUserFeed={false}
         isCustomList={false}
+        hideMonthFilter={false}
         activeTab="global"
         onTabChange={onTabChange}
         isReadOnly={false}
@@ -35,6 +36,7 @@ describe('FeedHeader', () => {
         hideHeader={false}
         isUserFeed
         isCustomList={false}
+        hideMonthFilter={false}
         activeTab="global"
         onTabChange={() => {}}
         isReadOnly={false}
@@ -50,5 +52,26 @@ describe('FeedHeader', () => {
     );
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'all' } });
     expect(onMonthFilterChange).toHaveBeenCalledWith('all');
+  });
+
+  it('oculta el filtro de mes cuando se indica expresamente', () => {
+    render(
+      <FeedHeader
+        hideHeader={false}
+        isUserFeed={false}
+        isCustomList
+        hideMonthFilter
+        activeTab="global"
+        onTabChange={() => {}}
+        isReadOnly={false}
+        authNotice={null}
+        onAuthNoticeChange={() => {}}
+        effectiveMonthFilter="2026-03"
+        onMonthFilterChange={() => {}}
+        monthOptions={[{ value: '2026-03', label: 'Marzo' }]}
+      />
+    );
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 });
