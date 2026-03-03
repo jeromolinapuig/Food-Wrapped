@@ -75,11 +75,16 @@ export function useEntryComments({
 
     const rows = (data ?? []) as SupabaseCommentRow[];
     const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
-    let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+    let profileMap: Record<string, {
+      username: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+      equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+    }> = {};
     if (userIds.length) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', userIds);
       profileMap = Object.fromEntries(
         (profilesData ?? []).map((profile) => [
@@ -88,6 +93,7 @@ export function useEntryComments({
             username: (profile as { username: string | null }).username,
             display_name: (profile as { display_name: string | null }).display_name,
             avatar_url: (profile as { avatar_url: string | null }).avatar_url,
+            equipped_frame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
           },
         ])
       );
@@ -104,6 +110,7 @@ export function useEntryComments({
         username: profile?.username ?? 'usuario',
         displayName: profile?.display_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
+        avatarFrame: profile?.equipped_frame ?? null,
       };
     });
 
@@ -157,11 +164,16 @@ export function useEntryComments({
 
     const rows = (data ?? []) as SupabaseCommentRow[];
     const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
-    let profileMap: Record<string, { username: string | null; display_name: string | null; avatar_url: string | null }> = {};
+    let profileMap: Record<string, {
+      username: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+      equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+    }> = {};
     if (userIds.length) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', userIds);
       profileMap = Object.fromEntries(
         (profilesData ?? []).map((profile) => [
@@ -170,6 +182,7 @@ export function useEntryComments({
             username: (profile as { username: string | null }).username,
             display_name: (profile as { display_name: string | null }).display_name,
             avatar_url: (profile as { avatar_url: string | null }).avatar_url,
+            equipped_frame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
           },
         ])
       );
@@ -190,6 +203,7 @@ export function useEntryComments({
         username: profile?.username ?? 'usuario',
         displayName: profile?.display_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
+        avatarFrame: profile?.equipped_frame ?? null,
       });
     });
 
@@ -227,6 +241,33 @@ export function useEntryComments({
     }
     void Promise.all(entries.map((entry) => loadEntryComments(entry.id)));
   }, [commentMode, entries, headerOnly, loadEntryComments, loadPreviewComments, refreshKey]);
+
+  useEffect(() => {
+    if (headerOnly || commentMode === 'none') return;
+    const handleFrameUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ userId?: string; frameKey?: 'gold' | 'silver' | 'bronze' | null }>;
+      const changedUserId = custom.detail?.userId;
+      if (!changedUserId) return;
+      const nextFrame = custom.detail?.frameKey ?? null;
+      setEntryComments((prev) => {
+        let changed = false;
+        const next: Record<string, EntryComment[]> = {};
+        Object.entries(prev).forEach(([entryId, comments]) => {
+          const mapped = comments.map((comment) => {
+            if (comment.userId !== changedUserId || comment.avatarFrame === nextFrame) return comment;
+            changed = true;
+            return { ...comment, avatarFrame: nextFrame };
+          });
+          next[entryId] = mapped;
+        });
+        return changed ? next : prev;
+      });
+    };
+    window.addEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    return () => {
+      window.removeEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    };
+  }, [commentMode, headerOnly]);
 
   const submitComment = useCallback(
     async (entryId: string) => {

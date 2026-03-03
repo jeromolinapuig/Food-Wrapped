@@ -19,6 +19,7 @@ describe('CommentConfirmDialog', () => {
             username: 'u',
             displayName: null,
             avatarUrl: null,
+            avatarFrame: null,
           },
         }}
         onCancel={onCancel}

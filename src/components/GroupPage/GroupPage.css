@@ -92,6 +92,18 @@
   display: block;
 }
 
+.bw-ranking-avatar .bw-avatar-wrap,
+.bw-ranking-avatar .bw-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.bw-ranking-avatar .bw-avatar-frame {
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+}
+
 .bw-ranking-name {
   font-weight: 600;
 }

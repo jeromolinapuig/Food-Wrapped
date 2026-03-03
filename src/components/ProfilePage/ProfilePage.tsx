@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cropper, { type Area } from 'react-easy-crop';
-import { BookmarksOutlined } from '@mui/icons-material';
+import { Block, BookmarksOutlined, Check, Close } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { useTranslation } from 'react-i18next';
@@ -9,9 +9,11 @@ import { TopMenu } from '../TopMenu/TopMenu';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
+import { ModalBase } from '../common/ModalBase';
 import { cropImageFile } from '../../utils/cropImage';
 import { compressImage } from '../../utils/image';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
+import { lockBodyScroll } from '../../utils/scrollLock';
 import { usePreferences } from '../../context/PreferencesContext';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
@@ -22,6 +24,7 @@ type ProfileData = {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  equipped_frame?: 'gold' | 'silver' | 'bronze' | null;
   is_private?: boolean | null;
   is_admin?: boolean | null;
   preferred_language?: string | null;
@@ -36,6 +39,19 @@ type ProfilePageProps = {
   adminModeEnabled?: boolean;
   onAdminModeChange?: (enabled: boolean) => void;
 };
+
+type FrameOption = {
+  key: 'gold' | 'silver' | 'bronze';
+  label: string;
+  src: string;
+  rule: string;
+};
+
+const FRAME_OPTIONS: FrameOption[] = [
+  { key: 'gold', label: 'Gold', src: '/frames/gold_frame.svg', rule: 'Top 1 del mes' },
+  { key: 'silver', label: 'Silver', src: '/frames/silver_frame.svg', rule: 'Top 2 del mes' },
+  { key: 'bronze', label: 'Bronze', src: '/frames/bronze_frame.svg', rule: 'Top 3 del mes' },
+];
 
 export function ProfilePage({
   session,
@@ -69,6 +85,16 @@ export function ProfilePage({
   const [avatarCropArea, setAvatarCropArea] = useState<Area | null>(null);
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
   const [followListMode, setFollowListMode] = useState<FollowListMode | null>(null);
+  const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
+  const [framePickerOpen, setFramePickerOpen] = useState(false);
+  const [equippedFrameKey, setEquippedFrameKey] = useState<FrameOption['key'] | null>(null);
+  const [unlockedFrames, setUnlockedFrames] = useState<Record<FrameOption['key'], boolean>>({
+    gold: false,
+    silver: false,
+    bronze: false,
+  });
+  const [monthlyRank, setMonthlyRank] = useState<number | null>(null);
+  const [framesLoading, setFramesLoading] = useState(false);
   const languageOptions = useMemo(
     () => [
       { value: 'en', label: 'English' },
@@ -92,6 +118,10 @@ export function ProfilePage({
   );
   const profileCacheKey = `bw-profile-${session.user.id}`;
   const followCountsCacheKey = `bw-profile-follow-counts-${session.user.id}`;
+  const parseFrameKey = (value: string | null | undefined): FrameOption['key'] | null => {
+    if (value === 'gold' || value === 'silver' || value === 'bronze') return value;
+    return null;
+  };
 
   const loadProfile = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -195,10 +225,163 @@ export function ProfilePage({
     }
   }, [followCountsCacheKey, session.user.id]);
 
+  const loadCurrentMonthRank = useCallback(async () => {
+    setFramesLoading(true);
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+
+    const { data, error } = await supabase
+      .from('entries')
+      .select('user_id, rating, restaurant_id, datetime')
+      .eq('is_burger', true)
+      .eq('visibility', 'public')
+      .is('deleted_at', null)
+      .gte('datetime', monthStart.toISOString())
+      .lt('datetime', monthEnd.toISOString());
+
+    if (error) {
+      setMonthlyRank(null);
+      setFramesLoading(false);
+      return;
+    }
+
+    const rows = (data ?? []) as {
+      user_id: string;
+      rating: number | null;
+      restaurant_id: string | null;
+      datetime: string;
+    }[];
+
+    if (!rows.length) {
+      setMonthlyRank(null);
+      setFramesLoading(false);
+      return;
+    }
+
+    const byUser = new Map<
+      string,
+      { burgers: number; ratingSum: number; ratingCount: number; restaurants: Set<string>; lastTs: number }
+    >();
+
+    rows.forEach((row) => {
+      const current = byUser.get(row.user_id) ?? {
+        burgers: 0,
+        ratingSum: 0,
+        ratingCount: 0,
+        restaurants: new Set<string>(),
+        lastTs: 0,
+      };
+      current.burgers += 1;
+      if (row.rating != null) {
+        current.ratingSum += row.rating;
+        current.ratingCount += 1;
+      }
+      if (row.restaurant_id) current.restaurants.add(row.restaurant_id);
+      const ts = new Date(row.datetime).getTime();
+      if (!Number.isNaN(ts) && ts > current.lastTs) current.lastTs = ts;
+      byUser.set(row.user_id, current);
+    });
+
+    const ranking = Array.from(byUser.entries()).map(([userId, stats]) => ({
+      userId,
+      burgers: stats.burgers,
+      restaurantCount: stats.restaurants.size,
+      lastTs: stats.lastTs,
+    }));
+
+    ranking.sort((a, b) => {
+      if (b.burgers !== a.burgers) return b.burgers - a.burgers;
+      if (a.lastTs !== b.lastTs) return a.lastTs - b.lastTs;
+      if (b.restaurantCount !== a.restaurantCount) return b.restaurantCount - a.restaurantCount;
+      return a.userId.localeCompare(b.userId);
+    });
+
+    const index = ranking.findIndex((row) => row.userId === session.user.id);
+    setMonthlyRank(index >= 0 ? index + 1 : null);
+    setFramesLoading(false);
+  }, [session.user.id]);
+
+  const loadAvailableMonthlyFrame = useCallback(async () => {
+    const { data: latestRows, error: latestError } = await supabase
+      .from('monthly_frame_results')
+      .select('year_month')
+      .order('year_month', { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      if (latestError.code !== '42P01') {
+        console.error('Error loading latest monthly frame results', latestError);
+      }
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const latestMonth = (latestRows?.[0] as { year_month?: string | null } | undefined)?.year_month ?? null;
+    if (!latestMonth) {
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('monthly_frame_results')
+      .select('frame_key')
+      .eq('year_month', latestMonth)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading available monthly frame', error);
+      setUnlockedFrames({ gold: false, silver: false, bronze: false });
+      return;
+    }
+
+    const allowed = parseFrameKey((data as { frame_key?: string | null } | null)?.frame_key ?? null);
+    setUnlockedFrames({
+      gold: allowed === 'gold',
+      silver: allowed === 'silver',
+      bronze: allowed === 'bronze',
+    });
+  }, [parseFrameKey, session.user.id]);
+
+  const persistEquippedFrame = useCallback(async (key: FrameOption['key'] | null) => {
+    const { data, error: updateError } = await supabase
+      .from('profiles')
+      .update({ equipped_frame: key })
+      .eq('id', session.user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      if (updateError.code !== '42703') {
+        throw updateError;
+      }
+      // Column still not deployed. Keep local value as fallback.
+      return;
+    }
+
+    setProfile(data as ProfileData);
+  }, [session.user.id]);
+
   useRevalidateOnFocus(() => {
     loadProfile({ showLoading: false, skipCache: true });
     loadFollowCounts();
-  }, [loadFollowCounts, loadProfile], { minIntervalMs: 120000, maxStaleMs: 600000, debounceMs: 500 });
+    loadAvailableMonthlyFrame();
+    loadCurrentMonthRank();
+  }, [loadAvailableMonthlyFrame, loadCurrentMonthRank, loadFollowCounts, loadProfile], { minIntervalMs: 120000, maxStaleMs: 600000, debounceMs: 500 });
+
+  useEffect(() => {
+    const profileFrame = parseFrameKey(profile?.equipped_frame);
+    setEquippedFrameKey(profileFrame);
+  }, [parseFrameKey, profile?.equipped_frame]);
+
+  useEffect(() => {
+    void loadAvailableMonthlyFrame();
+  }, [loadAvailableMonthlyFrame]);
+
+  useEffect(() => {
+    loadCurrentMonthRank();
+  }, [loadCurrentMonthRank]);
 
   useEffect(() => {
     const cachedCounts = sessionStorage.getItem(followCountsCacheKey);
@@ -252,7 +435,50 @@ export function ProfilePage({
     usernameInputRef.current = usernameInput;
   }, [usernameInput]);
 
+  useEffect(() => {
+    if (!avatarOptionsOpen && !framePickerOpen) return;
+    return lockBodyScroll();
+  }, [avatarOptionsOpen, framePickerOpen]);
+
+  useEffect(() => {
+    if (!equippedFrameKey) return;
+    if (unlockedFrames[equippedFrameKey]) return;
+    setEquippedFrameKey(null);
+    void persistEquippedFrame(null).catch(() => {});
+  }, [equippedFrameKey, persistEquippedFrame, unlockedFrames]);
+
   const currentAvatar = useMemo(() => avatarPreview ?? profile?.avatar_url ?? null, [avatarPreview, profile?.avatar_url]);
+  const equippedFrameUrl = useMemo(
+    () => FRAME_OPTIONS.find((frame) => frame.key === equippedFrameKey)?.src ?? null,
+    [equippedFrameKey]
+  );
+  const initialLetter = (profile?.username ?? username ?? session.user.email?.[0] ?? '?').charAt(0).toUpperCase();
+
+  const handleSelectFrame = async (key: FrameOption['key'] | null) => {
+    if (key && !unlockedFrames[key]) return;
+    const previous = equippedFrameKey;
+    setEquippedFrameKey(key);
+    try {
+      await persistEquippedFrame(key);
+      window.dispatchEvent(
+        new CustomEvent('bw-avatar-frame-updated', {
+          detail: { userId: session.user.id, frameKey: key },
+          })
+      );
+      setFramePickerOpen(false);
+    } catch (err) {
+      setEquippedFrameKey(previous ?? null);
+      const msg = err instanceof Error ? err.message : 'No se pudo guardar la decoracion.';
+      setError(msg);
+    }
+  };
+
+  const handleOpenFramePicker = () => {
+    setAvatarOptionsOpen(false);
+    setFramePickerOpen(true);
+    void loadCurrentMonthRank();
+  };
+
   const hasChanges = useMemo(() => {
     const usernameChanged = (usernameInput.trim() || '') !== (profile?.username ?? '');
     const bioChanged = (bioInput.trim() || '') !== (profile?.bio ?? '');
@@ -490,22 +716,34 @@ export function ProfilePage({
               <BookmarksOutlined fontSize="small" />
             </button>
             <div className="bw-profile-header">
-              <div className="bw-avatar bw-avatar-lg">
-                {currentAvatar ? (
-                  <img
-                    src={currentAvatar}
-                    alt={profile?.username ?? username ?? session.user.email}
-                    className="bw-avatar-image"
-                    onClick={() => fileInputRef.current?.click()}
-                  />
-                ) : (
-                  <div className="bw-avatar-placeholder" onClick={() => fileInputRef.current?.click()}>
-                    {(profile?.username ?? username ?? session.user.email?.[0] ?? '?')
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                className="bw-profile-avatar-trigger"
+                onClick={() => setAvatarOptionsOpen(true)}
+                aria-label="Opciones de avatar"
+              >
+                <span className="bw-profile-avatar-shell">
+                  <span className="bw-avatar bw-avatar-lg">
+                    {currentAvatar ? (
+                      <img
+                        src={currentAvatar}
+                        alt={profile?.username ?? username ?? session.user.email}
+                        className="bw-avatar-image"
+                      />
+                    ) : (
+                      <span className="bw-avatar-placeholder">{initialLetter}</span>
+                    )}
+                  </span>
+                  {equippedFrameUrl ? (
+                    <img
+                      src={equippedFrameUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="bw-profile-avatar-frame"
+                    />
+                  ) : null}
+                </span>
+              </button>
               <div>
                 <h1 className="bw-profile-username" style={{ margin: 0, fontSize: 22 }}>
                   @{profile?.username ?? username ?? 'usuario'}
@@ -669,6 +907,126 @@ export function ProfilePage({
         onListCount={handleFollowListCount}
         onViewPosts={handleOpenUserFeed}
       />
+
+      <ModalBase
+        open={avatarOptionsOpen}
+        onClose={() => setAvatarOptionsOpen(false)}
+        modalClassName="bw-modal bw-profile-avatar-modal"
+      >
+        <div className="bw-modal-header">
+          <div>
+            <h2 className="bw-modal-title">Avatar</h2>
+            <p className="bw-modal-subtitle">Elige que quieres cambiar.</p>
+          </div>
+          <button
+            type="button"
+            className="bw-icon-button"
+            onClick={() => setAvatarOptionsOpen(false)}
+            aria-label={t('common.close')}
+          >
+            <Close fontSize="small" />
+          </button>
+        </div>
+        <div className="bw-profile-avatar-options">
+          <button
+            type="button"
+            className="bw-btn bw-btn-primary"
+            onClick={() => {
+              setAvatarOptionsOpen(false);
+              fileInputRef.current?.click();
+            }}
+          >
+            Cambiar foto de perfil
+          </button>
+          <button
+            type="button"
+            className="bw-btn bw-btn-ghost"
+            onClick={handleOpenFramePicker}
+          >
+            Cambiar decoracion de avatar
+          </button>
+        </div>
+      </ModalBase>
+
+      <ModalBase
+        open={framePickerOpen}
+        onClose={() => setFramePickerOpen(false)}
+        modalClassName="bw-modal bw-profile-avatar-modal"
+      >
+        <div className="bw-modal-header">
+          <div>
+            <h2 className="bw-modal-title">Decoracion de avatar</h2>
+            <p className="bw-modal-subtitle">
+              {monthlyRank ? `Tu posicion mensual: #${monthlyRank}` : 'Aun no tienes posicion en el ranking mensual.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="bw-icon-button"
+            onClick={() => setFramePickerOpen(false)}
+            aria-label={t('common.close')}
+          >
+            <Close fontSize="small" />
+          </button>
+        </div>
+        <div className="bw-profile-frame-list">
+          <button
+            type="button"
+            className={`bw-profile-frame-item ${equippedFrameKey === null ? 'is-selected' : ''}`}
+            onClick={() => {
+              void handleSelectFrame(null);
+            }}
+          >
+            <span className="bw-profile-frame-preview bw-profile-frame-preview-none">X</span>
+            <span className="bw-profile-frame-meta">
+              <span className="bw-profile-frame-name">Sin marco</span>
+              <span className="bw-profile-frame-rule">Quita la decoracion actual</span>
+            </span>
+            {equippedFrameKey === null ? <Check fontSize="small" /> : null}
+          </button>
+
+          {FRAME_OPTIONS.map((frame) => {
+            const unlocked = unlockedFrames[frame.key];
+            const isSelected = equippedFrameKey === frame.key;
+            return (
+              <button
+                type="button"
+                key={frame.key}
+                className={`bw-profile-frame-item ${isSelected ? 'is-selected' : ''} ${!unlocked ? 'is-locked' : ''}`}
+                onClick={() => {
+                  void handleSelectFrame(frame.key);
+                }}
+                disabled={!unlocked || framesLoading}
+              >
+                <span className="bw-profile-frame-preview-shell">
+                  <span className="bw-profile-frame-preview">
+                    {currentAvatar ? (
+                      <img
+                        src={currentAvatar}
+                        alt=""
+                        className="bw-profile-frame-preview-avatar"
+                      />
+                    ) : (
+                      <span className="bw-avatar-placeholder">{initialLetter}</span>
+                    )}
+                  </span>
+                  <img src={frame.src} alt="" aria-hidden="true" className="bw-profile-frame-preview-overlay" />
+                  {!unlocked ? (
+                    <span className="bw-profile-frame-lock" title="No disponible">
+                      <Block fontSize="small" />
+                    </span>
+                  ) : null}
+                </span>
+                <span className="bw-profile-frame-meta">
+                  <span className="bw-profile-frame-name">{frame.label}</span>
+                  <span className="bw-profile-frame-rule">{frame.rule}</span>
+                </span>
+                {isSelected ? <Check fontSize="small" /> : null}
+              </button>
+            );
+          })}
+        </div>
+      </ModalBase>
 
       {avatarCropSrc && (
         <div className="bw-photo-viewer-backdrop" onClick={handleAvatarCropCancel}>

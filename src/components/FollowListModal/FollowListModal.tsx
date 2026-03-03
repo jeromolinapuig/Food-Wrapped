@@ -17,6 +17,7 @@ type FollowListItem = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
   bio: string | null;
   isOutgoing: boolean;
   isIncoming: boolean;
@@ -93,7 +94,7 @@ export function FollowListModal({
       }
 
       const [{ data: profilesData, error: profilesError }, extraFollows] = await Promise.all([
-        supabase.from('profiles').select('id, username, display_name, avatar_url, bio').in('id', userIds),
+        supabase.from('profiles').select('id, username, display_name, avatar_url, equipped_frame, bio').in('id', userIds),
         mode === 'followers'
           ? supabase
               .from('follows')
@@ -133,6 +134,7 @@ export function FollowListModal({
           username: (p as { username: string | null }).username,
           displayName: (p as { display_name: string | null }).display_name,
           avatarUrl: (p as { avatar_url: string | null }).avatar_url,
+          avatarFrame: ((p as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
           bio: (p as { bio: string | null }).bio,
           isOutgoing: Boolean(outgoingFollowId),
           isIncoming: Boolean(incomingFollowId),
@@ -321,6 +323,7 @@ export function FollowListModal({
               key={item.id}
               handle={item.username ?? 'usuario'}
               avatarUrl={item.avatarUrl}
+              avatarFrame={item.avatarFrame}
               avatarAlt={item.username ?? ''}
               avatarInitial={(item.username ?? '?').charAt(0).toUpperCase()}
               meta={metaText || null}

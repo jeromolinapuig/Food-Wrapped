@@ -41,6 +41,7 @@ type SearchUser = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  equipped_frame: 'gold' | 'silver' | 'bronze' | null;
   bio: string | null;
 };
 
@@ -163,7 +164,7 @@ export function FeedPage({
       setSearchError(null);
       let query = supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio')
+        .select('id, username, display_name, avatar_url, equipped_frame, bio')
         .ilike('username', `%${trimmedTerm}%`)
         .limit(10);
 
@@ -407,6 +408,7 @@ export function FeedPage({
                     key={user.id}
                     handle={user.username ?? 'user'}
                     avatarUrl={user.avatar_url}
+                    avatarFrame={user.equipped_frame}
                     avatarAlt={user.username ?? ''}
                     avatarInitial={(user.username ?? '?').charAt(0).toUpperCase()}
                     meta={

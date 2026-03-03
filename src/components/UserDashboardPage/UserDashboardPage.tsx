@@ -61,6 +61,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
     username: string | null;
     displayName: string | null;
     avatarUrl: string | null;
+    avatarFrame: 'gold' | 'silver' | 'bronze' | null;
     isPrivate?: boolean | null;
   } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
@@ -69,13 +70,13 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('username, display_name, avatar_url, is_private')
+      .select('username, display_name, avatar_url, equipped_frame, is_private')
       .eq('id', userId)
       .single();
 
     if (error) {
       console.error('Error loading profile', error);
-      setProfile({ username: null, displayName: null, avatarUrl: null });
+      setProfile({ username: null, displayName: null, avatarUrl: null, avatarFrame: null });
       return;
     }
 
@@ -83,6 +84,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
       username: (data as { username: string | null }).username,
       displayName: (data as { display_name: string | null }).display_name,
       avatarUrl: (data as { avatar_url: string | null }).avatar_url,
+      avatarFrame: ((data as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       isPrivate: (data as { is_private: boolean | null }).is_private,
     });
   }, [userId]);
@@ -305,6 +307,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
 
   const titleHandle = profile?.username ?? profile?.displayName ?? 'usuario';
   const headerAvatar = profile?.avatarUrl ?? null;
+  const headerAvatarFrame = profile?.avatarFrame ?? null;
   const headerAlt = profile?.displayName ?? profile?.username ?? 'Perfil';
 
   return (
@@ -315,6 +318,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
           logoSrc={headerAvatar ?? undefined}
           logoAlt={headerAvatar ? headerAlt : 'Burger Wrapped'}
           logoVariant={headerAvatar ? 'avatar' : 'square'}
+          logoFrameKey={headerAvatarFrame}
           leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
         />
 

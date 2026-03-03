@@ -15,7 +15,7 @@ import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/mat
 import { useState, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Avatar } from '../common/Avatar';
+import { UserAvatar } from '../common/UserAvatar';
 import { EntryComments } from '../Comments/EntryComments';
 import type { CommentMode, EntryComment } from '../Comments/types';
 import type { FeedEntry } from './types';
@@ -169,10 +169,11 @@ export function FeedEntryCard({
         <div className="bw-feed-entry-header">
           {shouldDisableProfileClick ? (
             <div className="bw-feed-user">
-              <Avatar
-                url={entry.avatarUrl}
-                alt={entry.username}
-                initial={entry.username?.[0]?.toUpperCase() ?? '?'}
+              <UserAvatar
+                avatarUrl={entry.avatarUrl}
+                avatarFrame={entry.avatarFrame}
+                username={entry.username}
+                displayName={entry.displayName}
                 loading="lazy"
               />
               <div>
@@ -185,10 +186,11 @@ export function FeedEntryCard({
               className="bw-feed-user as-button"
               onClick={() => onOpenProfile?.(entry.userId)}
             >
-              <Avatar
-                url={entry.avatarUrl}
-                alt={entry.username}
-                initial={entry.username?.[0]?.toUpperCase() ?? '?'}
+              <UserAvatar
+                avatarUrl={entry.avatarUrl}
+                avatarFrame={entry.avatarFrame}
+                username={entry.username}
+                displayName={entry.displayName}
                 loading="lazy"
               />
               <div>

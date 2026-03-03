@@ -67,6 +67,18 @@
   display: block;
 }
 
+.bw-header-icon .bw-avatar-wrap,
+.bw-header-icon .bw-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.bw-header-icon .bw-avatar-frame {
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+}
+
 .bw-title {
   margin: 0;
   font-size: 20px;

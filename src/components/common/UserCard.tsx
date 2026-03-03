@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { Avatar } from './Avatar';
+import { UserAvatar } from './UserAvatar';
 
 type UserCardProps = {
   avatarUrl?: string | null;
+  avatarFrame?: 'gold' | 'silver' | 'bronze' | null;
   avatarAlt?: string;
   avatarInitial?: string;
   avatarSize?: 'sm' | 'lg';
@@ -21,6 +22,7 @@ type UserCardProps = {
 
 export function UserCard({
   avatarUrl,
+  avatarFrame,
   avatarAlt,
   avatarInitial,
   avatarSize = 'sm',
@@ -51,8 +53,10 @@ export function UserCard({
     return (
       <button type="button" className={containerClassName} onClick={onClick}>
         <div className="bw-user-info">
-          <Avatar
-            url={avatarUrl}
+          <UserAvatar
+            avatarUrl={avatarUrl}
+            avatarFrame={avatarFrame}
+            username={handle}
             alt={avatarAlt}
             initial={avatarInitial}
             size={avatarSize}
@@ -72,8 +76,10 @@ export function UserCard({
   return (
     <div className={containerClassName}>
       <InfoTag {...infoProps}>
-        <Avatar
-          url={avatarUrl}
+        <UserAvatar
+          avatarUrl={avatarUrl}
+          avatarFrame={avatarFrame}
+          username={handle}
           alt={avatarAlt}
           initial={avatarInitial}
           size={avatarSize}

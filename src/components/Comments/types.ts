@@ -9,6 +9,7 @@ export type EntryComment = {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
 };
 
 export type SupabaseCommentRow = {

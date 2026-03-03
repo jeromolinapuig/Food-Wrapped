@@ -1,4 +1,4 @@
-import { Avatar } from '../common/Avatar';
+import { UserAvatar } from '../common/UserAvatar';
 import { useTranslation } from 'react-i18next';
 import type { CommentMode, EntryComment } from './types';
 
@@ -67,14 +67,14 @@ export function EntryComments({
               {visibleComments.map((comment) => {
                 const canDelete = canModerateComments || Boolean(viewerId && (viewerId === comment.userId || viewerId === entryUserId));
                 const commentName = comment.displayName || comment.username;
-                const initial = comment.username?.[0]?.toUpperCase() ?? '?';
                 const content = (
                   <>
                     <div className="bw-comment-avatar">
-                      <Avatar
-                        url={comment.avatarUrl}
-                        alt={comment.username}
-                        initial={initial}
+                      <UserAvatar
+                        avatarUrl={comment.avatarUrl}
+                        avatarFrame={comment.avatarFrame}
+                        username={comment.username}
+                        displayName={comment.displayName}
                         loading="lazy"
                       />
                     </div>
@@ -127,14 +127,14 @@ export function EntryComments({
                 hour: '2-digit',
                 minute: '2-digit',
               });
-              const initial = comment.username?.[0]?.toUpperCase() ?? '?';
               const content = (
                 <>
                   <div className="bw-comment-avatar">
-                    <Avatar
-                      url={comment.avatarUrl}
-                      alt={comment.username}
-                      initial={initial}
+                    <UserAvatar
+                      avatarUrl={comment.avatarUrl}
+                      avatarFrame={comment.avatarFrame}
+                      username={comment.username}
+                      displayName={comment.displayName}
                       loading="lazy"
                     />
                   </div>

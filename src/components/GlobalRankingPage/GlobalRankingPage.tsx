@@ -13,6 +13,7 @@ import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { StatCard } from '../StatCard/StatCard';
 import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
+import { Avatar } from '../common/Avatar';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import '../Dashboard/Dashboard.css';
@@ -29,6 +30,7 @@ type RankingEntryRow = {
   price: number | null;
   currency: string | null;
   is_burger: boolean;
+  restaurant_id?: string | null;
 };
 
 type RankingMember = {
@@ -36,6 +38,7 @@ type RankingMember = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
 };
 
 type MonthOption = {
@@ -65,7 +68,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
     const entriesQuery = whereNotDeleted(
       supabase
       .from('entries')
-      .select('user_id, datetime, price, currency, is_burger')
+      .select('user_id, datetime, price, currency, is_burger, restaurant_id')
       .eq('visibility', 'public')
       .gte('datetime', from)
       .lt('datetime', to)
@@ -93,7 +96,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
 
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url')
+      .select('id, username, display_name, avatar_url, equipped_frame')
       .in('id', userIds);
 
     if (profilesError) {
@@ -104,12 +107,18 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       return;
     }
 
-    const profileMap = new Map<string, { username: string | null; display_name: string | null; avatar_url: string | null }>();
+    const profileMap = new Map<string, {
+      username: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+      equipped_frame: 'gold' | 'silver' | 'bronze' | null;
+    }>();
     (profilesData ?? []).forEach((profile) => {
       profileMap.set((profile as { id: string }).id, {
         username: (profile as { username: string | null }).username,
         display_name: (profile as { display_name: string | null }).display_name,
         avatar_url: (profile as { avatar_url: string | null }).avatar_url,
+        equipped_frame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       });
     });
 
@@ -120,6 +129,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
         username: profile?.username ?? null,
         displayName: profile?.display_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
+        avatarFrame: profile?.equipped_frame ?? null,
       };
     });
 
@@ -196,6 +206,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
   const rankingRows = useMemo(() => {
     const base = new Map<string, { spent: number; burgers: number }>();
     const lastEatenMap = new Map<string, number>();
+    const restaurantSetMap = new Map<string, Set<string>>();
     members.forEach((member) => {
       base.set(member.id, { spent: 0, burgers: 0 });
     });
@@ -209,6 +220,11 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       }
       if (entry.is_burger) current.burgers += 1;
       base.set(entry.user_id, current);
+      if (entry.is_burger && (entry as { restaurant_id?: string | null }).restaurant_id) {
+        const currentRestaurants = restaurantSetMap.get(entry.user_id) ?? new Set<string>();
+        currentRestaurants.add((entry as { restaurant_id?: string | null }).restaurant_id as string);
+        restaurantSetMap.set(entry.user_id, currentRestaurants);
+      }
       const entryTime = new Date(entry.datetime).getTime();
       const prevTime = lastEatenMap.get(entry.user_id);
       if (prevTime === undefined || entryTime > prevTime) {
@@ -225,17 +241,22 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
           totalSpent: totals.spent,
           totalBurgers: totals.burgers,
           lastEaten: lastEatenMap.get(member.id) ?? 0,
+          distinctRestaurants: restaurantSetMap.get(member.id)?.size ?? 0,
           rank: 0,
         };
       });
 
     rows.sort((a, b) => {
-      const primary =
-        rankingMetric === 'spent'
-          ? b.totalSpent - a.totalSpent
-          : b.totalBurgers - a.totalBurgers;
+      if (rankingMetric === 'spent') {
+        const primary = b.totalSpent - a.totalSpent;
+        if (primary !== 0) return primary;
+        return a.lastEaten - b.lastEaten;
+      }
+      const primary = b.totalBurgers - a.totalBurgers;
       if (primary !== 0) return primary;
-      return a.lastEaten - b.lastEaten;
+      if (a.lastEaten !== b.lastEaten) return a.lastEaten - b.lastEaten;
+      if (b.distinctRestaurants !== a.distinctRestaurants) return b.distinctRestaurants - a.distinctRestaurants;
+      return a.id.localeCompare(b.id);
     });
 
     let lastValue: number | null = null;
@@ -349,11 +370,12 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
                       )}
                     </div>
                     <div className="bw-ranking-avatar">
-                      {member.avatarUrl ? (
-                        <img src={member.avatarUrl} alt={label} />
-                      ) : (
-                        <span>{label.charAt(0).toUpperCase()}</span>
-                      )}
+                      <Avatar
+                        url={member.avatarUrl}
+                        frameKey={member.avatarFrame ?? null}
+                        alt={label}
+                        initial={label.charAt(0).toUpperCase()}
+                      />
                     </div>
                     <div className="bw-ranking-name">{label}</div>
                   </div>

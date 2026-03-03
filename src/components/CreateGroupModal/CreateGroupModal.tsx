@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserSummary } from '../../types/profiles';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { Avatar } from '../common/Avatar';
 import '../../styles/shared.css';
 import '../GroupsPage/GroupsPage.css';
 
@@ -72,7 +73,7 @@ export function CreateGroupModal({
 
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, equipped_frame')
         .in('id', mutualIds);
 
       if (cancelled) return;
@@ -88,6 +89,7 @@ export function CreateGroupModal({
         username: (profile as { username: string | null }).username,
         displayName: (profile as { display_name: string | null }).display_name,
         avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+        avatarFrame: ((profile as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       }));
 
       setFriends(mapped);
@@ -255,15 +257,13 @@ export function CreateGroupModal({
                     onClick={() => toggleSelected(friend.id)}
                   >
                     <div className="bw-user-info">
-                      <div className="bw-avatar bw-avatar-sm">
-                        {friend.avatarUrl ? (
-                          <img src={friend.avatarUrl} alt={displayName} className="bw-avatar-image" />
-                        ) : (
-                          <div className="bw-avatar-placeholder">
-                            {(friend.username ?? '?').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
+                      <Avatar
+                        url={friend.avatarUrl}
+                        frameKey={friend.avatarFrame ?? null}
+                        alt={displayName}
+                        initial={(friend.username ?? '?').charAt(0).toUpperCase()}
+                        size="sm"
+                      />
                       <div>
                         <div className="bw-user-name">@{friend.username ?? t('common.user', { defaultValue: 'user' })}</div>
                         <div className="bw-user-meta">{displayName}</div>
