@@ -12,6 +12,7 @@ type FeedTabsProps = {
   currentUserId: string;
   entryIdsFilter: string[];
   hideHeader: boolean;
+  monthFilter?: string;
   onOpenEntry: (entryId: string) => void;
 };
 
@@ -102,6 +103,7 @@ describe('SavedPostsPage functional flows', () => {
       currentUserId: 'user-1',
       entryIdsFilter: ['entry-1', 'entry-2'],
       hideHeader: true,
+      monthFilter: 'all',
     });
 
     await user.click(screen.getByRole('button', { name: 'common.close' }));

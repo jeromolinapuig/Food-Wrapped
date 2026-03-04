@@ -9,6 +9,7 @@ type FeedTabsProps = {
   isReadOnly: boolean;
   entryIdsFilter: string[];
   hideHeader: boolean;
+  monthFilter?: string;
   commentMode: string;
 };
 
@@ -77,6 +78,7 @@ describe('PostPage functional flows', () => {
       isReadOnly: false,
       entryIdsFilter: ['entry-77'],
       hideHeader: true,
+      monthFilter: 'all',
       commentMode: 'full',
     });
 

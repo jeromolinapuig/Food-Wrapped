@@ -83,6 +83,7 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
               currentUserId={currentUserId}
               entryIdsFilter={savedEntryIds}
               hideHeader
+              monthFilter="all"
               onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: '/saved' } })}
             />
           ) : (

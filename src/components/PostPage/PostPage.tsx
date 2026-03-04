@@ -40,6 +40,7 @@ export function PostPage({ session, entryId, onBack }: Readonly<PostPageProps>) 
             isReadOnly={!currentUserId}
             entryIdsFilter={[entryId]}
             hideHeader
+            monthFilter="all"
             commentMode="full"
           />
         </main>
