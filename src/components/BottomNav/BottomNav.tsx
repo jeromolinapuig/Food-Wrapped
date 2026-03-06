@@ -164,7 +164,7 @@ export function BottomNav({
 
   if (adminModeEnabled && isAdmin) {
     return (
-      <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
+      <nav className="bw-bottom-nav is-admin" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
         <button
           type="button"
           className={`bw-bottom-nav-item ${activeKey === 'admin-feed' ? 'is-active' : ''}`}
@@ -208,7 +208,7 @@ export function BottomNav({
   }
 
   return (
-    <nav className="bw-bottom-nav" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
+    <nav className="bw-bottom-nav is-main" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}

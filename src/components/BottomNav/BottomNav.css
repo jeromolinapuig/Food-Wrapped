@@ -11,16 +11,23 @@
   background: var(--bw-card-bg);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   padding: 10px 0 12px;
-  display: flex;
+  display: grid;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 0;
   z-index: 46;
+}
+
+.bw-bottom-nav.is-main {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bw-bottom-nav.is-admin {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .bw-bottom-nav-more {
   position: relative;
-  flex: 1 1 0;
+  width: 100%;
   min-width: 0;
   display: flex;
   justify-content: center;
@@ -34,11 +41,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1 1 0;
+  width: 100%;
   min-width: 0;
   padding: 6px 8px;
   cursor: pointer;
   font-size: 22px; /* controls icon size */
+}
+
+.bw-bottom-nav-more > .bw-bottom-nav-item {
+  width: 100%;
 }
 
 .bw-bottom-nav-item.is-active {
