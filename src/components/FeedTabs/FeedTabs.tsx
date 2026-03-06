@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState, type ReactNode } from 'react';
+import { startTransition, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Close } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
@@ -72,6 +72,7 @@ export function FeedTabs({
   commentMode = 'preview',
   lockedPreview,
 }: Readonly<FeedTabsProps>) {
+  const PHOTO_PREVIEW_HISTORY_KEY = 'bwPhotoPreviewOpen';
   const { t } = useTranslation();
   const {
     activeTab,
@@ -110,6 +111,7 @@ export function FeedTabs({
     onMonthFilterChange,
   });
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const photoPreviewHistoryEntryRef = useRef(false);
   const {
     entryReactions,
     pendingLikes,
@@ -153,6 +155,39 @@ export function FeedTabs({
     if (!photoPreviewUrl) return;
     return lockBodyScroll();
   }, [photoPreviewUrl]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!photoPreviewHistoryEntryRef.current) return;
+      photoPreviewHistoryEntryRef.current = false;
+      setPhotoPreviewUrl(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleOpenPhotoPreview = (url: string) => {
+    if (!photoPreviewHistoryEntryRef.current) {
+      const nextState =
+        window.history.state && typeof window.history.state === 'object'
+          ? { ...window.history.state, [PHOTO_PREVIEW_HISTORY_KEY]: true }
+          : { [PHOTO_PREVIEW_HISTORY_KEY]: true };
+      window.history.pushState(nextState, '');
+      photoPreviewHistoryEntryRef.current = true;
+    }
+    setPhotoPreviewUrl(url);
+  };
+
+  const handleClosePhotoPreview = () => {
+    if (photoPreviewHistoryEntryRef.current) {
+      photoPreviewHistoryEntryRef.current = false;
+      setPhotoPreviewUrl(null);
+      window.history.back();
+      return;
+    }
+    setPhotoPreviewUrl(null);
+  };
 
   const renderPlaceholderText = () => {
     if (isUserFeed && effectiveMonthFilter !== 'all') return t('feed.noMonthUser', { defaultValue: 'No public posts this month.' });
@@ -281,7 +316,7 @@ export function FeedTabs({
                 onEditEntry={onEditEntry}
                 onDeleteEntry={onDeleteEntry}
                 onReportEntry={handleReportEntry}
-                onPreviewPhoto={(url) => setPhotoPreviewUrl(url)}
+                onPreviewPhoto={handleOpenPhotoPreview}
                 commentMode={commentMode}
                 comments={comments}
                 commentCount={commentCount}
@@ -303,12 +338,12 @@ export function FeedTabs({
       })()}
 
       {photoPreviewUrl && (
-        <div className="bw-photo-viewer-backdrop" onClick={() => setPhotoPreviewUrl(null)}>
+        <div className="bw-photo-viewer-backdrop" onClick={handleClosePhotoPreview}>
           <div className="bw-photo-viewer" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="bw-photo-viewer-close"
-              onClick={() => setPhotoPreviewUrl(null)}
+              onClick={handleClosePhotoPreview}
               aria-label="Cerrar imagen"
             >
               <Close />

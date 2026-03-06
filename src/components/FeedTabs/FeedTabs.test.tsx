@@ -136,6 +136,7 @@ describe('FeedTabs functional flows', () => {
 
   it('opens and closes photo preview from an entry card', async () => {
     const user = userEvent.setup();
+    const historyBackSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
     feedState.entries = [{ id: 'entry-1', user_id: 'author-1' }];
 
     render(<FeedTabs currentUserId="viewer-1" />);
@@ -143,6 +144,8 @@ describe('FeedTabs functional flows', () => {
 
     expect(screen.getByText('zoomable-https://img/entry-1.jpg')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Cerrar imagen' }));
+    expect(historyBackSpy).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('zoomable-https://img/entry-1.jpg')).not.toBeInTheDocument();
+    historyBackSpy.mockRestore();
   });
 });
