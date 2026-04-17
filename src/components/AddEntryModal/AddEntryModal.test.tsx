@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AddEntryModal } from './AddEntryModal';
@@ -52,9 +52,17 @@ vi.mock('@mui/material', () => ({
     </label>
   ),
   ThemeProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  Rating: () => <div>rating</div>,
   MenuItem: ({ children, value }: { children: ReactNode; value: string }) => <option value={value}>{children}</option>,
 }));
+
+vi.mock('@mui/icons-material', () => {
+  const Icon = ({ sx: _sx, ...props }: HTMLAttributes<HTMLSpanElement> & { sx?: unknown }) => <span {...props} />;
+  return {
+    Star: Icon,
+    StarBorder: Icon,
+    StarHalf: Icon,
+  };
+});
 
 vi.mock('../../context/PreferencesContext', () => ({
   usePreferences: () => ({ currency: 'EUR' }),
@@ -102,5 +110,26 @@ describe('AddEntryModal', () => {
     });
     expect(onClose).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+
+  it('mantiene seleccionada la puntuacion al pulsar el mismo valor otra vez', () => {
+    render(
+      <AddEntryModal
+        open
+        onClose={() => {}}
+        onSaved={() => {}}
+        session={{ user: { id: 'u1' } } as never}
+        theme="light"
+        mode="create"
+      />
+    );
+
+    const ratingButton = screen.getByRole('button', { name: 'addEntry.score 4.5' });
+
+    fireEvent.click(ratingButton);
+    expect(ratingButton).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(ratingButton);
+    expect(ratingButton).toHaveAttribute('aria-pressed', 'true');
   });
 });

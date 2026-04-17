@@ -9,9 +9,9 @@ import {
   CssBaseline,
   TextField,
   ThemeProvider,
-  Rating,
   MenuItem,
 } from '@mui/material';
+import { Star, StarBorder, StarHalf } from '@mui/icons-material';
 import { addEntrySchema } from '../../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
 import { createAppTheme } from '../../theme';
@@ -34,6 +34,53 @@ type BurgerOption = {
   name: string | null;
   meat_type: MeatType | null;
 };
+
+type RatingPickerProps = {
+  value: number | null;
+  onChange: (value: number) => void;
+  color: string;
+  emptyColor: string;
+  label: string;
+};
+
+function RatingPicker({ value, onChange, color, emptyColor, label }: RatingPickerProps) {
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const starValue = index + 1;
+    const isFull = value != null && value >= starValue;
+    const isHalf = value != null && value >= starValue - 0.5 && value < starValue;
+    const Icon = isFull ? Star : isHalf ? StarHalf : StarBorder;
+
+    return (
+      <span className="bw-rating-star" key={starValue}>
+        <Icon
+          className="bw-rating-icon"
+          aria-hidden="true"
+          sx={{ color: isFull || isHalf ? color : emptyColor }}
+        />
+        <button
+          className="bw-rating-half bw-rating-half-left"
+          type="button"
+          aria-label={`${label} ${(starValue - 0.5).toFixed(1)}`}
+          aria-pressed={value === starValue - 0.5}
+          onClick={() => onChange(starValue - 0.5)}
+        />
+        <button
+          className="bw-rating-half bw-rating-half-right"
+          type="button"
+          aria-label={`${label} ${starValue.toFixed(1)}`}
+          aria-pressed={value === starValue}
+          onClick={() => onChange(starValue)}
+        />
+      </span>
+    );
+  });
+
+  return (
+    <div className="bw-rating-picker" role="group" aria-label={label}>
+      {stars}
+    </div>
+  );
+}
 
 const normalizeName = (value: string) =>
   value
@@ -829,21 +876,12 @@ export function AddEntryModal({
                 <span className="bw-label" style={{ marginBottom: 6 }}>
                   {t('addEntry.score')}
                 </span>
-                <Rating
-                  name="entry-rating"
+                <RatingPicker
                   value={ratingInput ? Number(ratingInput) : null}
-                  precision={0.5}
-                  onChange={(_e, newValue) => {
-                    setRatingInput(newValue ? String(newValue) : '');
-                  }}
-                  sx={{
-                    color: colors.accent,
-                    '& .MuiRating-iconEmpty': {
-                      color: colors.textMuted,
-                    },
-                    fontSize: 32,
-                    alignSelf: 'center',
-                  }}
+                  onChange={(newValue) => setRatingInput(String(newValue))}
+                  color={colors.accent}
+                  emptyColor={colors.textMuted}
+                  label={t('addEntry.score')}
                 />
               </div>
 
