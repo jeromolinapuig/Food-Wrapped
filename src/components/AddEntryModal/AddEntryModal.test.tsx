@@ -56,7 +56,7 @@ vi.mock('@mui/material', () => ({
 }));
 
 vi.mock('@mui/icons-material', () => {
-  const Icon = ({ sx: _sx, ...props }: HTMLAttributes<HTMLSpanElement> & { sx?: unknown }) => <span {...props} />;
+  const Icon = (props: HTMLAttributes<HTMLSpanElement> & { sx?: unknown }) => <span {...props} />;
   return {
     Star: Icon,
     StarBorder: Icon,
@@ -110,6 +110,21 @@ describe('AddEntryModal', () => {
     });
     expect(onClose).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+
+  it('no rellena fecha y hora automaticamente al crear una entrada', () => {
+    render(
+      <AddEntryModal
+        open
+        onClose={() => {}}
+        onSaved={() => {}}
+        session={{ user: { id: 'u1' } } as never}
+        theme="light"
+        mode="create"
+      />
+    );
+
+    expect(screen.getByLabelText('addEntry.datetime')).toHaveValue('');
   });
 
   it('mantiene seleccionada la puntuacion al pulsar el mismo valor otra vez', () => {

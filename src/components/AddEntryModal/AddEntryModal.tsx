@@ -16,6 +16,7 @@ import { addEntrySchema } from '../../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
 import { createAppTheme } from '../../theme';
 import { compressImage } from '../../utils/image';
+import { getPhotoTakenDateTime } from '../../utils/photoMetadata';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import ReactCrop, { convertToPixelCrop, type Crop, type PixelCrop } from 'react-image-crop';
 import { cropImageFile } from '../../utils/cropImage';
@@ -240,7 +241,7 @@ export function AddEntryModal({
       setPhotoStageHeight(360);
       setPhotoNaturalSize(null);
     } else {
-      setDatetimeInput(nowString);
+      setDatetimeInput('');
       setRestaurantInput(initialRestaurant?.name ?? '');
       setRestaurantSuggestions([]);
       setSelectedRestaurant(initialRestaurant ?? null);
@@ -328,6 +329,10 @@ export function AddEntryModal({
       return;
     }
     if (photoCropSrc) URL.revokeObjectURL(photoCropSrc);
+    const photoDateTime = await getPhotoTakenDateTime(file);
+    if (photoDateTime) {
+      setDatetimeInput(photoDateTime);
+    }
     const src = URL.createObjectURL(file);
     setPhotoCropSrc(src);
     setPhotoCropFile(file);
