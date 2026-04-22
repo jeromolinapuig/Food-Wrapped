@@ -19,6 +19,10 @@ const DEFAULT_RATES: Record<string, number> = {
   'THB->EUR': 1 / 38,
   'EUR->USD': 1.08,
   'USD->EUR': 1 / 1.08,
+  'EUR->AED': 3.97,
+  'AED->EUR': 1 / 3.97,
+  'USD->AED': 3.67,
+  'AED->USD': 1 / 3.67,
 };
 
 const localeToCurrency: Record<string, string> = {

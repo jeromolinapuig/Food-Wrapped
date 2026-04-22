@@ -10,7 +10,15 @@ import { FeedEntryCard } from './FeedEntryCard';
 import { FeedHeader } from './FeedHeader';
 import { useEntryReactions } from './useEntryReactions';
 import { useFeedEntries } from './useFeedEntries';
-import type { FeedEntry, FeedTab } from './types';
+import type {
+  FeedEntry,
+  FeedMeatTypeFilterSelection,
+  FeedMonthFilterSelection,
+  FeedPriceFilter,
+  FeedPriceFilterRange,
+  FeedPriceFilterSelection,
+  FeedTab,
+} from './types';
 import { useTranslation } from 'react-i18next';
 import { ZoomableImage } from '../common/ZoomableImage';
 import '../../styles/shared.css';
@@ -36,8 +44,13 @@ type FeedTabsProps = {
   hideHeader?: boolean;
   hideMonthFilter?: boolean;
   headerOnly?: boolean;
-  monthFilter?: string;
+  monthFilter?: FeedMonthFilterSelection;
   onMonthFilterChange?: (value: string) => void;
+  priceFilter?: FeedPriceFilterSelection;
+  priceFilterRanges?: Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
+  priceFilterCurrency?: string;
+  convertPriceAmount?: (amount: number, fromCurrency: string, toCurrency: string) => number;
+  meatTypeFilter?: FeedMeatTypeFilterSelection;
   showOwnerActions?: boolean;
   onEditEntry?: (entry: FeedEntry) => void;
   onDeleteEntry?: (entry: FeedEntry) => void;
@@ -66,6 +79,11 @@ export function FeedTabs({
   headerOnly = false,
   monthFilter,
   onMonthFilterChange,
+  priceFilter,
+  priceFilterRanges,
+  priceFilterCurrency,
+  convertPriceAmount,
+  meatTypeFilter,
   showOwnerActions = false,
   onEditEntry,
   onDeleteEntry,
@@ -109,6 +127,11 @@ export function FeedTabs({
     refreshKey,
     monthFilter,
     onMonthFilterChange,
+    priceFilter,
+    priceFilterRanges,
+    priceFilterCurrency,
+    convertPriceAmount,
+    meatTypeFilter,
   });
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const photoPreviewHistoryEntryRef = useRef(false);
@@ -190,11 +213,14 @@ export function FeedTabs({
   };
 
   const renderPlaceholderText = () => {
-    if (isUserFeed && effectiveMonthFilter !== 'all') return t('feed.noMonthUser', { defaultValue: 'No public posts this month.' });
+    const isAllMonths = Array.isArray(effectiveMonthFilter)
+      ? effectiveMonthFilter.includes('all')
+      : effectiveMonthFilter === 'all';
+    if (isUserFeed && !isAllMonths) return t('feed.noMonthUser', { defaultValue: 'No public posts this month.' });
     if (isUserFeed) return t('feed.noUserPosts', { defaultValue: 'No public posts yet.' });
-    if (hasEntryFilter && effectiveMonthFilter !== 'all') return t('feed.noSavedMonth', { defaultValue: 'No saved posts this month.' });
+    if (hasEntryFilter && !isAllMonths) return t('feed.noSavedMonth', { defaultValue: 'No saved posts this month.' });
     if (hasEntryFilter) return t('feed.noSaved', { defaultValue: 'No saved posts.' });
-    if (isCustomList && effectiveMonthFilter !== 'all') return t('feed.noGroupMonth', { defaultValue: 'No group posts this month.' });
+    if (isCustomList && !isAllMonths) return t('feed.noGroupMonth', { defaultValue: 'No group posts this month.' });
     if (isCustomList) return t('feed.noGroup', { defaultValue: 'No group posts yet.' });
     if (privacyBlocked) return t('feed.privateProfile', { defaultValue: 'This profile is private.' });
     if (isReadOnly && activeTab === 'following') return t('feedTabs.lockedFollowing');
@@ -247,7 +273,7 @@ export function FeedTabs({
         isReadOnly={isReadOnly}
         authNotice={authNotice}
         onAuthNoticeChange={setAuthNotice}
-        effectiveMonthFilter={effectiveMonthFilter}
+        effectiveMonthFilter={Array.isArray(effectiveMonthFilter) ? effectiveMonthFilter[0] ?? 'all' : effectiveMonthFilter}
         onMonthFilterChange={setEffectiveMonthFilter}
         monthOptions={monthOptions}
       />

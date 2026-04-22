@@ -4,7 +4,17 @@ import { i18n } from '../../lib/i18n';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
-import type { FeedEntry, FeedTab, MonthOption, SupabaseEntryRow } from './types';
+import type {
+  FeedEntry,
+  FeedMeatTypeFilterSelection,
+  FeedMonthFilterSelection,
+  FeedPriceFilter,
+  FeedPriceFilterRange,
+  FeedPriceFilterSelection,
+  FeedTab,
+  MonthOption,
+  SupabaseEntryRow,
+} from './types';
 
 type UseFeedEntriesOptions = {
   currentUserId: string | null;
@@ -20,8 +30,13 @@ type UseFeedEntriesOptions = {
   headerOnly: boolean;
   hideHeader: boolean;
   refreshKey: number;
-  monthFilter?: string;
+  monthFilter?: FeedMonthFilterSelection;
   onMonthFilterChange?: (value: string) => void;
+  priceFilter?: FeedPriceFilterSelection;
+  priceFilterRanges?: Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
+  priceFilterCurrency?: string;
+  convertPriceAmount?: (amount: number, fromCurrency: string, toCurrency: string) => number;
+  meatTypeFilter?: FeedMeatTypeFilterSelection;
 };
 
 type UseFeedEntriesResult = {
@@ -34,7 +49,7 @@ type UseFeedEntriesResult = {
   error: string | null;
   privacyBlocked: boolean;
   monthOptions: MonthOption[];
-  effectiveMonthFilter: string;
+  effectiveMonthFilter: FeedMonthFilterSelection;
   setEffectiveMonthFilter: (value: string) => void;
   authNotice: string | null;
   setAuthNotice: (value: string | null) => void;
@@ -77,6 +92,24 @@ const buildMonthOptions = (values: string[], locale: string, allLabel: string) =
   return options;
 };
 
+const normalizeSelection = <T extends string>(value: T | T[] | undefined, fallback: T): T[] => {
+  const values = Array.isArray(value) ? value : [value ?? fallback];
+  return values.length ? values : [fallback];
+};
+
+const selectionCachePart = <T extends string>(value: T | T[] | undefined, fallback: T) =>
+  normalizeSelection(value, fallback).sort((a, b) => a.localeCompare(b)).join(',');
+
+const defaultPriceFilterRanges: Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange> = {
+  free: { exact: 0 },
+  '0-4.99': { min: 0.01, max: 4.99 },
+  '5-9.99': { min: 5, max: 9.99 },
+  '10-14.99': { min: 10, max: 14.99 },
+  '15-19.99': { min: 15, max: 19.99 },
+  '20-24.99': { min: 20, max: 24.99 },
+  '25-plus': { min: 25.01 },
+};
+
 export function useFeedEntries({
   currentUserId,
   isReadOnly,
@@ -93,6 +126,11 @@ export function useFeedEntries({
   refreshKey,
   monthFilter,
   onMonthFilterChange,
+  priceFilter = 'all',
+  priceFilterRanges = defaultPriceFilterRanges,
+  priceFilterCurrency = 'EUR',
+  convertPriceAmount,
+  meatTypeFilter = 'all',
 }: UseFeedEntriesOptions): UseFeedEntriesResult {
   const [activeTabState, setActiveTabState] = useState<FeedTab>('global');
   const activeTab = forcedTab ?? activeTabState;
@@ -123,6 +161,19 @@ export function useFeedEntries({
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
   const restaurantKey = restaurantIdFilter ?? 'all';
+  const selectedMonthFilters = useMemo(
+    () => normalizeSelection(effectiveMonthFilter, 'all'),
+    [effectiveMonthFilter]
+  );
+  const selectedPriceFilters = useMemo(
+    () => normalizeSelection(priceFilter, 'all' as FeedPriceFilter),
+    [priceFilter]
+  );
+  const hasConcretePriceFilter = !selectedPriceFilters.includes('all') && selectedPriceFilters.some((value) => value !== 'all');
+  const selectedMeatTypeFilters = useMemo(
+    () => normalizeSelection(meatTypeFilter, 'all' as const),
+    [meatTypeFilter]
+  );
 
   const entryIdsKey = useMemo(() => {
     if (!hasEntryFilter) return '';
@@ -145,7 +196,7 @@ export function useFeedEntries({
   }, [focusUserId, entryIdsKey, isCustomList, userIdsKey, restaurantKey]);
 
   const entriesCacheKey =
-    `bw-feed-entries-${viewerKey}-${focusUserId ?? 'global'}-${activeTab}-${effectiveMonthFilter}-${userIdsKey}-${entryIdsKey}-${restaurantKey}`;
+    `bw-feed-entries-${viewerKey}-${focusUserId ?? 'global'}-${activeTab}-${selectionCachePart(effectiveMonthFilter, 'all')}-${selectionCachePart(priceFilter, 'all')}-${selectionCachePart(meatTypeFilter, 'all')}-${userIdsKey}-${entryIdsKey}-${restaurantKey}`;
 
   useEffect(() => {
     entriesRef.current = entries;
@@ -199,8 +250,11 @@ export function useFeedEntries({
   const applyFeedFilters = useCallback(<TQuery extends {
     eq: (column: string, value: unknown) => TQuery;
     in: (column: string, values: unknown[]) => TQuery;
-    gte: (column: string, value: string) => TQuery;
+    gte: (column: string, value: unknown) => TQuery;
     lt: (column: string, value: string) => TQuery;
+    lte: (column: string, value: number) => TQuery;
+    gt: (column: string, value: number) => TQuery;
+    or: (filters: string) => TQuery;
   }>(query: TQuery, options?: {
     userIdsForQuery?: string[] | null;
     entryIdsForQuery?: string[] | null;
@@ -234,14 +288,28 @@ export function useFeedEntries({
       query = query.eq('restaurant_id', restaurantIdFilter);
     }
 
-    if ((focusUserId || isCustomList) && effectiveMonthFilter !== 'all') {
-      const [yearStr, monthStr] = effectiveMonthFilter.split('-');
-      const year = Number(yearStr);
-      const month = Number(monthStr);
-      if (!Number.isNaN(year) && !Number.isNaN(month)) {
-        const start = new Date(year, month - 1, 1);
-        const end = new Date(year, month, 1);
-        query = query.gte('datetime', start.toISOString()).lt('datetime', end.toISOString());
+    const concreteMeatTypeFilters = selectedMeatTypeFilters.filter((value) => value !== 'all');
+    if (!selectedMeatTypeFilters.includes('all') && concreteMeatTypeFilters.length === 1) {
+      query = query.eq('is_burger', true).eq('meat_type', concreteMeatTypeFilters[0]);
+    } else if (!selectedMeatTypeFilters.includes('all') && concreteMeatTypeFilters.length > 1) {
+      query = query.eq('is_burger', true).in('meat_type', concreteMeatTypeFilters);
+    }
+
+    const concreteMonthFilters = selectedMonthFilters.filter((value) => value !== 'all');
+    if ((focusUserId || isCustomList) && !selectedMonthFilters.includes('all') && concreteMonthFilters.length) {
+      const ranges = concreteMonthFilters.flatMap((value) => {
+        const [yearStr, monthStr] = value.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        if (Number.isNaN(year) || Number.isNaN(month)) return [];
+        const start = new Date(year, month - 1, 1).toISOString();
+        const end = new Date(year, month, 1).toISOString();
+        return [{ start, end }];
+      });
+      if (ranges.length === 1) {
+        query = query.gte('datetime', ranges[0].start).lt('datetime', ranges[0].end);
+      } else if (ranges.length > 1) {
+        query = query.or(ranges.map(({ start, end }) => `and(datetime.gte.${start},datetime.lt.${end})`).join(','));
       }
     }
 
@@ -249,12 +317,32 @@ export function useFeedEntries({
   }, [
     activeTab,
     adminMode,
-    effectiveMonthFilter,
     focusUserId,
     isCustomList,
     isSelfFeed,
     restaurantIdFilter,
+    selectedMeatTypeFilters,
+    selectedMonthFilters,
+    selectedPriceFilters,
   ]);
+
+  const matchesPriceFilters = useCallback((entry: FeedEntry) => {
+    if (!hasConcretePriceFilter) return true;
+    const concretePriceFilters = selectedPriceFilters.filter((value) => value !== 'all') as Exclude<FeedPriceFilter, 'all'>[];
+    const entryCurrency = entry.currency ?? 'EUR';
+    const convertedPrice = convertPriceAmount
+      ? convertPriceAmount(entry.price ?? 0, entryCurrency, priceFilterCurrency)
+      : entry.price ?? 0;
+
+    return concretePriceFilters.some((value) => {
+      const range = priceFilterRanges[value];
+      if (!range) return true;
+      if (range.exact !== undefined) return convertedPrice === range.exact;
+      if (range.min !== undefined && convertedPrice < range.min) return false;
+      if (range.max !== undefined && convertedPrice > range.max) return false;
+      return true;
+    });
+  }, [convertPriceAmount, hasConcretePriceFilter, priceFilterCurrency, priceFilterRanges, selectedPriceFilters]);
 
   const resolveQueryScope = useCallback(async () => {
     let userIdsForQuery: string[] | null = null;
@@ -407,6 +495,7 @@ export function useFeedEntries({
           user_id,
           datetime,
           price,
+          currency,
           rating,
           is_burger,
           additional_notes,
@@ -544,6 +633,10 @@ export function useFeedEntries({
         ingredients: entry.homemade_ingredients ?? null,
       };
     });
+
+    if (hasConcretePriceFilter) {
+      mapped = mapped.filter(matchesPriceFilters);
+    }
 
       if (!ignorePrivacy && !adminMode) {
         mapped = mapped.filter((entry) => {

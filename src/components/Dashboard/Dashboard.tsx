@@ -1,10 +1,12 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, House, LunchDining, Notifications, Star } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LocalDining, LunchDining, Notifications, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
+import type { FeedPriceFilter, FeedPriceFilterRange } from '../FeedTabs/types';
 import type { GroupInvite } from '../../types/groups';
 import { GroupInvitesModal } from '../GroupInvitesModal/GroupInvitesModal';
 import { NotificationsDrawer } from '../NotificationsDrawer/NotificationsDrawer';
@@ -72,6 +74,233 @@ type EditEntry = {
   burgerOrigin?: 'restaurant' | 'homemade' | null;
   ingredients?: string | null;
 };
+
+type MultiSelectOption<T extends string> = {
+  value: T;
+  label: string;
+  icon?: string;
+};
+
+type PriceFilterDefinition = {
+  value: FeedPriceFilter;
+  label: string;
+  range?: FeedPriceFilterRange;
+};
+
+const eurPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 4.99', range: { min: 0.01, max: 4.99 } },
+  { value: '5-9.99', label: '5 a 9.99', range: { min: 5, max: 9.99 } },
+  { value: '10-14.99', label: '10 a 14.99', range: { min: 10, max: 14.99 } },
+  { value: '15-19.99', label: '15 a 19.99', range: { min: 15, max: 19.99 } },
+  { value: '20-24.99', label: '20 a 24.99', range: { min: 20, max: 24.99 } },
+  { value: '25-plus', label: 'Más de 25', range: { min: 25.01 } },
+];
+
+const usdPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 7.99', range: { min: 0.01, max: 7.99 } },
+  { value: '5-9.99', label: '8 a 11.99', range: { min: 8, max: 11.99 } },
+  { value: '10-14.99', label: '12 a 15.99', range: { min: 12, max: 15.99 } },
+  { value: '15-19.99', label: '16 a 19.99', range: { min: 16, max: 19.99 } },
+  { value: '20-24.99', label: '20 a 24.99', range: { min: 20, max: 24.99 } },
+  { value: '25-plus', label: 'Más de 25', range: { min: 25.01 } },
+];
+
+const thbPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 199', range: { min: 0.01, max: 199 } },
+  { value: '5-9.99', label: '200 a 399', range: { min: 200, max: 399 } },
+  { value: '10-14.99', label: '400 a 599', range: { min: 400, max: 599 } },
+  { value: '15-19.99', label: '600 a 799', range: { min: 600, max: 799 } },
+  { value: '20-24.99', label: '800 a 999', range: { min: 800, max: 999 } },
+  { value: '25-plus', label: 'Más de 1000', range: { min: 1000 } },
+];
+
+const aedPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 24.99', range: { min: 0.01, max: 24.99 } },
+  { value: '5-9.99', label: '25 a 39.99', range: { min: 25, max: 39.99 } },
+  { value: '10-14.99', label: '40 a 59.99', range: { min: 40, max: 59.99 } },
+  { value: '15-19.99', label: '60 a 79.99', range: { min: 60, max: 79.99 } },
+  { value: '20-24.99', label: '80 a 99.99', range: { min: 80, max: 99.99 } },
+  { value: '25-plus', label: 'Más de 100', range: { min: 100 } },
+];
+
+const priceFiltersByCurrency: Record<string, PriceFilterDefinition[]> = {
+  EUR: eurPriceFilters,
+  USD: usdPriceFilters,
+  THB: thbPriceFilters,
+  AED: aedPriceFilters,
+};
+
+const getPriceFiltersForCurrency = (currency: string) =>
+  priceFiltersByCurrency[currency.toUpperCase()] ?? eurPriceFilters;
+
+const getCurrencySymbol = (currency: string) => {
+  try {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find((part) => part.type === 'currency')?.value ?? currency;
+  } catch {
+    return currency;
+  }
+};
+
+const burgerTypeFilterOptions: { value: MeatType | 'all'; icon?: string; labelKey?: string; label?: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'beef', icon: '/meat.png', labelKey: 'dashboard.beef' },
+  { value: 'chicken', icon: '/chicken-leg.png', labelKey: 'dashboard.chicken' },
+  { value: 'vegan', icon: '/plant.png', labelKey: 'dashboard.vegan' },
+  { value: 'other', labelKey: 'dashboard.other', label: 'Otro' },
+];
+
+function DashboardMultiSelect<T extends string>({
+  label,
+  options,
+  selected,
+  onChange,
+  onOpenChange,
+}: Readonly<{
+  label: string;
+  options: MultiSelectOption<T>[];
+  selected: T[];
+  onChange: (value: T[]) => void;
+  onOpenChange?: (open: boolean) => void;
+}>) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+  const allValue = 'all' as T;
+  const isAllSelected = selected.includes(allValue);
+  const concreteSelected = selected.filter((value) => value !== allValue);
+  const selectedLabels = options
+    .filter((option) => concreteSelected.includes(option.value))
+    .map((option) => option.label);
+  const displayLabel = isAllSelected
+    ? label
+    : selectedLabels.length <= 2
+      ? selectedLabels.join(', ')
+      : `${selectedLabels[0]} +${selectedLabels.length - 1}`;
+
+  useEffect(() => {
+    onOpenChange?.(open);
+    return () => {
+      if (open) onOpenChange?.(false);
+    };
+  }, [onOpenChange, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const updateMenuPosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuWidth = 280;
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(viewportPadding, rect.left),
+        window.innerWidth - menuWidth - viewportPadding
+      );
+      setMenuPosition({
+        top: rect.bottom + 8,
+        left,
+        maxHeight: Math.max(180, window.innerHeight - rect.bottom - 24),
+      });
+    };
+    updateMenuPosition();
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [open]);
+
+  const toggleOption = (value: T) => {
+    if (value === allValue) {
+      onChange([allValue]);
+      return;
+    }
+    const next = isAllSelected
+      ? [value]
+      : selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...concreteSelected, value];
+    onChange(next.length ? next : [allValue]);
+  };
+
+  return (
+    <div className="bw-dashboard-multiselect" ref={rootRef}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`bw-dashboard-multiselect-trigger ${open ? 'is-open' : ''} ${isAllSelected ? '' : 'is-active'}`}
+        onClick={() => setOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="bw-dashboard-multiselect-label">{displayLabel}</span>
+        <span className="bw-dashboard-multiselect-chevron" aria-hidden="true" />
+      </button>
+      {open && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          className="bw-dashboard-multiselect-menu"
+          role="listbox"
+          aria-multiselectable="true"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            maxHeight: menuPosition.maxHeight,
+          }}
+        >
+          {options.map((option) => {
+            const checked = option.value === allValue ? isAllSelected : !isAllSelected && selected.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={`bw-dashboard-multiselect-option ${checked ? 'is-selected' : ''}`}
+                onClick={() => toggleOption(option.value)}
+                role="option"
+                aria-selected={checked}
+              >
+                <span className="bw-dashboard-multiselect-check" aria-hidden="true">
+                  {checked ? '✓' : ''}
+                </span>
+                {option.icon && <img src={option.icon} alt="" aria-hidden="true" />}
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 function computeStats(entries: DbEntryRow[]) {
   if (!entries.length) {
@@ -168,8 +397,10 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<string>(() => getCurrentMonthValue());
+  const [monthFilter, setMonthFilter] = useState<string[]>(['all']);
+  const [priceFilter, setPriceFilter] = useState<FeedPriceFilter[]>(['all']);
+  const [meatTypeFilter, setMeatTypeFilter] = useState<(MeatType | 'all')[]>(['all']);
+  const [openFilterCount, setOpenFilterCount] = useState(0);
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
   const [mutating, setMutating] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
@@ -182,7 +413,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     if (typeof window === 'undefined') return null;
     return window.localStorage.getItem(lastSeenKey);
   });
-  const { formatCurrency, currency: viewerCurrency } = usePreferences(); const { t } = useTranslation();
+  const { formatCurrency, currency: viewerCurrency, convertAmount } = usePreferences(); const { t } = useTranslation();
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [isInvitesOpen, setIsInvitesOpen] = useState(false);
   const [invites, setInvites] = useState<GroupInvite[]>([]);
@@ -571,6 +802,61 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
 
   // --- Stats calculadas ---
   const stats = useMemo(() => computeStats(entries), [entries]);
+  const monthOptions = useMemo(() => {
+    const currentMonthValue = getCurrentMonthValue();
+    const values = new Set<string>([currentMonthValue]);
+    entries.forEach((entry) => {
+      const date = new Date(entry.datetime);
+      if (Number.isNaN(date.getTime())) return;
+      values.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+    });
+    const currentYear = new Date().getFullYear();
+    const locale = typeof navigator !== 'undefined' ? navigator.language : undefined;
+    return [
+      { value: 'all', label: t('feedTabs.all', { defaultValue: 'Todos' }) },
+      ...Array.from(values)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => {
+          const [yearStr, monthStr] = value.split('-');
+          const year = Number(yearStr);
+          const month = Number(monthStr);
+          const date = new Date(year, month - 1, 1);
+          const label = year === currentYear
+            ? date.toLocaleString(locale, { month: 'long' })
+            : date.toLocaleString(locale, { month: 'long', year: 'numeric' });
+          return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
+        }),
+    ];
+  }, [entries, t]);
+  const priceFilterOptions = useMemo<MultiSelectOption<FeedPriceFilter>[]>(
+    () => {
+      const symbol = getCurrencySymbol(viewerCurrency);
+      return getPriceFiltersForCurrency(viewerCurrency).map((filter) => ({
+        value: filter.value,
+        label: filter.value === 'all' || filter.value === 'free'
+          ? filter.label
+          : `${filter.label} ${symbol}`,
+      }));
+    },
+    [viewerCurrency]
+  );
+  const priceFilterRanges = useMemo<Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>>(() => {
+    const ranges = {} as Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
+    getPriceFiltersForCurrency(viewerCurrency).forEach((filter) => {
+      if (filter.value === 'all' || !filter.range) return;
+      ranges[filter.value] = filter.range;
+    });
+    return ranges;
+  }, [viewerCurrency]);
+  const meatTypeFilterOptions = useMemo<MultiSelectOption<MeatType | 'all'>[]>(
+    () =>
+      burgerTypeFilterOptions.map((filter) => ({
+        value: filter.value,
+        label: filter.labelKey ? t(filter.labelKey, { defaultValue: filter.label ?? filter.value }) : filter.label ?? filter.value,
+        icon: filter.icon,
+      })),
+    [t]
+  );
 
   const activeHistoryError = error ?? savedError;
   const hasUnreadNotifications = Boolean(
@@ -580,6 +866,17 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const handleOpenPost = (entryId: string) => {
     navigate(`/posts/${entryId}`, { state: { returnTo: location.pathname } });
   };
+
+  const handleFilterOpenChange = useCallback((open: boolean) => {
+    setOpenFilterCount((prev) => Math.max(0, prev + (open ? 1 : -1)));
+  }, []);
+
+  const isOverlayOpen =
+    isAddModalOpen ||
+    Boolean(deleteEntry) ||
+    notificationsOpen ||
+    Boolean(profileModalUserId) ||
+    isInvitesOpen;
 
   const handleEntrySaved = async () => {
     await loadEntries();
@@ -656,7 +953,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           </div>
         )}
 
-        <main className="bw-main">
+        <main className="bw-main bw-dashboard-main">
           <section className="bw-stats-grid">
             {loading ? (
               [1, 2, 3, 4].map((id) => (
@@ -715,28 +1012,57 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             />
           </section>
 
+          <section className="bw-dashboard-top-link">
+            <button
+              type="button"
+              className="bw-dashboard-top-link-button"
+              onClick={() => navigate('/my-top-burgers')}
+            >
+              <span className="bw-dashboard-top-link-icon">
+                <LocalDining fontSize="small" />
+              </span>
+              <span>{t('myTopBurgers.title', { defaultValue: 'Mi top burgers' })}</span>
+            </button>
+          </section>
+
           <section className="bw-history">
-            <div className="bw-section-header">
-              <h2 className="bw-section-title">{t('dashboard.posts')} ({postsCount})</h2>
-              <div className="bw-section-right">
-                <FeedTabs
-                  currentUserId={session.user.id}
-                  focusUserId={session.user.id}
-                  headerOnly
-                  monthFilter={monthFilter}
-                  onMonthFilterChange={setMonthFilter}
-                  refreshKey={refreshFeedKey}
-                />
-              </div>
+            <div
+              className={`bw-dashboard-filter-carousel ${openFilterCount > 0 ? 'is-locked' : ''} ${isOverlayOpen ? 'is-disabled' : ''}`}
+              aria-label={t('dashboard.filters', { defaultValue: 'Filtros' })}
+            >
+              <DashboardMultiSelect
+                label={t('dashboard.dateFilter', { defaultValue: 'Fecha' })}
+                options={monthOptions}
+                selected={monthFilter}
+                onChange={setMonthFilter}
+                onOpenChange={handleFilterOpenChange}
+              />
+              <DashboardMultiSelect
+                label={t('dashboard.priceFilter', { defaultValue: 'Precio' })}
+                options={priceFilterOptions}
+                selected={priceFilter}
+                onChange={setPriceFilter}
+                onOpenChange={handleFilterOpenChange}
+              />
+              <DashboardMultiSelect
+                label={t('dashboard.type', { defaultValue: 'Tipo' })}
+                options={meatTypeFilterOptions}
+                selected={meatTypeFilter}
+                onChange={setMeatTypeFilter}
+                onOpenChange={handleFilterOpenChange}
+              />
             </div>
             {activeHistoryError && <p style={{ color: 'red', fontSize: 12 }}>{activeHistoryError}</p>}
             <FeedTabs
               currentUserId={session.user.id}
               focusUserId={session.user.id}
-              onCountChange={setPostsCount}
               hideHeader
               monthFilter={monthFilter}
-              onMonthFilterChange={setMonthFilter}
+              priceFilter={priceFilter}
+              priceFilterRanges={priceFilterRanges}
+              priceFilterCurrency={viewerCurrency}
+              convertPriceAmount={convertAmount}
+              meatTypeFilter={meatTypeFilter}
               refreshKey={refreshFeedKey}
               onOpenEntry={handleOpenPost}
               showOwnerActions
@@ -782,7 +1108,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
 
         </main>
 
-        <div className="bw-fab-wrapper">
+        <div className={`bw-fab-wrapper ${isOverlayOpen ? 'is-hidden' : ''}`}>
           <button
             className="bw-fab"
             onClick={openAddModal}

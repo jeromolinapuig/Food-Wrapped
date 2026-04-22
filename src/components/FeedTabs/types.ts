@@ -44,3 +44,18 @@ export type SupabaseEntryRow = {
 };
 
 export type MonthOption = { value: string; label: string };
+
+export type FeedPriceFilter =
+  | 'all'
+  | 'free'
+  | '0-4.99'
+  | '5-9.99'
+  | '10-14.99'
+  | '15-19.99'
+  | '20-24.99'
+  | '25-plus';
+
+export type FeedPriceFilterSelection = FeedPriceFilter | FeedPriceFilter[];
+export type FeedMonthFilterSelection = string | string[];
+export type FeedMeatTypeFilterSelection = 'all' | NonNullable<FeedEntry['meatType']> | Array<'all' | NonNullable<FeedEntry['meatType']>>;
+export type FeedPriceFilterRange = { min?: number; max?: number; exact?: number };

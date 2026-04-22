@@ -10,6 +10,7 @@ vi.mock('@mui/icons-material', () => ({
   EmojiEvents: () => null,
   Euro: () => null,
   House: () => null,
+  LocalDining: () => null,
   LunchDining: () => null,
   Notifications: () => null,
   Star: () => null,
@@ -67,6 +68,7 @@ vi.mock('../../context/PreferencesContext', () => ({
   usePreferences: () => ({
     currency: 'EUR',
     formatCurrency: (amount: number) => `EUR ${amount.toFixed(2)}`,
+    convertAmount: (amount: number) => amount,
   }),
 }));
 
