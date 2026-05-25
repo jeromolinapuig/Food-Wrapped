@@ -206,7 +206,10 @@ export function BottomNav({
   }
 
   return (
-    <nav className="bw-bottom-nav is-main" aria-label={t('common.navigation', { defaultValue: 'Navigation' })}>
+    <nav
+      className={`bw-bottom-nav is-main ${moreOpen ? 'is-more-open' : ''}`}
+      aria-label={t('common.navigation', { defaultValue: 'Navigation' })}
+    >
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}

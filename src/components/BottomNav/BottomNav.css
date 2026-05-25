@@ -14,11 +14,15 @@
   display: grid;
   align-items: center;
   gap: 0;
-  z-index: 46;
+  z-index: 61;
 }
 
 .bw-bottom-nav.is-main {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bw-bottom-nav.is-more-open {
+  z-index: 63;
 }
 
 .bw-bottom-nav.is-admin {
@@ -150,7 +154,7 @@
   border: none;
   padding: 0;
   margin: 0;
-  z-index: 49;
+  z-index: 63;
 }
 
 :root[data-theme="dark"] .bw-bottom-nav-menu-backdrop {
@@ -171,7 +175,7 @@
   gap: 8px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  z-index: 50;
+  z-index: 64;
   min-width: 180px;
 }
 

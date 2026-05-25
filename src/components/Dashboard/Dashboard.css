@@ -409,7 +409,7 @@
   position: fixed;
   right: max(16px, calc((100vw - 430px) / 2 + 16px));
   bottom: 90px;
-  z-index: 45;
+  z-index: 62;
   display: flex;
   justify-content: flex-end;
   width: auto;
