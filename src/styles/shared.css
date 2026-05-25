@@ -403,7 +403,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 50;
+  z-index: 100;
   padding: 12px 12px 0;
   box-sizing: border-box;
   animation: bw-backdrop-in 180ms ease;
@@ -506,7 +506,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 60;
+  z-index: 110;
   padding: 12px;
   box-sizing: border-box;
 }
