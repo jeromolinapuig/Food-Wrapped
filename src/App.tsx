@@ -86,6 +86,10 @@ function App() {
   }, [isLoginRoute]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [location.pathname]);
+
+  useEffect(() => {
     const isLegacyAuthPayload = (value: string | null) => {
       if (!value) return false;
       try {
@@ -234,7 +238,7 @@ function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const toggleTheme = () =>
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));

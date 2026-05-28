@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Fixed app navigation so changing sections resets the page scroll to the top.
+
 ## 1.0.1
 
 - Added post-shaped skeletons while feed and user home posts are loading to avoid flashing the empty state.

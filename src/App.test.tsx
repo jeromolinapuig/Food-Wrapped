@@ -96,6 +96,8 @@ const renderAppAt = (path: string) =>
   );
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   supabaseMock.auth.getSession.mockResolvedValue({ data: { session: null } });
   supabaseMock.auth.onAuthStateChange.mockReturnValue({
     data: { subscription: { unsubscribe: vi.fn() } },
@@ -148,6 +150,13 @@ describe('App functional flows', () => {
   it('redirects /home to root page', async () => {
     renderAppAt('/home');
     expect(await screen.findByText('landing-page')).toBeInTheDocument();
+  });
+
+  it('scrolls to the top when rendering a route', async () => {
+    renderAppAt('/feed');
+
+    expect(await screen.findByText('feed-page')).toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0 });
   });
 
   it('redirects unknown routes to root page', async () => {
