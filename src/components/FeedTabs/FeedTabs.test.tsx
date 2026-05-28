@@ -134,6 +134,14 @@ describe('FeedTabs functional flows', () => {
     expect(screen.getByText('No posts in this feed yet.')).toBeInTheDocument();
   });
 
+  it('renders post skeletons instead of the empty placeholder while loading', () => {
+    feedState.loading = true;
+    const { container } = render(<FeedTabs currentUserId="viewer-1" />);
+
+    expect(container.querySelectorAll('.bw-feed-entry-skeleton')).toHaveLength(2);
+    expect(screen.queryByText('No posts in this feed yet.')).not.toBeInTheDocument();
+  });
+
   it('opens and closes photo preview from an entry card', async () => {
     const user = userEvent.setup();
     const historyBackSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});

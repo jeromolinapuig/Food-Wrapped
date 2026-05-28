@@ -112,6 +112,24 @@ describe('useFeedEntries', () => {
     setupSupabase();
   });
 
+  it('starts in loading state before the first feed request resolves', async () => {
+    const { result } = renderHook(() =>
+      useFeedEntries({
+        currentUserId: 'u1',
+        isReadOnly: false,
+        ignorePrivacy: true,
+        headerOnly: false,
+        hideHeader: true,
+        refreshKey: 0,
+      })
+    );
+
+    expect(result.current.loading).toBe(true);
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+  });
+
   it('returns empty feed immediately when read-only following is forced', async () => {
     const onCountChange = vi.fn();
     const { result } = renderHook(() =>

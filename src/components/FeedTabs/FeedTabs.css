@@ -103,6 +103,53 @@
   padding: 12px 0;
 }
 
+.bw-feed-entry-skeleton {
+  pointer-events: none;
+}
+
+.bw-feed-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bw-feed-skeleton-user {
+  width: 132px;
+}
+
+.bw-feed-skeleton-date {
+  width: 72px;
+}
+
+.bw-feed-skeleton-title {
+  width: 68%;
+}
+
+.bw-feed-skeleton-photo {
+  width: 100%;
+  height: 200px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bw-feed-skeleton-actions {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.bw-feed-skeleton-pill {
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bw-feed-skeleton-price {
+  width: 56px;
+}
+
 .bw-feed-entry {
   gap: 10px;
   color: var(--bw-text);

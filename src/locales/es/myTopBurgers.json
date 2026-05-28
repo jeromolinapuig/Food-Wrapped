@@ -10,9 +10,11 @@
   "unknownBurger": "Hamburguesa sin nombre",
   "rating": "Nota",
   "price": "Precio",
+  "highestPrice": "Mayor precio registrado",
   "eatenOneTime": "Te la has comido 1 vez",
   "eatenManyTimes": "Te la has comido {{count}} veces",
   "lastEaten": "Te la comiste la última vez el día {{date}}",
   "noPhoto": "Sin foto",
+  "postsTitle": "Posts de {{burger}}",
   "lockedSubtitle": "Inicia sesión para ver tu ranking personal de hamburguesas."
 }

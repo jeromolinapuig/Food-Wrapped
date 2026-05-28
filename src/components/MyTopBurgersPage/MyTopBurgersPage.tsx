@@ -1,12 +1,14 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Euro, Star } from '@mui/icons-material';
+import { Close, Euro, Star } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
+import { ModalBase } from '../common/ModalBase';
 import { PageHeader } from '../common/PageHeader';
 import { ZoomableImage } from '../common/ZoomableImage';
+import { lockBodyScroll } from '../../utils/scrollLock';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './MyTopBurgersPage.css';
@@ -36,6 +38,15 @@ type RawBurgerRow = {
   burger: { name: string | null } | { name: string | null }[] | null;
 };
 
+type BurgerPost = {
+  id: string;
+  datetime: string;
+  rating: number | null;
+  price: number | null;
+  currency: string | null;
+  photoUrl: string | null;
+};
+
 type BurgerSummary = {
   key: string;
   burgerName: string;
@@ -45,6 +56,7 @@ type BurgerSummary = {
   price: number | null;
   currency: string | null;
   photoUrl: string | null;
+  posts: BurgerPost[];
 };
 
 type RestaurantGroup = {
@@ -85,6 +97,10 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
   const [sortBy, setSortBy] = useState<SortBy>('rating');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [rows, setRows] = useState<BurgerRow[]>([]);
+  const [selectedBurger, setSelectedBurger] = useState<{
+    restaurantName: string;
+    burger: BurgerSummary;
+  } | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
@@ -146,6 +162,11 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
   }, [session.user.id]);
 
   useEffect(() => {
+    if (!selectedBurger) return;
+    return lockBodyScroll();
+  }, [selectedBurger]);
+
+  useEffect(() => {
     if (!selectedPhoto) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSelectedPhoto(null);
@@ -180,11 +201,11 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
           lastDatetime: string;
           ratingSum: number;
           ratingCount: number;
-          priceSum: number;
-          priceCount: number;
+          highestPrice: number | null;
           currency: string | null;
           photoUrl: string | null;
           photoTs: number;
+          posts: BurgerPost[];
         }
       >();
 
@@ -200,21 +221,30 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
           lastDatetime: entry.datetime,
           ratingSum: 0,
           ratingCount: 0,
-          priceSum: 0,
-          priceCount: 0,
+          highestPrice: null,
           currency: entry.currency ?? null,
           photoUrl: null,
           photoTs: -Infinity,
+          posts: [],
         };
 
         current.count += 1;
+        current.posts.push({
+          id: entry.id,
+          datetime: entry.datetime,
+          rating: entry.rating,
+          price: entry.price,
+          currency: entry.currency ?? null,
+          photoUrl: entry.photo_url,
+        });
         if (entry.rating != null) {
           current.ratingSum += entry.rating;
           current.ratingCount += 1;
         }
         if (entry.price != null) {
-          current.priceSum += entry.price;
-          current.priceCount += 1;
+          current.highestPrice = current.highestPrice == null
+            ? entry.price
+            : Math.max(current.highestPrice, entry.price);
           current.currency = entry.currency ?? current.currency;
         }
         if (ts >= current.lastTs) {
@@ -235,9 +265,10 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
         count: value.count,
         lastDatetime: value.lastDatetime,
         rating: value.ratingCount ? value.ratingSum / value.ratingCount : null,
-        price: value.priceCount ? value.priceSum / value.priceCount : null,
+        price: value.highestPrice,
         currency: value.currency,
         photoUrl: value.photoUrl,
+        posts: [...value.posts].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()),
       }));
 
       summarized.sort((a, b) => {
@@ -326,17 +357,16 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
                     const lastDateText = t('myTopBurgers.lastEaten', {
                       date: new Date(burger.lastDatetime).toLocaleDateString(),
                     });
+                    const priceLabel = burger.count === 1
+                      ? t('myTopBurgers.price')
+                      : t('myTopBurgers.highestPrice');
 
                     return (
                       <button
                         type="button"
                         key={burger.key}
-                        className={`bw-top-burgers-item ${hasPhoto ? 'is-clickable' : 'is-disabled'}`}
-                        disabled={!hasPhoto}
-                        onClick={() => {
-                          if (!burger.photoUrl) return;
-                          setSelectedPhoto({ src: burger.photoUrl, alt: burger.burgerName });
-                        }}
+                        className={`bw-top-burgers-item ${hasPhoto ? 'has-thumb' : 'no-thumb'}`}
+                        onClick={() => setSelectedBurger({ restaurantName: group.restaurantName, burger })}
                       >
                         <div className={`bw-top-burgers-item-main ${hasPhoto ? 'has-thumb' : 'no-thumb'}`}>
                           {hasPhoto && (
@@ -349,7 +379,7 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
                             <div className="bw-top-burgers-item-title">{burger.burgerName}</div>
                             <div className="bw-top-burgers-item-meta">
                               <span>{t('myTopBurgers.rating')}: {burger.rating != null ? burger.rating.toFixed(1) : '-'}</span>
-                              <span>{t('myTopBurgers.price')}: {formatPrice(burger.price, burger.currency)}</span>
+                              <span>{priceLabel}: {formatPrice(burger.price, burger.currency)}</span>
                             </div>
                             <div className="bw-top-burgers-item-date">{lastDateText}</div>
                             <div className="bw-top-burgers-item-times">{eatenTimesText}</div>
@@ -365,6 +395,59 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
         )}
       </main>
 
+      {selectedBurger && (
+        <ModalBase
+          onClose={() => setSelectedBurger(null)}
+          modalClassName="bw-modal bw-top-burgers-posts-modal"
+        >
+          <div className="bw-modal-header">
+            <div>
+              <h2 className="bw-modal-title">
+                {t('myTopBurgers.postsTitle', { burger: selectedBurger.burger.burgerName })}
+              </h2>
+              <p className="bw-modal-subtitle">{selectedBurger.restaurantName}</p>
+            </div>
+            <button
+              type="button"
+              className="bw-icon-button"
+              onClick={() => setSelectedBurger(null)}
+              aria-label={t('common.close')}
+            >
+              <Close fontSize="small" />
+            </button>
+          </div>
+
+          <div className="bw-top-burgers-post-list">
+            {selectedBurger.burger.posts.map((post) => {
+              const formattedDate = new Date(post.datetime).toLocaleDateString();
+              return (
+                <article className="bw-top-burgers-post-item" key={post.id}>
+                  {post.photoUrl ? (
+                    <button
+                      type="button"
+                      className="bw-top-burgers-post-photo"
+                      onClick={() => setSelectedPhoto({ src: post.photoUrl ?? '', alt: selectedBurger.burger.burgerName })}
+                      aria-label={t('common.viewPhoto')}
+                    >
+                      <img src={post.photoUrl} alt={selectedBurger.burger.burgerName} />
+                    </button>
+                  ) : (
+                    <div className="bw-top-burgers-post-photo is-empty">{t('myTopBurgers.noPhoto')}</div>
+                  )}
+                  <div className="bw-top-burgers-post-content">
+                    <div className="bw-top-burgers-post-date">{formattedDate}</div>
+                    <div className="bw-top-burgers-item-meta">
+                      <span>{t('myTopBurgers.rating')}: {post.rating != null ? post.rating.toFixed(1) : '-'}</span>
+                      <span>{t('myTopBurgers.price')}: {formatPrice(post.price, post.currency)}</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </ModalBase>
+      )}
+
       {selectedPhoto && (
         <div className="bw-photo-viewer-backdrop" onClick={() => setSelectedPhoto(null)}>
           <div className="bw-photo-viewer" onClick={(event) => event.stopPropagation()}>
@@ -375,7 +458,7 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
               aria-label={t('common.close')}
               onClick={() => setSelectedPhoto(null)}
             >
-              x
+              <Close fontSize="small" />
             </button>
           </div>
         </div>

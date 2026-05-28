@@ -10,9 +10,11 @@
   "unknownBurger": "Burger sans nom",
   "rating": "Note",
   "price": "Prix",
+  "highestPrice": "Prix le plus élevé enregistré",
   "eatenOneTime": "Tu l'as mangé 1 fois",
   "eatenManyTimes": "Tu l'as mangé {{count}} fois",
   "lastEaten": "Tu l'as mangé pour la dernière fois le {{date}}",
   "noPhoto": "Sans photo",
+  "postsTitle": "Posts de {{burger}}",
   "lockedSubtitle": "Connecte-toi pour voir ton classement personnel de burgers."
 }

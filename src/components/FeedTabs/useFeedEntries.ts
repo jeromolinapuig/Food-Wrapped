@@ -132,10 +132,12 @@ export function useFeedEntries({
   convertPriceAmount,
   meatTypeFilter = 'all',
 }: UseFeedEntriesOptions): UseFeedEntriesResult {
+  const hasEntryFilter = entryIdsFilter !== undefined && entryIdsFilter !== null;
+  const shouldStartLoading = !headerOnly && !(hasEntryFilter && !entryIdsFilter?.length);
   const [activeTabState, setActiveTabState] = useState<FeedTab>('global');
   const activeTab = forcedTab ?? activeTabState;
   const [entries, setEntries] = useState<FeedEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(shouldStartLoading);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,9 +156,9 @@ export function useFeedEntries({
 
   const viewerId = currentUserId ?? null;
   const viewerKey = viewerId ?? 'guest';
+  const currentLanguage = i18n.language;
   const isUserFeed = Boolean(focusUserId);
   const isSelfFeed = Boolean(focusUserId && viewerId && focusUserId === viewerId);
-  const hasEntryFilter = entryIdsFilter !== undefined && entryIdsFilter !== null;
   const isCustomList = Boolean(userIdsFilter?.length) || hasEntryFilter;
   const effectiveMonthFilter = monthFilter ?? internalMonthFilter;
   const setEffectiveMonthFilter = onMonthFilterChange ?? setInternalMonthFilter;
@@ -323,7 +325,6 @@ export function useFeedEntries({
     restaurantIdFilter,
     selectedMeatTypeFilters,
     selectedMonthFilters,
-    selectedPriceFilters,
   ]);
 
   const matchesPriceFilters = useCallback((entry: FeedEntry) => {
@@ -708,15 +709,16 @@ export function useFeedEntries({
     if (append) setLoadingMore(false);
   }, [
     activeTab,
+    adminMode,
     viewerId,
-    effectiveMonthFilter,
     entriesCacheKey,
-    entryIdsFilter,
     focusUserId,
+    hasConcretePriceFilter,
     hasEntryFilter,
     ignorePrivacy,
     isReadOnly,
     isCustomList,
+    matchesPriceFilters,
     onCountChange,
     pageSize,
     applyFeedFilters,
@@ -727,7 +729,7 @@ export function useFeedEntries({
     if (hideHeader) return;
     if (!focusUserId && !isCustomList) return;
     if (hasEntryFilter && !entryIdsFilter?.length) {
-      const locale = getLocale(i18n.language);
+      const locale = getLocale(currentLanguage);
       const options = buildMonthOptions([], locale, i18n.t('feedTabs.all'));
       startTransition(() => setMonthOptions(options));
       return;
@@ -741,7 +743,7 @@ export function useFeedEntries({
         try {
           const parsed = JSON.parse(cached) as MonthOption[];
           if (!cancelled) {
-            const locale = getLocale(i18n.language);
+            const locale = getLocale(currentLanguage);
             const values = parsed.filter((option) => option.value !== 'all').map((option) => option.value);
             const nextOptions = buildMonthOptions(values, locale, i18n.t('feedTabs.all'));
             startTransition(() => {
@@ -791,13 +793,13 @@ export function useFeedEntries({
 
       if (error) {
         console.error('Error cargando meses', error);
-        const locale = getLocale(i18n.language);
+        const locale = getLocale(currentLanguage);
         setMonthOptions(buildMonthOptions([], locale, i18n.t('feedTabs.all')));
         return;
       }
 
       const seen = new Set<string>();
-      const locale = getLocale(i18n.language);
+      const locale = getLocale(currentLanguage);
       (data ?? []).forEach((row) => {
         const date = new Date((row as { datetime: string }).datetime);
         if (Number.isNaN(date.getTime())) return;
@@ -828,10 +830,11 @@ export function useFeedEntries({
     hasEntryFilter,
     hideHeader,
     isCustomList,
+    isSelfFeed,
     monthCacheKey,
     restaurantIdFilter,
     userIdsFilter,
-    i18n.language,
+    currentLanguage,
   ]);
 
   useEffect(() => {
@@ -893,7 +896,7 @@ export function useFeedEntries({
     return () => {
       isCancelled = true;
     };
-  }, [checkFocusPrivacy, entriesCacheKey, focusUserId, headerOnly, ignorePrivacy, loadEntries, onCountChange, refreshKey]);
+  }, [checkFocusPrivacy, entriesCacheKey, focusUserId, hasEntryFilter, headerOnly, ignorePrivacy, loadEntries, onCountChange, refreshKey]);
 
   useEffect(() => {
     if (headerOnly || !onCountChange) return;
@@ -969,7 +972,7 @@ export function useFeedEntries({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, adminMode, focusUserId, headerOnly, isCustomList, loadEntries, loadTotalCount, restaurantIdFilter, userIdsFilter, viewerKey]);
+  }, [activeTab, adminMode, focusUserId, hasEntryFilter, headerOnly, isCustomList, loadEntries, loadTotalCount, restaurantIdFilter, userIdsFilter, viewerKey]);
 
   useRevalidateOnFocus(
     () => {

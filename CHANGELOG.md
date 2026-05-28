@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1
+
+- Added post-shaped skeletons while feed and user home posts are loading to avoid flashing the empty state.
+- Added skeleton placeholders for annual summary stat card icons and values while the home data is loading.
+- Changed My Top Burgers to show the highest recorded price instead of the average price.
+- Changed My Top Burgers to show "Price" when a burger has only one recorded price.
+- Centered the photo viewer close icon.
+- Fixed photo viewer layering so images opened from modals appear above the modal.
+- Added a posts modal when selecting a burger in My Top Burgers.
+- Reworked the README as detailed technical documentation with public-repository security guidance.
+
 ## 1.0.0
 
 - Fixed the bottom navigation More menu layering so homepage filters no longer appear above it.

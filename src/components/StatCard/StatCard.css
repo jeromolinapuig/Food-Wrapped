@@ -49,3 +49,30 @@
   font-size: 12px;
   color: var(--bw-text-muted);
 }
+
+.bw-stat-card-skeleton {
+  min-height: 112px;
+  pointer-events: none;
+}
+
+.bw-stat-skeleton-icon,
+.bw-stat-skeleton-value,
+.bw-stat-skeleton-label {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bw-stat-skeleton-icon {
+  color: transparent;
+}
+
+.bw-stat-skeleton-value {
+  width: min(92px, 70%);
+  height: 22px;
+  border-radius: 8px;
+}
+
+.bw-stat-skeleton-label {
+  width: min(118px, 82%);
+  height: 12px;
+  border-radius: 8px;
+}

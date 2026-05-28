@@ -10,9 +10,11 @@
   "unknownBurger": "Unnamed burger",
   "rating": "Rating",
   "price": "Price",
+  "highestPrice": "Highest recorded price",
   "eatenOneTime": "You have eaten it 1 time",
   "eatenManyTimes": "You have eaten it {{count}} times",
   "lastEaten": "You last ate it on {{date}}",
   "noPhoto": "No photo",
+  "postsTitle": "{{burger}} posts",
   "lockedSubtitle": "Log in to see your personal burger ranking."
 }

@@ -387,6 +387,16 @@ function computeStats(entries: DbEntryRow[]) {
   };
 }
 
+function DashboardStatSkeleton() {
+  return (
+    <article className="bw-stat-card bw-stat-card-skeleton bw-skeleton" aria-hidden="true">
+      <div className="bw-stat-icon bw-stat-skeleton-icon" />
+      <div className="bw-stat-value bw-stat-skeleton-value" />
+      <div className="bw-stat-label bw-stat-skeleton-label" />
+    </article>
+  );
+}
+
 export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -956,13 +966,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         <main className="bw-main bw-dashboard-main">
           <section className="bw-stats-grid">
             {loading ? (
-              [1, 2, 3, 4].map((id) => (
-                <div className="bw-stat-card bw-skeleton" key={id}>
-                  <div className="bw-skeleton-line bw-skeleton-short" />
-                  <div className="bw-skeleton-line" />
-                  <div className="bw-skeleton-line bw-skeleton-short" />
-                </div>
-              ))
+              [1, 2, 3, 4].map((id) => <DashboardStatSkeleton key={id} />)
             ) : (
               <>
                 <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
@@ -1005,11 +1009,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
                 </div>
               </div>
             </div>
-            <StatCard
-              icon={<Euro fontSize="small" />}
-              value={formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency })}
-              label={t('dashboard.totalSpent')}
-            />
+            {loading ? (
+              <DashboardStatSkeleton />
+            ) : (
+              <StatCard
+                icon={<Euro fontSize="small" />}
+                value={formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency })}
+                label={t('dashboard.totalSpent')}
+              />
+            )}
           </section>
 
           <section className="bw-dashboard-top-link">

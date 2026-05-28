@@ -243,6 +243,41 @@ export function FeedTabs({
       </div>
     );
 
+  const renderPostSkeletons = () => (
+    <>
+      {Array.from({ length: 2 }).map((_, index) => (
+        <article
+          className="bw-history-card bw-feed-entry bw-feed-entry-skeleton bw-skeleton"
+          key={`feed-skeleton-${index}`}
+          aria-hidden="true"
+        >
+          <div className="bw-feed-entry-header">
+            <div className="bw-feed-user">
+              <div className="bw-feed-skeleton-avatar" />
+              <div className="bw-feed-skeleton-user">
+                <div className="bw-skeleton-line bw-skeleton-short" />
+                <div className="bw-skeleton-line" />
+              </div>
+            </div>
+            <div className="bw-feed-skeleton-date bw-skeleton-line" />
+          </div>
+          <div className="bw-feed-body">
+            <div className="bw-skeleton-line bw-feed-skeleton-title" />
+            <div className="bw-skeleton-line bw-skeleton-short" />
+            <div className="bw-feed-skeleton-photo" />
+            <div className="bw-feed-footer-row">
+              <div className="bw-feed-skeleton-actions">
+                <div className="bw-feed-skeleton-pill" />
+                <div className="bw-feed-skeleton-pill" />
+              </div>
+              <div className="bw-feed-skeleton-price bw-skeleton-line" />
+            </div>
+          </div>
+        </article>
+      ))}
+    </>
+  );
+
   const shouldLockFollowing =
     isReadOnly && activeTab === 'following' && !focusUserId && !isCustomList && !hasEntryFilter;
 
@@ -294,20 +329,7 @@ export function FeedTabs({
         }
         return (
           <div className="bw-history-list">
-        {loading && (
-          <>
-            <div className="bw-history-card bw-skeleton">
-              <div className="bw-skeleton-line bw-skeleton-short" />
-              <div className="bw-skeleton-line" />
-              <div className="bw-skeleton-line" />
-            </div>
-            <div className="bw-history-card bw-skeleton">
-              <div className="bw-skeleton-line bw-skeleton-short" />
-              <div className="bw-skeleton-line" />
-              <div className="bw-skeleton-line" />
-            </div>
-          </>
-        )}
+        {loading && renderPostSkeletons()}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
         {!loading && !entries.length && <p style={{ fontSize: 13, opacity: 0.8 }}>{renderPlaceholderText()}</p>}
 

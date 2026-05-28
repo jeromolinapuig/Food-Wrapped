@@ -31,6 +31,7 @@ const { supabaseMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('@mui/icons-material', () => ({
+  Close: () => null,
   Euro: () => null,
   Star: () => null,
 }));
@@ -59,7 +60,7 @@ describe('MyTopBurgersPage functional flows', () => {
     supabaseMock.from.mockReset();
   });
 
-  it('loads entries and lets user open/close the burger photo viewer', async () => {
+  it('opens a posts modal from a burger and lets user open/close the post photo viewer', async () => {
     mockEntriesQuery({
       data: [
         {
@@ -80,11 +81,20 @@ describe('MyTopBurgersPage functional flows', () => {
     render(<MyTopBurgersPage session={session as never} />);
 
     expect(await screen.findByText('Smash Burger')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Smash Burger/i })).toHaveTextContent('myTopBurgers.price');
     await user.click(screen.getByRole('button', { name: /Smash Burger/i }));
 
-    expect(screen.getByRole('button', { name: 'common.close' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'myTopBurgers.postsTitle' })).toBeInTheDocument();
+    expect(screen.getAllByText('Alpha')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'common.viewPhoto' }));
+
+    const closeButtons = screen.getAllByRole('button', { name: 'common.close' });
+    expect(closeButtons).toHaveLength(2);
+    await user.click(closeButtons[1]);
+    expect(screen.getByRole('heading', { name: 'myTopBurgers.postsTitle' })).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'common.close' }));
-    expect(screen.queryByRole('button', { name: 'common.close' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'myTopBurgers.postsTitle' })).not.toBeInTheDocument();
   });
 
   it('sorts burgers by price and toggles direction on repeated click', async () => {
@@ -130,6 +140,40 @@ describe('MyTopBurgersPage functional flows', () => {
     burgerButtons = within(groupCard).getAllByRole('button');
     expect(burgerButtons[0]).toHaveTextContent('Cheap Burger');
     expect(burgerButtons[1]).toHaveTextContent('Expensive Burger');
+  });
+
+  it('shows the highest recorded price for repeated burgers', async () => {
+    mockEntriesQuery({
+      data: [
+        {
+          id: '1',
+          datetime: '2026-01-01T10:00:00.000Z',
+          rating: 4,
+          price: 12,
+          currency: 'EUR',
+          photo_url: 'https://cdn.example.com/smash-1.jpg',
+          restaurant: { name: 'Alpha' },
+          burger: { name: 'Smash Burger' },
+        },
+        {
+          id: '2',
+          datetime: '2026-01-02T10:00:00.000Z',
+          rating: 5,
+          price: 18,
+          currency: 'EUR',
+          photo_url: 'https://cdn.example.com/smash-2.jpg',
+          restaurant: { name: 'Alpha' },
+          burger: { name: 'Smash Burger' },
+        },
+      ],
+      error: null,
+    });
+
+    render(<MyTopBurgersPage session={session as never} />);
+
+    const burger = await screen.findByRole('button', { name: /Smash Burger/i });
+    expect(burger).toHaveTextContent('myTopBurgers.highestPrice');
+    expect(burger).toHaveTextContent('18');
   });
 
   it('shows backend error when loading fails', async () => {
