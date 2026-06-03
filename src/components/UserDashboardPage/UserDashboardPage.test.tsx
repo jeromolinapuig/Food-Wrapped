@@ -51,6 +51,14 @@ vi.mock('../../utils/useRevalidateOnFocus', () => ({
   useRevalidateOnFocus: vi.fn(),
 }));
 
+vi.mock('../../context/PreferencesContext', () => ({
+  usePreferences: () => ({
+    currency: 'EUR',
+    formatCurrency: (amount: number) => `EUR ${amount.toFixed(2)}`,
+    convertAmount: (amount: number) => amount,
+  }),
+}));
+
 vi.mock('../common/AppShell', () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));

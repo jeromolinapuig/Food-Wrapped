@@ -4,3 +4,21 @@
   height: auto;
   max-height: 80vh;
 }
+
+.bw-user-profile-preferences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bw-user-profile-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(171, 171, 171, 0.14);
+  color: var(--bw-text);
+  font-size: 12px;
+  font-weight: 700;
+}

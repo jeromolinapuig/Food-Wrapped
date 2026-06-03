@@ -20,5 +20,58 @@
   "following": "Folge ich",
   "saved": "Gespeichert",
   "cropCancel": "Abbrechen",
-  "cropSave": "Zuschneiden und speichern"
+  "cropSave": "Zuschneiden und speichern",
+  "unsavedLeaveTitle": "Ohne Speichern verlassen?",
+  "unsavedLeaveMessage": "Du hast ungespeicherte Änderungen am Profil. Wenn du jetzt gehst, gehen sie verloren.",
+  "unsavedLeaveCancel": "Weiter bearbeiten",
+  "unsavedLeaveConfirm": "Ohne Speichern verlassen",
+  "completion": {
+    "title": "Profil personalisieren",
+    "description": "Füge Foto, Bio und Burger-Vorlieben hinzu, damit dein Profil persönlicher wirkt.",
+    "completeTitle": "Personalisiertes Profil",
+    "completeDescription": "Dein Profil zeigt jetzt, wer du in Burger Wrapped bist.",
+    "progress": "{{completed}} von {{total}} Elementen abgeschlossen"
+  },
+  "burgerPreferences": {
+    "title": "Meine Burger-Vorlieben",
+    "description": "Diese Vorlieben erscheinen in deinem öffentlichen Profil und erzeugen deinen idealen Burger.",
+    "emptyOption": "Nicht ausgewählt",
+    "typeLabel": "Lieblings-Burgertyp",
+    "sauceLabel": "Lieblingssauce",
+    "donenessLabel": "Lieblingsgargrad",
+    "breadLabel": "Lieblingsbrot",
+    "idealBurger": "Dein idealer Burger: {{type}} {{doneness}} mit {{bread}}-Brot und {{sauce}}.",
+    "types": {
+      "beef": "Rind",
+      "chicken": "Hähnchen",
+      "vegan": "Vegan"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "Burger-Sauce",
+      "mayonnaise": "Mayonnaise",
+      "honey_mustard": "Honig-Senf",
+      "truffle": "Trüffel",
+      "bacon_mayonnaise": "Bacon-Mayonnaise",
+      "mustard": "Senf",
+      "ketchup": "Ketchup",
+      "sweet_and_sour": "Süß-sauer",
+      "sweet_chili": "Sweet Chili",
+      "cheese": "Käse",
+      "sriracha": "Sriracha",
+      "emmy": "Emmy",
+      "yogurt": "Joghurt"
+    },
+    "doneness": {
+      "rare": "Blutig",
+      "medium": "Medium",
+      "well_done": "Durch"
+    },
+    "breads": {
+      "potato": "Kartoffel",
+      "brioche": "Brioche",
+      "crystal": "Crystal",
+      "classic": "Klassisch"
+    }
+  }
 }

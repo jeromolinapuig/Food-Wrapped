@@ -4,5 +4,6 @@
   "privateProfile": "Profil privé",
   "viewStats": "Voir ses statistiques",
   "noBio": "Pas encore de bio.",
-  "loginToFollow": "Connecte-toi pour suivre cette personne."
+  "loginToFollow": "Connecte-toi pour suivre cette personne.",
+  "burgerPreferencesLabel": "Préférences burger"
 }

@@ -20,5 +20,58 @@
   "following": "Seguidos",
   "saved": "Guardado",
   "cropCancel": "Cancelar",
-  "cropSave": "Recortar y guardar"
+  "cropSave": "Recortar y guardar",
+  "unsavedLeaveTitle": "¿Salir sin guardar?",
+  "unsavedLeaveMessage": "Tienes cambios sin guardar en tu perfil. Si sales ahora, se perderán.",
+  "unsavedLeaveCancel": "Seguir editando",
+  "unsavedLeaveConfirm": "Salir sin guardar",
+  "completion": {
+    "title": "Personaliza tu perfil",
+    "description": "Añade foto, bio y preferencias burger para que tu perfil tenga más personalidad.",
+    "completeTitle": "Perfil personalizado",
+    "completeDescription": "Tu perfil ya muestra quién eres dentro de Burger Wrapped.",
+    "progress": "{{completed}} de {{total}} elementos completados"
+  },
+  "burgerPreferences": {
+    "title": "Mis preferencias burger",
+    "description": "Estas preferencias se muestran en tu perfil público y generan tu burger ideal.",
+    "emptyOption": "Sin seleccionar",
+    "typeLabel": "Tipo de burger favorito",
+    "sauceLabel": "Salsa favorita",
+    "donenessLabel": "Punto favorito",
+    "breadLabel": "Pan favorito",
+    "idealBurger": "Tu burger ideal: {{type}} {{doneness}} con pan {{bread}} y {{sauce}}.",
+    "types": {
+      "beef": "Ternera",
+      "chicken": "Pollo",
+      "vegan": "Vegana"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "Salsa burger",
+      "mayonnaise": "Mayonesa",
+      "honey_mustard": "Miel y Mostaza",
+      "truffle": "Trufa",
+      "bacon_mayonnaise": "Mayonesa de Bacon",
+      "mustard": "Mostaza",
+      "ketchup": "Ketchup",
+      "sweet_and_sour": "Agridulce",
+      "sweet_chili": "Sweet Chili",
+      "cheese": "Queso",
+      "sriracha": "Sriracha",
+      "emmy": "Emmy",
+      "yogurt": "Yogur"
+    },
+    "doneness": {
+      "rare": "Poco hecha",
+      "medium": "Al punto",
+      "well_done": "Muy hecha"
+    },
+    "breads": {
+      "potato": "Patata",
+      "brioche": "Brioche",
+      "crystal": "Cristal",
+      "classic": "Clásico"
+    }
+  }
 }

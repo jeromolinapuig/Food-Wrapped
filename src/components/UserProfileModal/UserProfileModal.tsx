@@ -6,6 +6,16 @@ import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { ModalBase } from '../common/ModalBase';
 import { Avatar } from '../common/Avatar';
+import {
+  type BurgerBreadPreference,
+  type BurgerDonenessPreference,
+  type BurgerSaucePreference,
+  type BurgerTypePreference,
+  isBurgerBreadPreference,
+  isBurgerDonenessPreference,
+  isBurgerSaucePreference,
+  isBurgerTypePreference,
+} from '../../constants/burgerPreferences';
 import '../../styles/shared.css';
 import '../ProfilePage/ProfilePage.css';
 import './UserProfileModal.css';
@@ -28,7 +38,33 @@ type PublicProfile = {
   equipped_frame?: 'gold' | 'silver' | 'bronze' | null;
   bio: string | null;
   is_private?: boolean | null;
+  favorite_burger_type?: BurgerTypePreference | null;
+  favorite_sauce?: BurgerSaucePreference | null;
+  favorite_doneness?: BurgerDonenessPreference | null;
+  favorite_bread?: BurgerBreadPreference | null;
 };
+
+const PUBLIC_PROFILE_SELECT =
+  'id, username, display_name, avatar_url, equipped_frame, bio, is_private, favorite_burger_type, favorite_sauce, favorite_doneness, favorite_bread';
+const PUBLIC_PROFILE_FALLBACK_SELECT = 'id, username, display_name, avatar_url, equipped_frame, bio, is_private';
+
+async function fetchPublicProfile(userId: string) {
+  const response = await supabase
+    .from('profiles')
+    .select(PUBLIC_PROFILE_SELECT)
+    .eq('id', userId)
+    .single();
+
+  if (response.error && (response.error as { code?: string }).code === '42703') {
+    return supabase
+      .from('profiles')
+      .select(PUBLIC_PROFILE_FALLBACK_SELECT)
+      .eq('id', userId)
+      .single();
+  }
+
+  return response;
+}
 
 export function UserProfileModal({
   open,
@@ -62,11 +98,7 @@ export function UserProfileModal({
       const loadProfile = async () => {
         setLoading(true);
         setError(null);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url, equipped_frame, bio, is_private')
-          .eq('id', userId)
-          .single();
+        const { data, error } = await fetchPublicProfile(userId);
         if (cancelled) return;
         if (error) {
           setError(error.message);
@@ -92,11 +124,7 @@ export function UserProfileModal({
       setError(null);
 
       const [{ data: profileData, error: profileError }, { data: followData, error: followError }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url, equipped_frame, bio, is_private')
-          .eq('id', userId)
-          .single(),
+        fetchPublicProfile(userId),
         supabase
           .from('follows')
           .select('id, follower_id, following_id')
@@ -191,6 +219,20 @@ export function UserProfileModal({
   const displayName = profile?.display_name || profile?.username || 'Usuario';
   const handleText = isFollowing && isIncoming ? t('userProfileModal.mutual') : isIncoming ? t('userProfileModal.followsYou') : '';
   const isPrivateBlocked = Boolean(profile?.is_private) && !isMutual;
+  const favoriteBurgerType = isBurgerTypePreference(profile?.favorite_burger_type)
+    ? profile.favorite_burger_type
+    : null;
+  const favoriteSauce = isBurgerSaucePreference(profile?.favorite_sauce) ? profile.favorite_sauce : null;
+  const favoriteDoneness = isBurgerDonenessPreference(profile?.favorite_doneness)
+    ? profile.favorite_doneness
+    : null;
+  const favoriteBread = isBurgerBreadPreference(profile?.favorite_bread) ? profile.favorite_bread : null;
+  const burgerPreferenceChips = [
+    favoriteBurgerType ? t(`profile.burgerPreferences.types.${favoriteBurgerType}`) : null,
+    favoriteSauce ? t(`profile.burgerPreferences.sauces.${favoriteSauce}`) : null,
+    favoriteDoneness ? t(`profile.burgerPreferences.doneness.${favoriteDoneness}`) : null,
+    favoriteBread ? t(`profile.burgerPreferences.breads.${favoriteBread}`) : null,
+  ].filter(Boolean) as string[];
 
   const handleViewPosts = () => {
     if (!profile) return;
@@ -248,6 +290,19 @@ export function UserProfileModal({
                 {profile.bio || t('userProfileModal.noBio')}
               </div>
             </div>
+
+            {burgerPreferenceChips.length ? (
+              <div className="bw-field">
+                <label className="bw-label">{t('userProfileModal.burgerPreferencesLabel')}</label>
+                <div className="bw-user-profile-preferences">
+                  {burgerPreferenceChips.map((chip) => (
+                    <span key={chip} className="bw-user-profile-chip">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="bw-profile-actions" style={{ justifyContent: 'center', gap: 6, flexDirection: 'column', alignItems: 'center' }}>
               {session ? (

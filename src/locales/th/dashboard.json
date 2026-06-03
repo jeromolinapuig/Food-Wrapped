@@ -12,5 +12,8 @@
   "totalSpent": "ยอดใช้จ่าย",
   "beef": "เนื้อ",
   "chicken": "ไก่",
-  "vegan": "วีแกน"
+  "vegan": "วีแกน",
+  "profileReminderTitle": "กรอกโปรไฟล์ให้ครบ",
+  "profileReminderText": "เพิ่มรูปภาพ ประวัติย่อ และความชอบเบอร์เกอร์เพื่อให้ผู้ใช้อื่นรู้จักคุณมากขึ้น",
+  "profileReminderAction": "แก้ไขโปรไฟล์"
 }

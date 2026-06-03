@@ -20,5 +20,58 @@
   "following": "Abonnements",
   "saved": "Enregistré",
   "cropCancel": "Annuler",
-  "cropSave": "Recadrer et enregistrer"
+  "cropSave": "Recadrer et enregistrer",
+  "unsavedLeaveTitle": "Quitter sans enregistrer ?",
+  "unsavedLeaveMessage": "Tu as des modifications non enregistrées sur ton profil. Si tu pars maintenant, elles seront perdues.",
+  "unsavedLeaveCancel": "Continuer à modifier",
+  "unsavedLeaveConfirm": "Quitter sans enregistrer",
+  "completion": {
+    "title": "Personnalise ton profil",
+    "description": "Ajoute une photo, une bio et tes préférences burger pour donner plus de personnalité à ton profil.",
+    "completeTitle": "Profil personnalisé",
+    "completeDescription": "Ton profil montre maintenant qui tu es dans Burger Wrapped.",
+    "progress": "{{completed}} sur {{total}} éléments complétés"
+  },
+  "burgerPreferences": {
+    "title": "Mes préférences burger",
+    "description": "Ces préférences apparaissent sur ton profil public et génèrent ton burger idéal.",
+    "emptyOption": "Non sélectionné",
+    "typeLabel": "Type de burger favori",
+    "sauceLabel": "Sauce favorite",
+    "donenessLabel": "Cuisson favorite",
+    "breadLabel": "Pain favori",
+    "idealBurger": "Ton burger idéal : {{type}} {{doneness}} avec pain {{bread}} et {{sauce}}.",
+    "types": {
+      "beef": "Bœuf",
+      "chicken": "Poulet",
+      "vegan": "Vegan"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "Sauce burger",
+      "mayonnaise": "Mayonnaise",
+      "honey_mustard": "Miel et moutarde",
+      "truffle": "Truffe",
+      "bacon_mayonnaise": "Mayonnaise au bacon",
+      "mustard": "Moutarde",
+      "ketchup": "Ketchup",
+      "sweet_and_sour": "Aigre-douce",
+      "sweet_chili": "Sweet chili",
+      "cheese": "Fromage",
+      "sriracha": "Sriracha",
+      "emmy": "Emmy",
+      "yogurt": "Yaourt"
+    },
+    "doneness": {
+      "rare": "Saignant",
+      "medium": "À point",
+      "well_done": "Bien cuit"
+    },
+    "breads": {
+      "potato": "Pomme de terre",
+      "brioche": "Brioche",
+      "crystal": "Cristal",
+      "classic": "Classique"
+    }
+  }
 }

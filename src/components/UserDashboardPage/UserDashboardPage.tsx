@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
+import type { FeedPriceFilter, FeedPriceFilterRange } from '../FeedTabs/types';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
@@ -14,6 +15,17 @@ import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import { useTranslation } from 'react-i18next';
+import {
+  DashboardMultiSelect,
+  type MultiSelectOption,
+} from '../Dashboard/DashboardFilters';
+import {
+  burgerTypeFilterOptions,
+  getCurrencySymbol,
+  getPriceFiltersForCurrency,
+} from '../Dashboard/DashboardFilterOptions';
+import type { MeatType } from '../Dashboard/Dashboard';
+import { usePreferences } from '../../context/PreferencesContext';
 import '../Dashboard/Dashboard.css';
 import './UserDashboardPage.css';
 
@@ -23,13 +35,12 @@ type BurgerTypeStats = {
   vegan: number;
 };
 
-type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
-
 type DbEntryRow = {
   id: string;
   datetime: string;
   rating: number | null;
   price: number | null;
+  currency?: string | null;
   is_burger: boolean;
   burger_origin: 'restaurant' | 'homemade' | null;
   meat_type: MeatType | null;
@@ -51,12 +62,16 @@ type UserDashboardPageProps = {
 
 export function UserDashboardPage({ session, userId, isAdminView = false, onBack }: Readonly<UserDashboardPageProps>) {
   const { t } = useTranslation();
+  const { currency: viewerCurrency, convertAmount, formatCurrency } = usePreferences();
   const navigate = useNavigate();
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<'all' | string>(() => getCurrentMonthValue());
+  const [monthFilter, setMonthFilter] = useState<string[]>(() => [getCurrentMonthValue()]);
+  const [priceFilter, setPriceFilter] = useState<FeedPriceFilter[]>(['all']);
+  const [meatTypeFilter, setMeatTypeFilter] = useState<(MeatType | 'all')[]>(['all']);
+  const [openFilterCount, setOpenFilterCount] = useState(0);
   const [profile, setProfile] = useState<{
     username: string | null;
     displayName: string | null;
@@ -168,6 +183,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
           datetime,
           rating,
           price,
+          currency,
           is_burger,
           burger_origin,
           meat_type,
@@ -309,6 +325,63 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   const headerAvatar = profile?.avatarUrl ?? null;
   const headerAvatarFrame = profile?.avatarFrame ?? null;
   const headerAlt = profile?.displayName ?? profile?.username ?? 'Perfil';
+  const monthOptions = useMemo<MultiSelectOption<string>[]>(() => {
+    const values = new Set<string>();
+    entries.forEach((entry) => {
+      const date = new Date(entry.datetime);
+      if (Number.isNaN(date.getTime())) return;
+      values.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+    });
+    const currentValue = getCurrentMonthValue();
+    values.add(currentValue);
+
+    const locale = typeof navigator !== 'undefined' ? navigator.language : undefined;
+    const currentYear = new Date().getFullYear();
+    return [
+      { value: 'all', label: t('common.all', { defaultValue: 'Todos' }) },
+      ...Array.from(values)
+        .sort((a, b) => b.localeCompare(a))
+        .map((value) => {
+          const [yearStr, monthStr] = value.split('-');
+          const year = Number(yearStr);
+          const month = Number(monthStr);
+          const date = new Date(year, month - 1, 1);
+          const label = year === currentYear
+            ? date.toLocaleString(locale, { month: 'long' })
+            : date.toLocaleString(locale, { month: 'long', year: 'numeric' });
+          return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
+        }),
+    ];
+  }, [entries, t]);
+  const priceFilterOptions = useMemo<MultiSelectOption<FeedPriceFilter>[]>(() => {
+    const symbol = getCurrencySymbol(viewerCurrency);
+    return getPriceFiltersForCurrency(viewerCurrency).map((filter) => ({
+      value: filter.value,
+      label: filter.value === 'all' || filter.value === 'free'
+        ? filter.label
+        : `${filter.label} ${symbol}`,
+    }));
+  }, [viewerCurrency]);
+  const priceFilterRanges = useMemo<Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>>(() => {
+    const ranges = {} as Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
+    getPriceFiltersForCurrency(viewerCurrency).forEach((filter) => {
+      if (filter.value === 'all' || !filter.range) return;
+      ranges[filter.value] = filter.range;
+    });
+    return ranges;
+  }, [viewerCurrency]);
+  const meatTypeFilterOptions = useMemo<MultiSelectOption<MeatType | 'all'>[]>(
+    () =>
+      burgerTypeFilterOptions.map((filter) => ({
+        value: filter.value,
+        label: filter.labelKey ? t(filter.labelKey, { defaultValue: filter.label ?? filter.value }) : filter.label ?? filter.value,
+        icon: filter.icon,
+      })),
+    [t]
+  );
+  const handleFilterOpenChange = useCallback((open: boolean) => {
+    setOpenFilterCount((prev) => Math.max(0, prev + (open ? 1 : -1)));
+  }, []);
 
   return (
     <AppShell>
@@ -342,7 +415,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
                   <>
                   <StatCard
                     icon={<Euro fontSize="small" />}
-                    value={`${stats.totalSpent.toFixed(2)}\u20AC`}
+                    value={formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency })}
                     label={t('dashboard.totalSpent')}
                   />
                     <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
@@ -392,19 +465,33 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
               <section className="bw-history">
                 <div className="bw-section-header">
                   <h2 className="bw-section-title">{t('dashboard.posts')} ({postsCount})</h2>
-                  <div className="bw-section-right">
-                  <FeedTabs
-                    currentUserId={viewerId}
-                    isReadOnly={!viewerId}
-                    adminMode={isAdminView}
-                    focusUserId={userId}
-                    ignorePrivacy={isAdminView}
-                    headerOnly
-                    monthFilter={monthFilter}
-                    onMonthFilterChange={setMonthFilter}
+                </div>
+                <div
+                  className={`bw-dashboard-filter-carousel ${openFilterCount > 0 ? 'is-locked' : ''}`}
+                  aria-label={t('dashboard.filters', { defaultValue: 'Filtros' })}
+                >
+                  <DashboardMultiSelect
+                    label={t('dashboard.dateFilter', { defaultValue: 'Fecha' })}
+                    options={monthOptions}
+                    selected={monthFilter}
+                    onChange={setMonthFilter}
+                    onOpenChange={handleFilterOpenChange}
+                  />
+                  <DashboardMultiSelect
+                    label={t('dashboard.priceFilter', { defaultValue: 'Precio' })}
+                    options={priceFilterOptions}
+                    selected={priceFilter}
+                    onChange={setPriceFilter}
+                    onOpenChange={handleFilterOpenChange}
+                  />
+                  <DashboardMultiSelect
+                    label={t('dashboard.type', { defaultValue: 'Tipo' })}
+                    options={meatTypeFilterOptions}
+                    selected={meatTypeFilter}
+                    onChange={setMeatTypeFilter}
+                    onOpenChange={handleFilterOpenChange}
                   />
                 </div>
-              </div>
               <FeedTabs
                 currentUserId={viewerId}
                 isReadOnly={!viewerId}
@@ -414,7 +501,11 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
                 onCountChange={setPostsCount}
                 hideHeader
                 monthFilter={monthFilter}
-                onMonthFilterChange={setMonthFilter}
+                priceFilter={priceFilter}
+                priceFilterRanges={priceFilterRanges}
+                priceFilterCurrency={viewerCurrency}
+                convertPriceAmount={convertAmount}
+                meatTypeFilter={meatTypeFilter}
                 onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: `/users/${userId}` } })}
               />
             </section>

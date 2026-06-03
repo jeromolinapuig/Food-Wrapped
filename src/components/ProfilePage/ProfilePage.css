@@ -7,6 +7,10 @@
   position: relative;
 }
 
+.bw-profile-main {
+  padding-bottom: 220px;
+}
+
 .bw-profile-saved-button {
   position: absolute;
   top: 12px;
@@ -99,6 +103,73 @@
   margin-top: 8px;
 }
 
+.bw-profile-completion {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: var(--bw-card-bg);
+}
+
+.bw-profile-completion-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bw-profile-completion-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--bw-text);
+}
+
+.bw-profile-completion-text,
+.bw-profile-completion-meta {
+  font-size: 12px;
+  color: var(--bw-text-muted);
+  line-height: 1.35;
+}
+
+.bw-profile-completion-percent {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--bw-accent);
+}
+
+.bw-profile-completion-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(171, 171, 171, 0.2);
+}
+
+.bw-profile-completion-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bw-accent);
+}
+
+.bw-preferences-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.bw-profile-ideal-burger {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bw-accent-soft);
+  color: var(--bw-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .bw-profile-avatar-field {
   gap: 10px;
 }
@@ -111,8 +182,33 @@
 
 .bw-profile-actions {
   display: flex;
-  justify-content: space-between;
   gap: 12px;
+}
+
+.bw-profile-actions .bw-btn {
+  width: 100%;
+}
+
+.bw-profile-save-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 78px;
+  z-index: 60;
+  width: min(430px, calc(100% - 32px));
+  box-sizing: border-box;
+  padding: 8px 0 0;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to top,
+    var(--bw-card-bg) 0%,
+    var(--bw-card-bg) 82%,
+    rgba(255, 255, 255, 0)
+  );
+}
+
+.bw-profile-save-button {
+  width: 100%;
+  min-height: 48px;
 }
 
 .bw-profile-avatar-trigger {

@@ -12,5 +12,8 @@
   "totalSpent": "Total gastado",
   "beef": "Carne",
   "chicken": "Pollo",
-  "vegan": "Vegana"
+  "vegan": "Vegana",
+  "profileReminderTitle": "Completa tu perfil",
+  "profileReminderText": "Añade foto, bio y preferencias burger para que otros usuarios te conozcan mejor.",
+  "profileReminderAction": "Editar perfil"
 }

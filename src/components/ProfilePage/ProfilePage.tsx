@@ -10,11 +10,26 @@ import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { ModalBase } from '../common/ModalBase';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { cropImageFile } from '../../utils/cropImage';
 import { compressImage } from '../../utils/image';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { usePreferences } from '../../context/PreferencesContext';
+import {
+  BURGER_BREAD_OPTIONS,
+  BURGER_DONENESS_OPTIONS,
+  BURGER_SAUCE_OPTIONS,
+  BURGER_TYPE_OPTIONS,
+  type BurgerBreadPreference,
+  type BurgerDonenessPreference,
+  type BurgerSaucePreference,
+  type BurgerTypePreference,
+  isBurgerBreadPreference,
+  isBurgerDonenessPreference,
+  isBurgerSaucePreference,
+  isBurgerTypePreference,
+} from '../../constants/burgerPreferences';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './ProfilePage.css';
@@ -29,6 +44,10 @@ type ProfileData = {
   is_admin?: boolean | null;
   preferred_language?: string | null;
   preferred_currency?: string | null;
+  favorite_burger_type?: BurgerTypePreference | null;
+  favorite_sauce?: BurgerSaucePreference | null;
+  favorite_doneness?: BurgerDonenessPreference | null;
+  favorite_bread?: BurgerBreadPreference | null;
 };
 
 type ProfilePageProps = {
@@ -75,6 +94,10 @@ export function ProfilePage({
   const { language, currency, setLanguage, setCurrency } = usePreferences();
   const [languageInput, setLanguageInput] = useState(language);
   const [currencyInput, setCurrencyInput] = useState(currency);
+  const [favoriteBurgerTypeInput, setFavoriteBurgerTypeInput] = useState<BurgerTypePreference | ''>('');
+  const [favoriteSauceInput, setFavoriteSauceInput] = useState<BurgerSaucePreference | ''>('');
+  const [favoriteDonenessInput, setFavoriteDonenessInput] = useState<BurgerDonenessPreference | ''>('');
+  const [favoriteBreadInput, setFavoriteBreadInput] = useState<BurgerBreadPreference | ''>('');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const BIO_LIMIT = 250;
@@ -95,6 +118,7 @@ export function ProfilePage({
   });
   const [monthlyRank, setMonthlyRank] = useState<number | null>(null);
   const [framesLoading, setFramesLoading] = useState(false);
+  const [pendingNavPath, setPendingNavPath] = useState<string | null>(null);
   const languageOptions = useMemo(
     () => [
       { value: 'en', label: 'English' },
@@ -118,10 +142,25 @@ export function ProfilePage({
   );
   const profileCacheKey = `bw-profile-${session.user.id}`;
   const followCountsCacheKey = `bw-profile-follow-counts-${session.user.id}`;
-  const parseFrameKey = (value: string | null | undefined): FrameOption['key'] | null => {
+  const parseFrameKey = useCallback((value: string | null | undefined): FrameOption['key'] | null => {
     if (value === 'gold' || value === 'silver' || value === 'bronze') return value;
     return null;
-  };
+  }, []);
+
+  const syncBurgerPreferenceInputs = useCallback((nextProfile: ProfileData) => {
+    setFavoriteBurgerTypeInput(
+      isBurgerTypePreference(nextProfile.favorite_burger_type) ? nextProfile.favorite_burger_type : ''
+    );
+    setFavoriteSauceInput(
+      isBurgerSaucePreference(nextProfile.favorite_sauce) ? nextProfile.favorite_sauce : ''
+    );
+    setFavoriteDonenessInput(
+      isBurgerDonenessPreference(nextProfile.favorite_doneness) ? nextProfile.favorite_doneness : ''
+    );
+    setFavoriteBreadInput(
+      isBurgerBreadPreference(nextProfile.favorite_bread) ? nextProfile.favorite_bread : ''
+    );
+  }, []);
 
   const loadProfile = useCallback(async (options?: { showLoading?: boolean; skipCache?: boolean }) => {
     const showLoading = options?.showLoading ?? true;
@@ -150,6 +189,7 @@ export function ProfilePage({
       setBioInput(data?.bio ?? '');
       setAvatarPreview(data?.avatar_url ?? null);
       setIsPrivate(Boolean(data?.is_private));
+      syncBurgerPreferenceInputs(nextProfile);
       if (!options?.skipCache) {
         try {
           sessionStorage.setItem(profileCacheKey, JSON.stringify(data));
@@ -161,7 +201,7 @@ export function ProfilePage({
       setCurrencyInput((data as ProfileData)?.preferred_currency ?? currency);
     }
     if (showLoading) setLoading(false);
-  }, [currency, language, profileCacheKey, session.user.id, username]);
+  }, [currency, language, profileCacheKey, session.user.id, syncBurgerPreferenceInputs, username]);
 
   useEffect(() => {
     const cached = sessionStorage.getItem(profileCacheKey);
@@ -177,6 +217,7 @@ export function ProfilePage({
         setBioInput(parsed.bio ?? '');
         setAvatarPreview(parsed.avatar_url ?? null);
         setIsPrivate(Boolean(parsed.is_private));
+        syncBurgerPreferenceInputs(parsed);
         setLanguageInput((parsed as ProfileData)?.preferred_language ?? language);
         setCurrencyInput((parsed as ProfileData)?.preferred_currency ?? currency);
         return;
@@ -186,7 +227,7 @@ export function ProfilePage({
     }
 
     loadProfile();
-  }, [currency, language, loadProfile, profileCacheKey, username]);
+  }, [currency, language, loadProfile, profileCacheKey, syncBurgerPreferenceInputs, username]);
 
   const loadFollowCounts = useCallback(async () => {
     const { data: followRows, error } = await supabase
@@ -446,6 +487,41 @@ export function ProfilePage({
     [equippedFrameKey]
   );
   const initialLetter = (profile?.username ?? username ?? session.user.email?.[0] ?? '?').charAt(0).toUpperCase();
+  const profileCompletion = useMemo(() => {
+    const items = [
+      Boolean(currentAvatar),
+      Boolean(bioInput.trim()),
+      Boolean(favoriteBurgerTypeInput),
+      Boolean(favoriteSauceInput),
+      Boolean(favoriteDonenessInput),
+      Boolean(favoriteBreadInput),
+    ];
+    const completed = items.filter(Boolean).length;
+    return {
+      completed,
+      total: items.length,
+      percent: Math.round((completed / items.length) * 100),
+      isComplete: completed === items.length,
+    };
+  }, [
+    bioInput,
+    currentAvatar,
+    favoriteBreadInput,
+    favoriteBurgerTypeInput,
+    favoriteDonenessInput,
+    favoriteSauceInput,
+  ]);
+  const idealBurgerText = useMemo(() => {
+    if (!favoriteBurgerTypeInput || !favoriteSauceInput || !favoriteDonenessInput || !favoriteBreadInput) {
+      return null;
+    }
+    return t('profile.burgerPreferences.idealBurger', {
+      type: t(`profile.burgerPreferences.types.${favoriteBurgerTypeInput}`),
+      sauce: t(`profile.burgerPreferences.sauces.${favoriteSauceInput}`),
+      doneness: t(`profile.burgerPreferences.doneness.${favoriteDonenessInput}`),
+      bread: t(`profile.burgerPreferences.breads.${favoriteBreadInput}`),
+    });
+  }, [favoriteBreadInput, favoriteBurgerTypeInput, favoriteDonenessInput, favoriteSauceInput, t]);
 
   const handleSelectFrame = async (key: FrameOption['key'] | null) => {
     if (key && !unlockedFrames[key]) return;
@@ -478,21 +554,65 @@ export function ProfilePage({
     const privacyChanged = Boolean(isPrivate) !== Boolean(profile?.is_private);
     const languageChanged = languageInput !== (profile?.preferred_language ?? language);
     const currencyChanged = currencyInput !== (profile?.preferred_currency ?? currency);
-    return usernameChanged || bioChanged || privacyChanged || languageChanged || currencyChanged;
+    const favoriteBurgerTypeChanged = (favoriteBurgerTypeInput || null) !== (profile?.favorite_burger_type ?? null);
+    const favoriteSauceChanged = (favoriteSauceInput || null) !== (profile?.favorite_sauce ?? null);
+    const favoriteDonenessChanged = (favoriteDonenessInput || null) !== (profile?.favorite_doneness ?? null);
+    const favoriteBreadChanged = (favoriteBreadInput || null) !== (profile?.favorite_bread ?? null);
+    return (
+      usernameChanged ||
+      bioChanged ||
+      privacyChanged ||
+      languageChanged ||
+      currencyChanged ||
+      favoriteBurgerTypeChanged ||
+      favoriteSauceChanged ||
+      favoriteDonenessChanged ||
+      favoriteBreadChanged
+    );
   }, [
     bioInput,
     currency,
     currencyInput,
+    favoriteBreadInput,
+    favoriteBurgerTypeInput,
+    favoriteDonenessInput,
+    favoriteSauceInput,
     isPrivate,
     language,
     languageInput,
     profile?.bio,
+    profile?.favorite_bread,
+    profile?.favorite_burger_type,
+    profile?.favorite_doneness,
+    profile?.favorite_sauce,
     profile?.is_private,
     profile?.preferred_currency,
     profile?.preferred_language,
     profile?.username,
     usernameInput,
   ]);
+
+  useEffect(() => {
+    const handleBeforeBottomNavNavigate = (event: Event) => {
+      const custom = event as CustomEvent<{ path?: string }>;
+      const nextPath = custom.detail?.path ?? null;
+      if (!nextPath || !hasChanges || saving) return;
+      event.preventDefault();
+      setPendingNavPath(nextPath);
+    };
+
+    window.addEventListener('bw-bottom-nav-before-navigate', handleBeforeBottomNavNavigate);
+    return () => {
+      window.removeEventListener('bw-bottom-nav-before-navigate', handleBeforeBottomNavNavigate);
+    };
+  }, [hasChanges, saving]);
+
+  const handleConfirmPendingNavigation = () => {
+    if (!pendingNavPath) return;
+    const nextPath = pendingNavPath;
+    setPendingNavPath(null);
+    navigate(nextPath);
+  };
 
   const getStoragePathFromUrl = (url: string | null | undefined) => {
     if (!url) return null;
@@ -587,6 +707,10 @@ export function ProfilePage({
         is_private: isPrivate,
         preferred_language: languageInput,
         preferred_currency: currencyInput,
+        favorite_burger_type: favoriteBurgerTypeInput || null,
+        favorite_sauce: favoriteSauceInput || null,
+        favorite_doneness: favoriteDonenessInput || null,
+        favorite_bread: favoriteBreadInput || null,
       };
 
       const attemptUpdate = async (body: Record<string, unknown>) =>
@@ -612,6 +736,7 @@ export function ProfilePage({
       await supabase.auth.refreshSession().catch(() => {});
 
       setProfile(data as ProfileData);
+      syncBurgerPreferenceInputs(data as ProfileData);
       setUsernameInput(nextUsername);
       setLanguage(languageInput);
       setCurrency(currencyInput);
@@ -696,7 +821,7 @@ export function ProfilePage({
           actions={<TopMenu theme={theme} onToggleTheme={onToggleTheme} />}
         />
 
-        <main className="bw-main">
+        <main className="bw-main bw-profile-main">
           <section className="bw-card bw-profile-card">
             <button
               type="button"
@@ -756,6 +881,33 @@ export function ProfilePage({
             {loading && <p style={{ fontSize: 13 }}>{t('profile.loading')}</p>}
             {error && <p style={{ fontSize: 12, color: 'red' }}>{error}</p>}
 
+            {!profileCompletion.isComplete ? (
+              <div className="bw-profile-completion">
+                <div className="bw-profile-completion-header">
+                  <div>
+                    <div className="bw-profile-completion-title">{t('profile.completion.title')}</div>
+                    <div className="bw-profile-completion-text">{t('profile.completion.description')}</div>
+                  </div>
+                  <span className="bw-profile-completion-percent">{profileCompletion.percent}%</span>
+                </div>
+                <div
+                  className="bw-profile-completion-bar"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={profileCompletion.percent}
+                >
+                  <span style={{ width: `${profileCompletion.percent}%` }} />
+                </div>
+                <div className="bw-profile-completion-meta">
+                  {t('profile.completion.progress', {
+                    completed: profileCompletion.completed,
+                    total: profileCompletion.total,
+                  })}
+                </div>
+              </div>
+            ) : null}
+
             <div className="bw-profile-form">
               <div className="bw-field">
                 <label className="bw-label" htmlFor="username">{t('profile.usernameLabel')}</label>
@@ -785,6 +937,105 @@ export function ProfilePage({
                   {bioInput.length}/{BIO_LIMIT}
                 </div>
               </div>
+
+              <div className="bw-field">
+                <div className="bw-label" style={{ marginBottom: 6 }}>
+                  {t('profile.burgerPreferences.title')}
+                </div>
+                <p className="bw-helper" style={{ marginTop: 0 }}>
+                  {t('profile.burgerPreferences.description')}
+                </p>
+                <div className="bw-preferences-grid">
+                  <div className="bw-field" style={{ marginBottom: 0 }}>
+                    <label className="bw-label" htmlFor="favorite-burger-type">
+                      {t('profile.burgerPreferences.typeLabel')}
+                    </label>
+                    <select
+                      id="favorite-burger-type"
+                      className="bw-input"
+                      value={favoriteBurgerTypeInput}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setFavoriteBurgerTypeInput(isBurgerTypePreference(next) ? next : '');
+                      }}
+                    >
+                      <option value="">{t('profile.burgerPreferences.emptyOption')}</option>
+                      {BURGER_TYPE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`profile.burgerPreferences.types.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="bw-field" style={{ marginBottom: 0 }}>
+                    <label className="bw-label" htmlFor="favorite-sauce">
+                      {t('profile.burgerPreferences.sauceLabel')}
+                    </label>
+                    <select
+                      id="favorite-sauce"
+                      className="bw-input"
+                      value={favoriteSauceInput}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setFavoriteSauceInput(isBurgerSaucePreference(next) ? next : '');
+                      }}
+                    >
+                      <option value="">{t('profile.burgerPreferences.emptyOption')}</option>
+                      {BURGER_SAUCE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`profile.burgerPreferences.sauces.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="bw-field" style={{ marginBottom: 0 }}>
+                    <label className="bw-label" htmlFor="favorite-doneness">
+                      {t('profile.burgerPreferences.donenessLabel')}
+                    </label>
+                    <select
+                      id="favorite-doneness"
+                      className="bw-input"
+                      value={favoriteDonenessInput}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setFavoriteDonenessInput(isBurgerDonenessPreference(next) ? next : '');
+                      }}
+                    >
+                      <option value="">{t('profile.burgerPreferences.emptyOption')}</option>
+                      {BURGER_DONENESS_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`profile.burgerPreferences.doneness.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="bw-field" style={{ marginBottom: 0 }}>
+                    <label className="bw-label" htmlFor="favorite-bread">
+                      {t('profile.burgerPreferences.breadLabel')}
+                    </label>
+                    <select
+                      id="favorite-bread"
+                      className="bw-input"
+                      value={favoriteBreadInput}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setFavoriteBreadInput(isBurgerBreadPreference(next) ? next : '');
+                      }}
+                    >
+                      <option value="">{t('profile.burgerPreferences.emptyOption')}</option>
+                      {BURGER_BREAD_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`profile.burgerPreferences.breads.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {idealBurgerText ? (
+                  <div className="bw-profile-ideal-burger">{idealBurgerText}</div>
+                ) : null}
+              </div>
+
               <div className="bw-privacy-toggle">
                 <div>
                   <div className="bw-privacy-title">{t('profile.privacyTitle')}</div>
@@ -813,7 +1064,7 @@ export function ProfilePage({
               <div className="bw-field">
                 <div className="bw-label" style={{ marginBottom: 6 }}>{t('profile.preferencesTitle')}</div>
                 <p className="bw-helper" style={{ marginTop: 0 }}>{t('profile.preferencesDescription')}</p>
-                <div className="bw-preferences-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <div className="bw-preferences-grid">
                   <div className="bw-field" style={{ marginBottom: 0 }}>
                     <label className="bw-label" htmlFor="language-select">{t('common.language')}</label>
                     <select
@@ -872,18 +1123,21 @@ export function ProfilePage({
                 >
                   {t('profile.signOut')}
                 </button>
-                <button
-                  type="button"
-                  className="bw-btn bw-btn-primary"
-                  onClick={handleSave}
-                  disabled={saving || !hasChanges}
-                >
-                  {saving ? t('profile.saving') : t('profile.saveChanges')}
-                </button>
               </div>
             </div>
           </section>
         </main>
+
+        <div className="bw-profile-save-bar">
+          <button
+            type="button"
+            className="bw-btn bw-btn-primary bw-profile-save-button"
+            onClick={handleSave}
+            disabled={saving || !hasChanges}
+          >
+            {saving ? t('profile.saving') : t('profile.saveChanges')}
+          </button>
+        </div>
 
       {saving && (
         <div className="bw-loader-overlay">
@@ -899,6 +1153,31 @@ export function ProfilePage({
         onFollowingDelta={handleFollowingDelta}
         onListCount={handleFollowListCount}
         onViewPosts={handleOpenUserFeed}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingNavPath)}
+        onClose={() => setPendingNavPath(null)}
+        title={t('profile.unsavedLeaveTitle')}
+        message={t('profile.unsavedLeaveMessage')}
+        actions={(
+          <>
+            <button
+              type="button"
+              className="bw-btn bw-btn-ghost"
+              onClick={() => setPendingNavPath(null)}
+            >
+              {t('profile.unsavedLeaveCancel')}
+            </button>
+            <button
+              type="button"
+              className="bw-btn bw-btn-danger"
+              onClick={handleConfirmPendingNavigation}
+            >
+              {t('profile.unsavedLeaveConfirm')}
+            </button>
+          </>
+        )}
       />
 
       <ModalBase

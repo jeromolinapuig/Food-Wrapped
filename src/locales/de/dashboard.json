@@ -12,5 +12,8 @@
   "totalSpent": "Gesamt ausgegeben",
   "beef": "Rind",
   "chicken": "Huhn",
-  "vegan": "Vegan"
+  "vegan": "Vegan",
+  "profileReminderTitle": "Profil vervollständigen",
+  "profileReminderText": "Füge Foto, Bio und Burger-Vorlieben hinzu, damit andere dich besser kennenlernen.",
+  "profileReminderAction": "Profil bearbeiten"
 }

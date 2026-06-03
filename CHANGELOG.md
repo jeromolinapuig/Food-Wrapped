@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+- Added burger profile preferences with translated ideal burger summaries and profile personalization progress.
+- Added a home reminder for users with incomplete profile personalization.
+- Added the home feed filters to other users' profile feeds.
+- Changed the profile save action to a full-width sticky bar above the bottom navigation.
+- Added an unsaved profile changes confirmation when leaving through the bottom navigation.
+- Fixed feed photo previews so mobile back closes the photo while manual close no longer navigates through browser history.
+
 ## 1.0.2
 
 - Fixed app navigation so changing sections resets the page scroll to the top.

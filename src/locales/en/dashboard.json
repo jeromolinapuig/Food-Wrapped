@@ -12,5 +12,8 @@
   "totalSpent": "Total spent",
   "beef": "Beef",
   "chicken": "Chicken",
-  "vegan": "Vegan"
+  "vegan": "Vegan",
+  "profileReminderTitle": "Complete your profile",
+  "profileReminderText": "Add a photo, bio, and burger preferences so other users can get to know you better.",
+  "profileReminderAction": "Edit profile"
 }

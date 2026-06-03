@@ -196,7 +196,7 @@ export function FeedTabs({
         window.history.state && typeof window.history.state === 'object'
           ? { ...window.history.state, [PHOTO_PREVIEW_HISTORY_KEY]: true }
           : { [PHOTO_PREVIEW_HISTORY_KEY]: true };
-      window.history.pushState(nextState, '');
+      window.history.pushState(nextState, '', window.location.href);
       photoPreviewHistoryEntryRef.current = true;
     }
     setPhotoPreviewUrl(url);
@@ -204,10 +204,13 @@ export function FeedTabs({
 
   const handleClosePhotoPreview = () => {
     if (photoPreviewHistoryEntryRef.current) {
+      const currentState =
+        window.history.state && typeof window.history.state === 'object'
+          ? { ...window.history.state }
+          : {};
+      delete (currentState as Record<string, unknown>)[PHOTO_PREVIEW_HISTORY_KEY];
+      window.history.replaceState(currentState, '', window.location.href);
       photoPreviewHistoryEntryRef.current = false;
-      setPhotoPreviewUrl(null);
-      window.history.back();
-      return;
     }
     setPhotoPreviewUrl(null);
   };

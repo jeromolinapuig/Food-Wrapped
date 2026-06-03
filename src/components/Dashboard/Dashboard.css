@@ -4,6 +4,51 @@
   overflow-y: visible;
 }
 
+.bw-profile-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: var(--bw-card-bg);
+}
+
+.bw-profile-reminder-title {
+  margin: 0;
+  color: var(--bw-text);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.bw-profile-reminder-text {
+  margin: 4px 0 0;
+  color: var(--bw-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.bw-profile-reminder-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 520px) {
+  .bw-profile-reminder {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bw-profile-reminder-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
 .bw-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

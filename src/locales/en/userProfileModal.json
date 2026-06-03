@@ -9,5 +9,6 @@
   "noBio": "No bio yet.",
   "unfollow": "Unfollow",
   "follow": "Follow",
-  "loginToFollow": "Log in to follow this person."
+  "loginToFollow": "Log in to follow this person.",
+  "burgerPreferencesLabel": "Burger preferences"
 }

@@ -56,7 +56,7 @@ export function BottomNav({
     if (location.pathname.startsWith('/restaurants')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
-  }, [adminModeEnabled, isAdmin, location.pathname]);
+  }, [adminModeEnabled, isAdmin, location.pathname, location.state]);
 
   const loadProfile = useCallback(async () => {
     if (!session || (adminModeEnabled && isAdmin)) return;
@@ -142,10 +142,22 @@ export function BottomNav({
   );
 
   useEffect(() => {
-    setMoreOpen(false);
+    const timeoutId = window.setTimeout(() => setMoreOpen(false), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [location.pathname]);
 
+  const requestNavigation = (path: string) => {
+    if (location.pathname === path) return false;
+    const event = new CustomEvent('bw-bottom-nav-before-navigate', {
+      cancelable: true,
+      detail: { path },
+    });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+
   const handleClick = (path: string) => {
+    if (requestNavigation(path)) return;
     setMoreOpen(false);
     navigate(path);
   };
@@ -166,7 +178,7 @@ export function BottomNav({
         <button
           type="button"
           className={`bw-bottom-nav-item ${activeKey === 'admin-feed' ? 'is-active' : ''}`}
-          onClick={() => navigate('/admin/feed')}
+          onClick={() => handleClick('/admin/feed')}
           aria-label="Admin Feed"
         >
           <span className="bw-bottom-nav-icon"><DynamicFeed /></span>
@@ -175,7 +187,7 @@ export function BottomNav({
         <button
           type="button"
           className={`bw-bottom-nav-item ${activeKey === 'admin-users' ? 'is-active' : ''}`}
-          onClick={() => navigate('/admin/users')}
+          onClick={() => handleClick('/admin/users')}
           aria-label="Admin Usuarios"
         >
           <span className="bw-bottom-nav-icon"><Groups /></span>
@@ -184,7 +196,7 @@ export function BottomNav({
         <button
           type="button"
           className={`bw-bottom-nav-item ${activeKey === 'admin-reports' ? 'is-active' : ''}`}
-          onClick={() => navigate('/admin/reports')}
+          onClick={() => handleClick('/admin/reports')}
           aria-label="Admin Reportes"
         >
           <span className="bw-bottom-nav-icon"><EmojiEvents /></span>
@@ -193,7 +205,7 @@ export function BottomNav({
         <button
           type="button"
           className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}
-          onClick={() => navigate('/profile')}
+          onClick={() => handleClick('/profile')}
           aria-label={t('profile.title')}
         >
           <span className="bw-bottom-nav-icon"><PersonOutline /></span>
@@ -213,7 +225,7 @@ export function BottomNav({
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'home' ? 'is-active' : ''}`}
-        onClick={() => navigate('/')}
+        onClick={() => handleClick('/')}
         aria-label={t('common.home', { defaultValue: 'Home' })}
       >
         <span className="bw-bottom-nav-icon"><Home /></span>
@@ -222,7 +234,7 @@ export function BottomNav({
       <button
         type="button"
         className={`bw-bottom-nav-item ${activeKey === 'feed' ? 'is-active' : ''}`}
-        onClick={() => navigate('/feed')}
+        onClick={() => handleClick('/feed')}
         aria-label="Feed"
       >
         <span className="bw-bottom-nav-icon"><DynamicFeed /></span>

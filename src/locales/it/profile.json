@@ -20,5 +20,58 @@
   "following": "Seguiti",
   "saved": "Salvato",
   "cropCancel": "Annulla",
-  "cropSave": "Ritaglia e salva"
+  "cropSave": "Ritaglia e salva",
+  "unsavedLeaveTitle": "Uscire senza salvare?",
+  "unsavedLeaveMessage": "Hai modifiche non salvate nel profilo. Se esci ora, andranno perse.",
+  "unsavedLeaveCancel": "Continua a modificare",
+  "unsavedLeaveConfirm": "Esci senza salvare",
+  "completion": {
+    "title": "Personalizza il profilo",
+    "description": "Aggiungi foto, bio e preferenze burger per dare più personalità al profilo.",
+    "completeTitle": "Profilo personalizzato",
+    "completeDescription": "Il tuo profilo mostra chi sei dentro Burger Wrapped.",
+    "progress": "{{completed}} di {{total}} elementi completati"
+  },
+  "burgerPreferences": {
+    "title": "Le mie preferenze burger",
+    "description": "Queste preferenze appaiono nel profilo pubblico e generano il tuo burger ideale.",
+    "emptyOption": "Non selezionato",
+    "typeLabel": "Tipo di burger preferito",
+    "sauceLabel": "Salsa preferita",
+    "donenessLabel": "Cottura preferita",
+    "breadLabel": "Pane preferito",
+    "idealBurger": "Il tuo burger ideale: {{type}} {{doneness}} con pane {{bread}} e {{sauce}}.",
+    "types": {
+      "beef": "Manzo",
+      "chicken": "Pollo",
+      "vegan": "Vegano"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "Salsa burger",
+      "mayonnaise": "Maionese",
+      "honey_mustard": "Miele e senape",
+      "truffle": "Tartufo",
+      "bacon_mayonnaise": "Maionese al bacon",
+      "mustard": "Senape",
+      "ketchup": "Ketchup",
+      "sweet_and_sour": "Agrodolce",
+      "sweet_chili": "Sweet chili",
+      "cheese": "Formaggio",
+      "sriracha": "Sriracha",
+      "emmy": "Emmy",
+      "yogurt": "Yogurt"
+    },
+    "doneness": {
+      "rare": "Al sangue",
+      "medium": "Media",
+      "well_done": "Ben cotta"
+    },
+    "breads": {
+      "potato": "Patata",
+      "brioche": "Brioche",
+      "crystal": "Cristal",
+      "classic": "Classico"
+    }
+  }
 }

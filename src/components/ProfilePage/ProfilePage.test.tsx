@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,7 +48,10 @@ const { supabaseMock, navigateMock, prefsMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('@mui/icons-material', () => ({
+  Block: () => null,
   BookmarksOutlined: () => null,
+  Check: () => null,
+  Close: () => null,
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -173,6 +176,32 @@ const setupSupabase = () => {
       };
     }
 
+    if (table === 'entries') {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        is: () => query,
+        gte: () => query,
+        lt: async () => ({ data: [], error: null }),
+      };
+      return query;
+    }
+
+    if (table === 'monthly_frame_results') {
+      return {
+        select: () => ({
+          order: () => ({
+            limit: async () => ({ data: [], error: null }),
+          }),
+          eq: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+            }),
+          }),
+        }),
+      };
+    }
+
     return {
       select: () => ({
         eq: () => ({
@@ -254,5 +283,28 @@ describe('ProfilePage functional flows', () => {
 
     await user.click(await screen.findByRole('button', { name: /common.following/i }));
     expect(screen.getByText('follow-modal-following')).toBeInTheDocument();
+  });
+
+  it('confirms bottom navigation when profile changes are unsaved', async () => {
+    const user = userEvent.setup();
+    renderProfilePage();
+
+    const usernameInput = await screen.findByLabelText('profile.usernameLabel');
+    await user.clear(usernameInput);
+    await user.type(usernameInput, 'changed-user');
+
+    const event = new CustomEvent('bw-bottom-nav-before-navigate', {
+      cancelable: true,
+      detail: { path: '/feed' },
+    });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(await screen.findByText('profile.unsavedLeaveTitle')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'profile.unsavedLeaveConfirm' }));
+    expect(navigateMock).toHaveBeenCalledWith('/feed');
   });
 });

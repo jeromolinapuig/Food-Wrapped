@@ -137,6 +137,7 @@ Responsabilidades:
 - Mostrar historial mediante `FeedTabs`.
 - Gestionar add/edit/delete de entradas.
 - Cargar invitaciones, grupos, notificaciones y datos del perfil.
+- Mostrar recordatorio para completar la personalizacion del perfil si falta foto, bio o preferencias burger.
 
 Llamadas Supabase relevantes:
 
@@ -214,7 +215,9 @@ Archivo:
 
 Responsabilidades:
 
-- Editar username, display name, bio y avatar.
+- Editar username, display name, bio, avatar y preferencias burger.
+- Mostrar progreso de personalizacion del perfil.
+- Generar una frase de burger ideal desde claves traducibles, sin persistir texto localizado.
 - Cambiar password via `supabase.auth.updateUser`.
 - Refrescar sesion.
 - Logout.

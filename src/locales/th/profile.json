@@ -20,5 +20,58 @@
   "following": "กำลังติดตาม",
   "saved": "บันทึกแล้ว",
   "cropCancel": "ยกเลิก",
-  "cropSave": "ครอปและบันทึก"
+  "cropSave": "ครอปและบันทึก",
+  "unsavedLeaveTitle": "ออกโดยไม่บันทึก?",
+  "unsavedLeaveMessage": "คุณมีการเปลี่ยนแปลงโปรไฟล์ที่ยังไม่ได้บันทึก หากออกตอนนี้ การเปลี่ยนแปลงจะหายไป",
+  "unsavedLeaveCancel": "แก้ไขต่อ",
+  "unsavedLeaveConfirm": "ออกโดยไม่บันทึก",
+  "completion": {
+    "title": "ปรับแต่งโปรไฟล์ของคุณ",
+    "description": "เพิ่มรูปภาพ ประวัติย่อ และความชอบเกี่ยวกับเบอร์เกอร์เพื่อให้โปรไฟล์มีความเป็นตัวคุณมากขึ้น",
+    "completeTitle": "โปรไฟล์ที่ปรับแต่งแล้ว",
+    "completeDescription": "โปรไฟล์ของคุณแสดงตัวตนใน Burger Wrapped แล้ว",
+    "progress": "เสร็จแล้ว {{completed}} จาก {{total}} รายการ"
+  },
+  "burgerPreferences": {
+    "title": "ความชอบเบอร์เกอร์ของฉัน",
+    "description": "ความชอบเหล่านี้จะแสดงในโปรไฟล์สาธารณะและสร้างเบอร์เกอร์ในอุดมคติของคุณ",
+    "emptyOption": "ยังไม่ได้เลือก",
+    "typeLabel": "ประเภทเบอร์เกอร์ที่ชอบ",
+    "sauceLabel": "ซอสที่ชอบ",
+    "donenessLabel": "ระดับความสุกที่ชอบ",
+    "breadLabel": "ขนมปังที่ชอบ",
+    "idealBurger": "เบอร์เกอร์ในอุดมคติของคุณ: {{type}} {{doneness}} พร้อมขนมปัง {{bread}} และ {{sauce}}",
+    "types": {
+      "beef": "เนื้อวัว",
+      "chicken": "ไก่",
+      "vegan": "วีแกน"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "ซอสเบอร์เกอร์",
+      "mayonnaise": "มายองเนส",
+      "honey_mustard": "น้ำผึ้งมัสตาร์ด",
+      "truffle": "ทรัฟเฟิล",
+      "bacon_mayonnaise": "มายองเนสเบคอน",
+      "mustard": "มัสตาร์ด",
+      "ketchup": "เคตชัป",
+      "sweet_and_sour": "เปรี้ยวหวาน",
+      "sweet_chili": "Sweet Chili",
+      "cheese": "ชีส",
+      "sriracha": "ศรีราชา",
+      "emmy": "Emmy",
+      "yogurt": "โยเกิร์ต"
+    },
+    "doneness": {
+      "rare": "สุกน้อย",
+      "medium": "สุกพอดี",
+      "well_done": "สุกมาก"
+    },
+    "breads": {
+      "potato": "มันฝรั่ง",
+      "brioche": "บริออช",
+      "crystal": "คริสตัล",
+      "classic": "คลาสสิก"
+    }
+  }
 }

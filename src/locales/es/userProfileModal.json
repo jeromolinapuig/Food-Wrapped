@@ -9,5 +9,6 @@
   "noBio": "Sin bio todavía.",
   "unfollow": "Dejar de seguir",
   "follow": "Seguir",
-  "loginToFollow": "Inicia sesión para seguir a esta persona."
+  "loginToFollow": "Inicia sesión para seguir a esta persona.",
+  "burgerPreferencesLabel": "Preferencias burger"
 }
