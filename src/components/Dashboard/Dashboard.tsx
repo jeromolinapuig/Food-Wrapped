@@ -797,23 +797,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         )}
 
         <main className="bw-main bw-dashboard-main">
-          {showProfileReminder ? (
-            <section className="bw-profile-reminder">
-              <div>
-                <h2 className="bw-profile-reminder-title">{t('dashboard.profileReminderTitle')}</h2>
-                <p className="bw-profile-reminder-text">{t('dashboard.profileReminderText')}</p>
-              </div>
-              <div className="bw-profile-reminder-actions">
-                <button type="button" className="bw-btn bw-btn-ghost" onClick={handleDismissProfileReminder}>
-                  {t('dashboard.later')}
-                </button>
-                <button type="button" className="bw-btn bw-btn-primary" onClick={handleOpenProfileReminder}>
-                  {t('dashboard.profileReminderAction')}
-                </button>
-              </div>
-            </section>
-          ) : null}
-
           <section className="bw-stats-grid">
             {loading ? (
               [1, 2, 3, 4].map((id) => <DashboardStatSkeleton key={id} />)
@@ -1026,6 +1009,23 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               disabled={mutating}
             >
               {mutating ? 'Procesando...' : 'Eliminar'}
+            </button>
+          </>
+        )}
+      />
+
+      <ConfirmDialog
+        open={showProfileReminder}
+        onClose={handleDismissProfileReminder}
+        title={t('dashboard.profileReminderTitle')}
+        message={t('dashboard.profileReminderText')}
+        actions={(
+          <>
+            <button type="button" className="bw-btn bw-btn-ghost" onClick={handleDismissProfileReminder}>
+              {t('dashboard.later')}
+            </button>
+            <button type="button" className="bw-btn bw-btn-primary" onClick={handleOpenProfileReminder}>
+              {t('dashboard.profileReminderAction')}
             </button>
           </>
         )}

@@ -228,11 +228,39 @@ export function UserProfileModal({
     : null;
   const favoriteBread = isBurgerBreadPreference(profile?.favorite_bread) ? profile.favorite_bread : null;
   const burgerPreferenceChips = [
-    favoriteBurgerType ? t(`profile.burgerPreferences.types.${favoriteBurgerType}`) : null,
-    favoriteSauce ? t(`profile.burgerPreferences.sauces.${favoriteSauce}`) : null,
-    favoriteDoneness ? t(`profile.burgerPreferences.doneness.${favoriteDoneness}`) : null,
-    favoriteBread ? t(`profile.burgerPreferences.breads.${favoriteBread}`) : null,
-  ].filter(Boolean) as string[];
+    favoriteBurgerType
+      ? {
+          key: 'type',
+          label: t(`profile.burgerPreferences.types.${favoriteBurgerType}`),
+          icon: '/meat.png',
+          alt: t('profile.burgerPreferences.typeLabel'),
+        }
+      : null,
+    favoriteSauce
+      ? {
+          key: 'sauce',
+          label: t(`profile.burgerPreferences.sauces.${favoriteSauce}`),
+          icon: '/sauce.png',
+          alt: t('profile.burgerPreferences.sauceLabel'),
+        }
+      : null,
+    favoriteDoneness
+      ? {
+          key: 'doneness',
+          label: t(`profile.burgerPreferences.doneness.${favoriteDoneness}`),
+          icon: '/punto.png',
+          alt: t('profile.burgerPreferences.donenessLabel'),
+        }
+      : null,
+    favoriteBread
+      ? {
+          key: 'bread',
+          label: t(`profile.burgerPreferences.breads.${favoriteBread}`),
+          icon: '/bread.png',
+          alt: t('profile.burgerPreferences.breadLabel'),
+        }
+      : null,
+  ].filter(Boolean) as { key: string; label: string; icon: string; alt: string }[];
 
   const handleViewPosts = () => {
     if (!profile) return;
@@ -296,8 +324,9 @@ export function UserProfileModal({
                 <label className="bw-label">{t('userProfileModal.burgerPreferencesLabel')}</label>
                 <div className="bw-user-profile-preferences">
                   {burgerPreferenceChips.map((chip) => (
-                    <span key={chip} className="bw-user-profile-chip">
-                      {chip}
+                    <span key={chip.key} className="bw-user-profile-chip">
+                      <img src={chip.icon} alt={chip.alt} className="bw-user-profile-chip-icon" />
+                      <span>{chip.label}</span>
                     </span>
                   ))}
                 </div>

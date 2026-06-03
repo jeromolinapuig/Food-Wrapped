@@ -3,10 +3,11 @@
 ## 1.1.0
 
 - Added burger profile preferences with translated ideal burger summaries and profile personalization progress.
-- Added a home reminder for users with incomplete profile personalization.
+- Added a centered home reminder modal for users with incomplete profile personalization.
 - Added the home feed filters to other users' profile feeds.
 - Changed the profile save action to a full-width sticky bar above the bottom navigation.
 - Added an unsaved profile changes confirmation when leaving through the bottom navigation.
+- Added icons to public burger preference chips.
 - Fixed feed photo previews so mobile back closes the photo while manual close no longer navigates through browser history.
 
 ## 1.0.2
