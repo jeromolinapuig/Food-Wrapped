@@ -1,4 +1,4 @@
-import { DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
+import { DynamicFeed, EmojiEvents, Groups, Home, LunchDining, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -54,6 +54,7 @@ export function BottomNav({
     if (location.pathname.startsWith('/groups')) return 'groups';
     if (location.pathname.startsWith('/ranking')) return 'more';
     if (location.pathname.startsWith('/restaurants')) return 'more';
+    if (location.pathname.startsWith('/wrapped')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [adminModeEnabled, isAdmin, location.pathname, location.state]);
@@ -293,6 +294,17 @@ export function BottomNav({
                 <span className="bw-bottom-nav-menu-icon"><Store fontSize="small" /></span>
                 <span className="bw-bottom-nav-menu-label">
                   {t('common.restaurants', { defaultValue: 'Restaurants' })}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="bw-bottom-nav-menu-item"
+                role="menuitem"
+                onClick={() => handleClick('/wrapped')}
+              >
+                <span className="bw-bottom-nav-menu-icon"><LunchDining fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-label">
+                  {t('common.wrapped', { defaultValue: 'Wrapped' })}
                 </span>
               </button>
             </div>

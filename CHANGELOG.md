@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added a Wrapped preview with three animated story slides for burgers eaten, money spent and burger types eaten.
+- Changed Wrapped slide copy to use real user stats for counts, spending and dominant burger types.
+- Added a Wrapped favorite-burger slide showing the user's highest-rated burger post.
+- Changed the Wrapped opening slide to highlight the burger count and tease the favorite burger reveal.
+
 ## 1.3.0
 
 - Added a responsive desktop layout with a wider app shell, sidebar navigation, expanded content grids and desktop-friendly fixed actions.

@@ -183,6 +183,13 @@ import frMyTopBurgers from '../locales/fr/myTopBurgers.json';
 import itMyTopBurgers from '../locales/it/myTopBurgers.json';
 import deMyTopBurgers from '../locales/de/myTopBurgers.json';
 import jaMyTopBurgers from '../locales/ja/myTopBurgers.json';
+import enWrapped from '../locales/en/wrapped.json';
+import esWrapped from '../locales/es/wrapped.json';
+import thWrapped from '../locales/th/wrapped.json';
+import frWrapped from '../locales/fr/wrapped.json';
+import itWrapped from '../locales/it/wrapped.json';
+import deWrapped from '../locales/de/wrapped.json';
+import jaWrapped from '../locales/ja/wrapped.json';
 
 const resources = {
   en: {
@@ -208,7 +215,8 @@ const resources = {
     createGroup: enCreateGroup,
     comments: enComments,
     restaurantSearch: enRestaurantSearch,
-    myTopBurgers: enMyTopBurgers
+    myTopBurgers: enMyTopBurgers,
+    wrapped: enWrapped
   },
   es: {
     common: esCommon,
@@ -233,7 +241,8 @@ const resources = {
     createGroup: esCreateGroup,
     comments: esComments,
     restaurantSearch: esRestaurantSearch,
-    myTopBurgers: esMyTopBurgers
+    myTopBurgers: esMyTopBurgers,
+    wrapped: esWrapped
   },
   th: {
     common: thCommon,
@@ -258,7 +267,8 @@ const resources = {
     createGroup: thCreateGroup,
     comments: thComments,
     restaurantSearch: thRestaurantSearch,
-    myTopBurgers: thMyTopBurgers
+    myTopBurgers: thMyTopBurgers,
+    wrapped: thWrapped
   },
   fr: {
     common: frCommon,
@@ -283,7 +293,8 @@ const resources = {
     createGroup: frCreateGroup,
     comments: frComments,
     restaurantSearch: frRestaurantSearch,
-    myTopBurgers: frMyTopBurgers
+    myTopBurgers: frMyTopBurgers,
+    wrapped: frWrapped
   },
   it: {
     common: itCommon,
@@ -308,7 +319,8 @@ const resources = {
     createGroup: itCreateGroup,
     comments: itComments,
     restaurantSearch: itRestaurantSearch,
-    myTopBurgers: itMyTopBurgers
+    myTopBurgers: itMyTopBurgers,
+    wrapped: itWrapped
   },
   de: {
     common: deCommon,
@@ -333,7 +345,8 @@ const resources = {
     createGroup: deCreateGroup,
     comments: deComments,
     restaurantSearch: deRestaurantSearch,
-    myTopBurgers: deMyTopBurgers
+    myTopBurgers: deMyTopBurgers,
+    wrapped: deWrapped
   },
   ja: {
     common: jaCommon,
@@ -358,7 +371,8 @@ const resources = {
     createGroup: jaCreateGroup,
     comments: jaComments,
     restaurantSearch: jaRestaurantSearch,
-    myTopBurgers: jaMyTopBurgers
+    myTopBurgers: jaMyTopBurgers,
+    wrapped: jaWrapped
   }
 };
 
@@ -403,7 +417,8 @@ i18n
       'createGroup',
       'comments',
       'restaurantSearch',
-      'myTopBurgers'
+      'myTopBurgers',
+      'wrapped'
     ],
     interpolation: { escapeValue: false },
     returnNull: false,

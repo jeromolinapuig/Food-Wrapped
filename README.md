@@ -131,7 +131,7 @@ Archivos:
 
 Responsabilidades:
 
-- Cargar entradas del usuario del ano activo.
+- Cargar entradas del usuario del año activo.
 - Calcular estadisticas anuales.
 - Mostrar filtros por mes, precio y tipo de carne.
 - Mostrar historial mediante `FeedTabs`.

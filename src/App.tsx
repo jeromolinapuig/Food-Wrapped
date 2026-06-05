@@ -22,6 +22,7 @@ import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
+import { WrappedPreviewPage } from './components/WrappedPreviewPage/WrappedPreviewPage';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
@@ -63,6 +64,7 @@ function App() {
   const isLoginRoute = location.pathname === '/login' ||
     location.pathname === '/reset-password' ||
     location.pathname === '/setup-username';
+  const isFullScreenRoute = location.pathname === '/wrapped';
 
   // Aplicar tema al <html> y guardar
   useEffect(() => {
@@ -519,6 +521,21 @@ function App() {
           }
         />
         <Route
+          path="/wrapped"
+          element={
+            session ? (
+              <WrappedPreviewPage session={session} />
+            ) : (
+              <LockedPage
+                title={t('common.wrapped', { defaultValue: 'Wrapped' })}
+                subtitle={t('locked.section')}
+                onLogin={handleLogin}
+                preview={<FeedPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
           path="/login"
           element={session ? <Navigate to="/" replace /> : <AuthScreen />}
         />
@@ -543,7 +560,7 @@ function App() {
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isLoginRoute && (
+      {!isLoginRoute && !isFullScreenRoute && (
         <BottomNav
           session={session}
           onRequireLogin={handleLogin}
