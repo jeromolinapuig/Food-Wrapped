@@ -183,6 +183,13 @@
   transform: translateY(1px);
 }
 
+.auth-toggle button:not(:disabled):hover,
+.auth-oauth-button:not(:disabled):hover,
+.auth-submit:not(:disabled):hover {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
 .auth-oauth-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;

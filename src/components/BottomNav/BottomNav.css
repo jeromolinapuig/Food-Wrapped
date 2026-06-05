@@ -5,7 +5,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  width: min(430px, calc(100% - 32px));
+  width: min(var(--bw-mobile-shell-max), calc(100% - 32px));
   margin: 0 auto;
   box-sizing: border-box;
   background: var(--bw-card-bg);
@@ -166,7 +166,7 @@
   bottom: 84px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(430px, calc(100% - 32px));
+  width: min(var(--bw-mobile-shell-max), calc(100% - 32px));
   background: var(--bw-card-bg);
   border-radius: 18px;
   padding: 10px;
@@ -202,6 +202,8 @@
 
 .bw-bottom-nav-menu-item:hover {
   background: rgba(0, 0, 0, 0.06);
+  color: var(--bw-accent);
+  transform: translateX(2px);
 }
 
 :root[data-theme="dark"] .bw-bottom-nav-menu-item:hover {
@@ -222,4 +224,64 @@
 .bw-bottom-nav-menu-label {
   flex: 1;
   text-align: left;
+}
+
+@media (min-width: 900px) {
+  .bw-bottom-nav {
+    top: 24px;
+    bottom: 24px;
+    left: max(24px, calc((100vw - var(--bw-desktop-shell-max)) / 2 + 24px));
+    right: auto;
+    width: var(--bw-desktop-nav-width);
+    margin: 0;
+    padding: 16px 10px;
+    border-top: 0;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 24px 0 0 24px;
+    align-content: start;
+    gap: 8px;
+  }
+
+  .bw-bottom-nav.is-main,
+  .bw-bottom-nav.is-admin {
+    grid-template-columns: 1fr;
+  }
+
+  .bw-bottom-nav-more {
+    justify-content: stretch;
+  }
+
+  .bw-bottom-nav-item {
+    min-height: 48px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    font-size: 20px;
+    text-align: left;
+  }
+
+  .bw-bottom-nav-item:hover,
+  .bw-bottom-nav-item.is-active {
+    background: var(--bw-accent-soft);
+  }
+
+  .bw-bottom-nav-label {
+    margin-top: 0;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  .bw-bottom-nav-avatar {
+    flex: 0 0 28px;
+  }
+
+  .bw-bottom-nav-menu {
+    top: 208px;
+    bottom: auto;
+    left: max(260px, calc((100vw - var(--bw-desktop-shell-max)) / 2 + var(--bw-desktop-nav-width) + 36px));
+    width: 240px;
+    transform: none;
+  }
 }

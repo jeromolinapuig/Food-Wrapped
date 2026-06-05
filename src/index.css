@@ -2,6 +2,9 @@
 
 /* Tema claro por defecto */
 :root {
+  --bw-mobile-shell-max: 430px;
+  --bw-desktop-shell-max: 1120px;
+  --bw-desktop-nav-width: 220px;
   --bw-bg: #f3f3f7;
   --bw-card-bg: #f7f7fb;
   --bw-surface: #ffffff;
@@ -61,4 +64,16 @@ a {
 
 button {
   font-family: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled) {
+    transition-property: background, border-color, box-shadow, color, filter, opacity, transform, width, padding;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+  }
+
+  button:not(:disabled):hover {
+    filter: brightness(1.06);
+  }
 }

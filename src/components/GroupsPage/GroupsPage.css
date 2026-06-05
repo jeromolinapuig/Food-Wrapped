@@ -28,6 +28,15 @@
   transform: translateY(1px);
 }
 
+.bw-group-invites-button:not(:disabled):hover,
+.bw-group-card:not(:disabled):hover,
+.bw-group-settings:not(:disabled):hover,
+.bw-group-remove:not(:disabled):hover {
+  border-color: var(--bw-accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
 .bw-group-card {
   width: 100%;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -365,4 +374,21 @@
 
 .bw-group-friend-card {
   position: relative;
+}
+
+@media (min-width: 900px) {
+  .bw-group-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .bw-group-invites-button,
+  .bw-group-card-add {
+    grid-column: 1 / -1;
+  }
+
+  .bw-group-card {
+    min-height: 132px;
+  }
 }

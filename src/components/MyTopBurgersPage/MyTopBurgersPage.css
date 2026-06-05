@@ -25,6 +25,14 @@
   color: var(--bw-accent);
 }
 
+.bw-top-burgers-sort-card:not(:disabled):hover,
+.bw-top-burgers-item:not(:disabled):hover,
+.bw-top-burgers-post-photo:not(:disabled):hover {
+  border-color: var(--bw-accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
 .bw-top-burgers-sort-arrow {
   font-size: 14px;
   font-weight: 800;

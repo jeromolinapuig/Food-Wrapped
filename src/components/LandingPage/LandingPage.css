@@ -10,7 +10,7 @@
 
 .landing-body {
   width: 100%;
-  max-width: 430px;
+  max-width: var(--bw-mobile-shell-max);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -267,6 +267,34 @@
 
   .landing-feature {
     grid-template-columns: auto 1fr;
+  }
+}
+
+@media (min-width: 900px) {
+  .landing-body {
+    max-width: 820px;
+    padding-bottom: 40px;
+  }
+
+  .landing-hero {
+    text-align: left;
+  }
+
+  .landing-logo-wrap {
+    margin-left: 0;
+  }
+
+  .landing-actions {
+    max-width: 280px;
+  }
+
+  .landing-feature-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-cta {
+    padding: 20px;
   }
 }
 

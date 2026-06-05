@@ -46,6 +46,11 @@
   color: var(--bw-accent);
 }
 
+.bw-restaurant-card:not(:disabled):hover {
+  background: var(--bw-accent-soft);
+  transform: translateY(-1px);
+}
+
 .bw-restaurant-selected {
   display: flex;
   align-items: center;
@@ -92,6 +97,7 @@
 .bw-fab {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 18px;
   border-radius: 24px;
@@ -102,7 +108,14 @@
   color: #ffffff;
   background: var(--bw-accent);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease,
+    width 0.24s ease, padding 0.24s ease, gap 0.24s ease;
+}
+
+.bw-fab:not(:disabled):hover {
+  background: #ff1f86;
+  box-shadow: 0 14px 30px rgba(255, 59, 141, 0.34);
+  transform: translateY(-1px);
 }
 
 .bw-fab:active {
@@ -112,8 +125,43 @@
 .bw-fab-plus {
   font-size: 18px;
   font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1;
 }
 
 .bw-fab-label {
+  display: inline-block;
   font-size: 15px;
+}
+
+@media (min-width: 900px) {
+  .bw-fab {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .bw-fab-label {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-width 0.22s ease, opacity 0.16s ease;
+  }
+
+  .bw-fab:not(:disabled):hover,
+  .bw-fab:not(:disabled):focus-visible {
+    width: 132px;
+    padding: 0 18px;
+    gap: 8px;
+  }
+
+  .bw-fab:not(:disabled):hover .bw-fab-label,
+  .bw-fab:not(:disabled):focus-visible .bw-fab-label {
+    max-width: 72px;
+    opacity: 1;
+  }
 }

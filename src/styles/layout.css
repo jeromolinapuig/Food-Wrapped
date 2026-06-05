@@ -16,7 +16,7 @@
 .bw-shell {
   position: relative;
   width: 100%;
-  max-width: 430px;
+  max-width: var(--bw-mobile-shell-max);
   background: var(--bw-card-bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   padding: 16px;
@@ -94,4 +94,39 @@
   flex: 1;
   overflow-y: auto;
   padding-bottom: 140px;
+}
+
+@media (min-width: 900px) {
+  .bw-app-root {
+    padding: 24px;
+  }
+
+  .bw-shell {
+    max-width: var(--bw-desktop-shell-max);
+    min-height: calc(100vh - 48px);
+    padding: 24px 28px 28px calc(var(--bw-desktop-nav-width) + 56px);
+    border-radius: 28px;
+  }
+
+  .bw-header {
+    top: 0;
+    margin-bottom: 20px;
+    margin-top: -24px;
+    margin-left: calc((var(--bw-desktop-nav-width) + 56px) * -1);
+    margin-right: -28px;
+    padding: 24px 28px 16px calc(var(--bw-desktop-nav-width) + 56px);
+  }
+
+  .bw-title {
+    font-size: 24px;
+  }
+
+  .bw-subtitle {
+    font-size: 13px;
+  }
+
+  .bw-main {
+    overflow-y: visible;
+    padding-bottom: 40px;
+  }
 }

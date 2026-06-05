@@ -194,7 +194,7 @@
   left: 50%;
   bottom: 78px;
   z-index: 60;
-  width: min(430px, calc(100% - 32px));
+  width: min(var(--bw-mobile-shell-max), calc(100% - 32px));
   box-sizing: border-box;
   padding: 8px 0 0;
   transform: translateX(-50%);
@@ -412,5 +412,20 @@
 
   .bw-switch {
     align-self: flex-end;
+  }
+}
+
+@media (min-width: 900px) {
+  .bw-profile-main {
+    padding-bottom: 120px;
+  }
+
+  .bw-profile-save-bar {
+    left: max(300px, calc((100vw - var(--bw-desktop-shell-max)) / 2 + var(--bw-desktop-nav-width) + 56px));
+    right: max(28px, calc((100vw - var(--bw-desktop-shell-max)) / 2 + 28px));
+    bottom: 24px;
+    width: auto;
+    transform: none;
+    padding: 8px 0 0;
   }
 }

@@ -122,6 +122,12 @@
   cursor: pointer;
 }
 
+.bw-dashboard-top-link-button:not(:disabled):hover {
+  border-color: var(--bw-accent);
+  background: var(--bw-accent-soft);
+  transform: translateY(-1px);
+}
+
 .bw-dashboard-top-link-icon {
   display: inline-flex;
   align-items: center;
@@ -341,6 +347,13 @@
   box-shadow: none;
 }
 
+.bw-dashboard-multiselect-trigger:not(:disabled):hover,
+.bw-dashboard-filter-chip:not(:disabled):hover {
+  color: var(--bw-text);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
 .bw-dashboard-filter-chip img {
   width: 18px;
   height: 18px;
@@ -407,7 +420,7 @@
 
 .bw-fab-wrapper {
   position: fixed;
-  right: max(16px, calc((100vw - 430px) / 2 + 16px));
+  right: max(16px, calc((100vw - var(--bw-mobile-shell-max)) / 2 + 16px));
   bottom: 90px;
   z-index: 62;
   display: flex;
@@ -423,6 +436,7 @@
 .bw-fab {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 18px;
   border-radius: 24px;
@@ -433,8 +447,15 @@
   color: #ffffff;
   background: var(--bw-accent);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease,
+    width 0.24s ease, padding 0.24s ease, gap 0.24s ease;
   pointer-events: auto;
+}
+
+.bw-fab:not(:disabled):hover {
+  background: #ff1f86;
+  box-shadow: 0 14px 30px rgba(255, 59, 141, 0.34);
+  transform: translateY(-1px);
 }
 
 .bw-fab:active {
@@ -444,9 +465,12 @@
 .bw-fab-plus {
   font-size: 18px;
   font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1;
 }
 
 .bw-fab-label {
+  display: inline-block;
   font-size: 15px;
 }
 
@@ -515,5 +539,66 @@
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 900px) {
+  .bw-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .bw-dashboard-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .bw-dashboard-filter-carousel {
+    position: sticky;
+    top: 96px;
+    overflow-x: visible;
+    flex-wrap: wrap;
+    padding: 4px 0 12px;
+    margin: -4px 0 8px;
+  }
+
+  .bw-burger-type-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .bw-fab-wrapper {
+    right: 32px;
+    bottom: 32px;
+  }
+
+  .bw-fab {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .bw-fab-label {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-width 0.22s ease, opacity 0.16s ease;
+  }
+
+  .bw-fab:not(:disabled):hover,
+  .bw-fab:not(:disabled):focus-visible {
+    width: 132px;
+    padding: 0 18px;
+    gap: 8px;
+  }
+
+  .bw-fab:not(:disabled):hover .bw-fab-label,
+  .bw-fab:not(:disabled):focus-visible .bw-fab-label {
+    max-width: 72px;
+    opacity: 1;
   }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- Added a responsive desktop layout with a wider app shell, sidebar navigation, expanded content grids and desktop-friendly fixed actions.
+- Refined the desktop header, add button and More menu positioning.
+- Added hover feedback for app buttons, including a desktop-only expanding Add button.
+
 ## 1.2.0
 
 - Added Japanese language support and Japanese yen currency support.
