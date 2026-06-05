@@ -127,6 +127,7 @@ export function ProfilePage({
       { value: 'fr', label: 'Français' },
       { value: 'it', label: 'Italiano' },
       { value: 'de', label: 'Deutsch' },
+      { value: 'ja', label: '日本語' },
     ],
     []
   );
@@ -137,6 +138,7 @@ export function ProfilePage({
       { value: 'USD', label: '$ USD' },
       { value: 'GBP', label: '£ GBP' },
       { value: 'AED', label: 'د.إ AED' },
+      { value: 'JPY', label: '¥ Yen' },
     ],
     []
   );

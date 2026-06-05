@@ -1,0 +1,77 @@
+{
+  "title": "マイプロフィール",
+  "subtitle": "プロフィール情報を編集します。",
+  "savedPosts": "保存済み投稿",
+  "usernameLabel": "ユーザー名",
+  "usernamePlaceholder": "ユーザー名",
+  "usernameHelper": "一意である必要があります。表示名として使われます。",
+  "bioLabel": "自己紹介",
+  "bioPlaceholder": "あなたについて少し書いてください...",
+  "privacyTitle": "非公開プロフィール",
+  "privacyDescription": "友達だけがあなたの統計と投稿を見られます。",
+  "signOut": "ログアウト",
+  "saveChanges": "変更を保存",
+  "saving": "保存中...",
+  "loading": "プロフィールを読み込み中...",
+  "preferencesTitle": "言語と通貨",
+  "preferencesDescription": "テキストは選択した言語で表示されます。価格は選択した通貨で表示されます。",
+  "preferencesNote": "投稿は元の通貨を保持し、ここでは表示用に換算します。",
+  "followers": "フォロワー",
+  "following": "フォロー中",
+  "saved": "保存済み",
+  "cropCancel": "キャンセル",
+  "cropSave": "切り抜いて保存",
+  "unsavedLeaveTitle": "保存せずに移動しますか？",
+  "unsavedLeaveMessage": "プロフィールに未保存の変更があります。今移動すると失われます。",
+  "unsavedLeaveCancel": "編集を続ける",
+  "unsavedLeaveConfirm": "保存せずに移動",
+  "completion": {
+    "title": "プロフィールをカスタマイズ",
+    "description": "写真、自己紹介、バーガーの好みを追加して、あなたらしいプロフィールにしましょう。",
+    "completeTitle": "カスタマイズ済みプロフィール",
+    "completeDescription": "Burger Wrappedであなたらしさが表示されるようになりました。",
+    "progress": "{{completed}}/{{total}}項目が完了"
+  },
+  "burgerPreferences": {
+    "title": "バーガーの好み",
+    "description": "これらの好みは公開プロフィールに表示され、理想のバーガーを生成します。",
+    "emptyOption": "未選択",
+    "typeLabel": "好きなバーガーの種類",
+    "sauceLabel": "好きなソース",
+    "donenessLabel": "好きな焼き加減",
+    "breadLabel": "好きなパン",
+    "idealBurger": "あなたの理想のバーガー：{{bread}}パン、{{sauce}}、{{doneness}}の{{type}}。",
+    "types": {
+      "beef": "ビーフ",
+      "chicken": "チキン",
+      "vegan": "ヴィーガン"
+    },
+    "sauces": {
+      "bbq": "BBQ",
+      "burger_sauce": "バーガーソース",
+      "mayonnaise": "マヨネーズ",
+      "honey_mustard": "ハニーマスタード",
+      "truffle": "トリュフ",
+      "bacon_mayonnaise": "ベーコンマヨネーズ",
+      "mustard": "マスタード",
+      "ketchup": "ケチャップ",
+      "sweet_and_sour": "甘酢",
+      "sweet_chili": "スイートチリ",
+      "cheese": "チーズ",
+      "sriracha": "シラチャー",
+      "emmy": "Emmy",
+      "yogurt": "ヨーグルト"
+    },
+    "doneness": {
+      "rare": "レア",
+      "medium": "ミディアム",
+      "well_done": "ウェルダン"
+    },
+    "breads": {
+      "potato": "ポテト",
+      "brioche": "ブリオッシュ",
+      "crystal": "クリスタル",
+      "classic": "クラシック"
+    }
+  }
+}

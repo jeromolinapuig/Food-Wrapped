@@ -1,0 +1,17 @@
+{
+  "title": "フィード",
+  "subtitle": "バーガーを見つけて、もっと多くの人とつながりましょう。",
+  "clearSearch": "検索をクリア",
+  "searchPlaceholder": "ユーザーを検索...",
+  "searching": "検索中...",
+  "noUsers": "ユーザーが見つかりません。",
+  "postsOf": "@{{user}}の投稿",
+  "backToFeed": "メインフィードに戻る",
+  "followBack": "フォローバック",
+  "confirmFollow": "@{{user}}をフォローしますか？",
+  "confirmUnfollow": "@{{user}}のフォローを解除しますか？",
+  "yes": "はい",
+  "no": "いいえ",
+  "postTitle": "投稿",
+  "postSubtitle": "投稿の詳細。"
+}

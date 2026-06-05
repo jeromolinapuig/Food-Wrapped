@@ -1,0 +1,19 @@
+{
+  "subtitle": "{{user}}の2026年バーガー記録",
+  "installText": "ホーム画面に追加すると素早く開けます。",
+  "later": "後で",
+  "addEntry": "投稿を追加",
+  "posts": "投稿",
+  "burgers": "バーガー",
+  "homemade": "手作りバーガー",
+  "avgRating": "平均評価",
+  "favorite": "お気に入り",
+  "type": "種類",
+  "totalSpent": "合計支出",
+  "beef": "ビーフ",
+  "chicken": "チキン",
+  "vegan": "ヴィーガン",
+  "profileReminderTitle": "プロフィールを完成させましょう",
+  "profileReminderText": "写真、自己紹介、バーガーの好みを追加すると、他のユーザーがあなたを知りやすくなります。",
+  "profileReminderAction": "プロフィールを編集"
+}

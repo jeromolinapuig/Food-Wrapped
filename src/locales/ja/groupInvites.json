@@ -1,0 +1,17 @@
+{
+  "title": "グループ招待",
+  "titleLimit": "グループ招待（{{max}}を超えて参加できません）",
+  "subtitle": "保留中の招待を管理します。",
+  "loading": "招待を読み込み中...",
+  "noInvites": "保留中の招待はありません。",
+  "inviteText": "@{{inviter}}が{{group}}への参加に招待しました。",
+  "thisGroup": "このグループ",
+  "reject": "拒否",
+  "accept": "承認",
+  "processing": "処理中...",
+  "confirm": "確認",
+  "limitError": "{{max}}を超えるグループには参加できません。",
+  "updateError": "招待を更新できませんでした。",
+  "acceptConfirm": "招待を承認しますか？",
+  "rejectConfirm": "招待を拒否しますか？"
+}

@@ -1,0 +1,20 @@
+{
+  "title": "マイトップバーガー",
+  "subtitle": "レストラン -> バーガー",
+  "sortLabel": "バーガーの並び替え",
+  "sortRating": "評価",
+  "sortPrice": "価格",
+  "loading": "バーガーを読み込み中...",
+  "empty": "レストランのバーガーはまだありません。",
+  "unknownRestaurant": "名前のないレストラン",
+  "unknownBurger": "名前のないバーガー",
+  "rating": "評価",
+  "price": "価格",
+  "highestPrice": "最高記録価格",
+  "eatenOneTime": "1回食べました",
+  "eatenManyTimes": "{{count}}回食べました",
+  "lastEaten": "最後に食べた日：{{date}}",
+  "noPhoto": "写真なし",
+  "postsTitle": "{{burger}}の投稿",
+  "lockedSubtitle": "個人バーガーランキングを見るにはログインしてください。"
+}

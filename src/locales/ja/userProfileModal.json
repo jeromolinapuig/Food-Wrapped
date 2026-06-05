@@ -1,0 +1,14 @@
+{
+  "title": "プロフィール",
+  "loadingProfile": "プロフィールを読み込み中...",
+  "mutual": "相互フォロー",
+  "followsYou": "あなたをフォローしています",
+  "privateProfile": "非公開プロフィール",
+  "viewStats": "統計を見る",
+  "bioLabel": "自己紹介",
+  "noBio": "自己紹介はまだありません。",
+  "unfollow": "フォロー解除",
+  "follow": "フォロー",
+  "loginToFollow": "この人をフォローするにはログインしてください。",
+  "burgerPreferencesLabel": "バーガーの好み"
+}

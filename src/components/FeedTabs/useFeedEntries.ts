@@ -66,6 +66,7 @@ const localeMap: Record<string, string> = {
   fr: 'fr-FR',
   it: 'it-IT',
   de: 'de-DE',
+  ja: 'ja-JP',
   en: 'en-US',
 };
 

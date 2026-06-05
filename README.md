@@ -87,28 +87,28 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 Definidas en `src/App.tsx`.
 
-| Ruta | Pantalla | Acceso esperado |
-| --- | --- | --- |
-| `/` | Dashboard si hay sesion, landing si no | Mixto |
-| `/home` | Alias/navegacion hacia inicio | Mixto |
-| `/feed` | Feed social y busqueda de usuarios | Mixto |
-| `/profile` | Perfil propio | Autenticado |
-| `/groups` | Listado y gestion de grupos | Autenticado |
-| `/ranking` | Ranking global | Mixto |
-| `/groups/:groupId` | Detalle de grupo | Autenticado/miembro segun logica |
-| `/users/:userId` | Dashboard publico de usuario | Mixto con privacidad |
-| `/posts/:entryId` | Detalle de post | Mixto segun visibilidad |
-| `/saved` | Posts guardados | Autenticado |
-| `/restaurants` | Busqueda/listado de restaurantes | Mixto |
-| `/my-top-burgers` | Ranking personal de hamburguesas | Autenticado |
-| `/login` | Login/signup/OAuth | Publico |
-| `/privacy` | Privacidad | Publico |
-| `/setup-username` | Configuracion inicial de username | Autenticado |
-| `/reset-password` | Reset de password | Publico/con sesion de reset |
-| `/admin/feed` | Moderacion feed | Admin |
-| `/admin/users` | Gestion de usuarios | Admin |
-| `/admin/reports` | Reportes | Admin |
-| `*` | Redireccion a `/` | Publico |
+| Ruta               | Pantalla                               | Acceso esperado                  |
+| ------------------ | -------------------------------------- | -------------------------------- |
+| `/`                | Dashboard si hay sesion, landing si no | Mixto                            |
+| `/home`            | Alias/navegacion hacia inicio          | Mixto                            |
+| `/feed`            | Feed social y busqueda de usuarios     | Mixto                            |
+| `/profile`         | Perfil propio                          | Autenticado                      |
+| `/groups`          | Listado y gestion de grupos            | Autenticado                      |
+| `/ranking`         | Ranking global                         | Mixto                            |
+| `/groups/:groupId` | Detalle de grupo                       | Autenticado/miembro segun logica |
+| `/users/:userId`   | Dashboard publico de usuario           | Mixto con privacidad             |
+| `/posts/:entryId`  | Detalle de post                        | Mixto segun visibilidad          |
+| `/saved`           | Posts guardados                        | Autenticado                      |
+| `/restaurants`     | Busqueda/listado de restaurantes       | Mixto                            |
+| `/my-top-burgers`  | Ranking personal de hamburguesas       | Autenticado                      |
+| `/login`           | Login/signup/OAuth                     | Publico                          |
+| `/privacy`         | Privacidad                             | Publico                          |
+| `/setup-username`  | Configuracion inicial de username      | Autenticado                      |
+| `/reset-password`  | Reset de password                      | Publico/con sesion de reset      |
+| `/admin/feed`      | Moderacion feed                        | Admin                            |
+| `/admin/users`     | Gestion de usuarios                    | Admin                            |
+| `/admin/reports`   | Reportes                               | Admin                            |
+| `*`                | Redireccion a `/`                      | Publico                          |
 
 ## Modulos Principales
 
@@ -420,6 +420,50 @@ Recomendaciones para repo publico:
 - Las policies de Storage deben impedir que un usuario sobrescriba o borre archivos de otro usuario.
 - Usar paths que incluyan `user.id` y validar en policies.
 
+## Supabase Exchange Rates
+
+La tabla `exchange_rates` se usa para convertir importes entre las monedas soportadas por el cliente. El frontend puede convertir importes en memoria, pero Supabase debe tener tasas actualizadas para evitar depender solo de los fallbacks del bundle.
+
+Monedas actuales:
+
+- `EUR`
+- `USD`
+- `GBP`
+- `AED`
+- `THB`
+- `JPY`
+
+SQL de seed/update para generar todos los pares cruzados entre monedas soportadas:
+
+```sql
+with eur_rates as (
+  select * from (values
+    ('EUR', 1::numeric),
+    ('AED', 4.27479::numeric),
+    ('GBP', 0.86433::numeric),
+    ('JPY', 186.08::numeric),
+    ('THB', 37.987::numeric),
+    ('USD', 1.164::numeric)
+  ) as v(currency, eur_rate)
+),
+all_rates as (
+  select
+    base.currency as base_currency,
+    target.currency as target_currency,
+    target.eur_rate / base.eur_rate as rate
+  from eur_rates base
+  cross join eur_rates target
+  where base.currency <> target.currency
+)
+insert into exchange_rates (base_currency, target_currency, rate, fetched_at)
+select base_currency, target_currency, rate, now()
+from all_rates
+on conflict (base_currency, target_currency)
+do update set rate = excluded.rate, fetched_at = excluded.fetched_at;
+```
+
+Antes de ejecutar el SQL en produccion, actualizar los valores de `eur_rates` con tasas recientes. `AED` puede derivarse de `EUR->USD * 3.6725` si la fuente usada no publica AED directamente.
+
 ## Realtime
 
 El feed y dashboard usan canales Supabase:
@@ -468,12 +512,21 @@ Locales:
 - `src/locales/de`
 - `src/locales/it`
 - `src/locales/th`
+- `src/locales/ja`
 
 Cuando se anade texto visible:
 
 - Crear la key en todos los idiomas.
 - Usar `defaultValue` solo como fallback, no como unica fuente.
 - Mantener nombres de namespace consistentes con el componente.
+
+Idiomas soportados en selectores y deteccion:
+
+- `en`, `es`, `fr`, `de`, `it`, `th`, `ja`.
+
+Monedas soportadas:
+
+- `EUR`, `USD`, `GBP`, `AED`, `THB`, `JPY`.
 
 ## Estilos
 
@@ -527,9 +580,7 @@ Configuracion Vercel:
 
 ```json
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
 ```
 
@@ -595,8 +646,9 @@ No son SQL final del proyecto, solo criterios que deberian existir:
 ## Checklist Antes De Publicar Cambios
 
 - No hay secretos en `git diff`.
-- No se ha tocado `package.json` ni version salvo peticion explicita.
-- `CHANGELOG.md` tiene la entrada en `Unreleased`.
+- Si no se ha pedido versionado, no se ha tocado `package.json` ni la version del changelog.
+- Si se ha pedido versionado, `CHANGELOG.md`, `package.json` y `package-lock.json` tienen la misma version.
+- Si no se ha pedido versionado, `CHANGELOG.md` tiene la entrada en `Unreleased`.
 - Nuevos textos tienen traducciones.
 - Nuevas llamadas Supabase dependen de RLS, no de ocultar botones.
 - Tests focalizados pasan.
@@ -608,6 +660,23 @@ No son SQL final del proyecto, solo criterios que deberian existir:
 - No usar Bootstrap.
 - Seguir patrones existentes antes de crear abstracciones nuevas.
 - Cada funcionalidad nueva debe documentarse en `CHANGELOG.md` bajo `Unreleased`.
-- No crear subversion automaticamente.
-- Solo cambiar version en `CHANGELOG.md` y `package.json` cuando se indique expresamente.
+- No cambiar version automaticamente salvo peticion expresa.
+- Cuando se pida versionar, aplicar SemVer:
+  - Cambios pequenos, fixes y bugs: subir patch (`x.y.Z`).
+  - Funcionalidades grandes: subir minor (`x.Y.0`).
+  - Cambios muy grandes de producto, imagen corporativa o funcionalidad que cambie mucho la app: subir major (`X.0.0`).
+- Cuando se cambie version, actualizar `CHANGELOG.md`, `package.json` y `package-lock.json`.
 - Mantener buenas practicas y estructura coherente con ejemplos existentes.
+
+## Instrucciones Para Trabajar Con ChatGPT/Codex
+
+- Leer este README y `CHANGELOG.md` antes de implementar cambios.
+- Revisar primero patrones existentes en componentes, hooks, repositorios, estilos y tests.
+- No usar Bootstrap.
+- Si se anade una funcionalidad o se modifica comportamiento, registrar el cambio en `CHANGELOG.md` dentro de `Unreleased`.
+- No cambiar `package.json` ni versiones del changelog salvo peticion expresa.
+- Si el usuario pide versionar, clasificar el cambio como patch, minor o major segun las convenciones del proyecto y mantener sincronizados `CHANGELOG.md`, `package.json` y `package-lock.json`.
+- Si se anade texto visible, crear las claves en todos los locales soportados.
+- Si se anade una moneda, actualizar selectores, filtros, `PreferencesContext`, fallbacks de tasas y el SQL de `exchange_rates`.
+- Si se anade un idioma, actualizar `src/lib/i18n.ts`, `PreferencesContext`, selectores de perfil y la lista de locales del README.
+- Mantener los cambios acotados al objetivo pedido y no revertir cambios ajenos.

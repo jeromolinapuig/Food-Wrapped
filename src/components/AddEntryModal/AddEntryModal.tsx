@@ -180,6 +180,7 @@ export function AddEntryModal({
       { value: 'USD', label: '$ USD' },
       { value: 'GBP', label: '£ GBP' },
       { value: 'AED', label: 'د.إ AED' },
+      { value: 'JPY', label: '¥ JPY' },
     ],
     []
   );

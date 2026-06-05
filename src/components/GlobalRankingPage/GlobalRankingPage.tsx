@@ -164,6 +164,7 @@ export function GlobalRankingPage({ session }: Readonly<GlobalRankingPageProps>)
       fr: 'fr-FR',
       it: 'it-IT',
       de: 'de-DE',
+      ja: 'ja-JP',
       en: 'en-US',
     };
     const locale = localeMap[i18n.language as keyof typeof localeMap] ?? 'en-US';

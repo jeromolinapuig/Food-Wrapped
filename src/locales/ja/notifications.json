@@ -1,0 +1,14 @@
+{
+  "title": "通知",
+  "loading": "通知を読み込み中...",
+  "noNotifications": "通知はまだありません。",
+  "likedSingle": "{{name}}があなたの投稿にいいねしました。",
+  "likedPlural": "{{name}}と他{{count}}人があなたの投稿にいいねしました。",
+  "likedMany": "{{name}}ほか多数があなたの投稿にいいねしました。",
+  "commentedSingle": "{{name}}があなたの投稿にコメントしました。",
+  "commentedPlural": "{{name}}と他{{count}}人があなたの投稿にコメントしました。",
+  "commentedMany": "{{name}}ほか多数があなたの投稿にコメントしました。",
+  "followed": "@{{name}}があなたをフォローしました。",
+  "invited": "@{{inviter}}が{{group}}に招待しました。",
+  "yourGroup": "あなたのグループ"
+}

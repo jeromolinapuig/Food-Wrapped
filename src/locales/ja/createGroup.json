@@ -1,0 +1,17 @@
+{
+  "title": "グループ作成",
+  "subtitle": "一緒にグループを作りたい友達を選択してください。",
+  "limitWarning": "すでに最大{{max}}グループに達しています。",
+  "groupNameLabel": "グループ名",
+  "groupNamePlaceholder": "例：バーガー仲間",
+  "searchPlaceholder": "ユーザー名で検索...",
+  "loading": "友達を読み込み中...",
+  "noResults": "結果がありません。",
+  "noFriends": "相互フォローの友達がまだいません。",
+  "creating": "作成中...",
+  "createButton": "グループを作成",
+  "errorCreate": "グループを作成できませんでした。",
+  "errorLimit": "6つを超えるグループは作成できません。",
+  "errorInviteLimit": "一部のユーザーはすでに最大6グループに達しています。",
+  "errorAddOwner": "作成者をグループに追加できませんでした。"
+}

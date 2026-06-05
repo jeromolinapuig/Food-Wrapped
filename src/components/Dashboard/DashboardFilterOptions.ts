@@ -51,11 +51,35 @@ const aedPriceFilters: PriceFilterDefinition[] = [
   { value: '25-plus', label: 'Más de 100', range: { min: 100 } },
 ];
 
+const gbpPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 4.99', range: { min: 0.01, max: 4.99 } },
+  { value: '5-9.99', label: '5 a 9.99', range: { min: 5, max: 9.99 } },
+  { value: '10-14.99', label: '10 a 14.99', range: { min: 10, max: 14.99 } },
+  { value: '15-19.99', label: '15 a 19.99', range: { min: 15, max: 19.99 } },
+  { value: '20-24.99', label: '20 a 24.99', range: { min: 20, max: 24.99 } },
+  { value: '25-plus', label: 'Más de 25', range: { min: 25.01 } },
+];
+
+const jpyPriceFilters: PriceFilterDefinition[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'free', label: 'Gratis', range: { exact: 0 } },
+  { value: '0-4.99', label: '0 a 999', range: { min: 0.01, max: 999 } },
+  { value: '5-9.99', label: '1000 a 1999', range: { min: 1000, max: 1999 } },
+  { value: '10-14.99', label: '2000 a 2999', range: { min: 2000, max: 2999 } },
+  { value: '15-19.99', label: '3000 a 3999', range: { min: 3000, max: 3999 } },
+  { value: '20-24.99', label: '4000 a 4999', range: { min: 4000, max: 4999 } },
+  { value: '25-plus', label: 'Más de 5000', range: { min: 5000 } },
+];
+
 const priceFiltersByCurrency: Record<string, PriceFilterDefinition[]> = {
   EUR: eurPriceFilters,
   USD: usdPriceFilters,
+  GBP: gbpPriceFilters,
   THB: thbPriceFilters,
   AED: aedPriceFilters,
+  JPY: jpyPriceFilters,
 };
 
 export const getPriceFiltersForCurrency = (currency: string) =>

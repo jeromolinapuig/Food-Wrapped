@@ -13,17 +13,26 @@ type PreferencesContextValue = {
 
 const PreferencesContext = createContext<PreferencesContextValue | undefined>(undefined);
 
-const DEFAULT_RATES: Record<string, number> = {
-  'EUR->EUR': 1,
-  'EUR->THB': 38,
-  'THB->EUR': 1 / 38,
-  'EUR->USD': 1.08,
-  'USD->EUR': 1 / 1.08,
-  'EUR->AED': 3.97,
-  'AED->EUR': 1 / 3.97,
-  'USD->AED': 3.67,
-  'AED->USD': 1 / 3.67,
+const DEFAULT_EUR_RATES: Record<string, number> = {
+  EUR: 1,
+  AED: 4.27479,
+  GBP: 0.86433,
+  JPY: 186.08,
+  THB: 37.987,
+  USD: 1.164,
 };
+
+const buildRatesFromEurRates = (eurRates: Record<string, number>) => {
+  const rates: Record<string, number> = {};
+  Object.entries(eurRates).forEach(([baseCurrency, baseRate]) => {
+    Object.entries(eurRates).forEach(([targetCurrency, targetRate]) => {
+      rates[`${baseCurrency}->${targetCurrency}`] = targetRate / baseRate;
+    });
+  });
+  return rates;
+};
+
+const DEFAULT_RATES: Record<string, number> = buildRatesFromEurRates(DEFAULT_EUR_RATES);
 
 const localeToCurrency: Record<string, string> = {
   es: 'EUR',
@@ -37,6 +46,8 @@ const localeToCurrency: Record<string, string> = {
   it: 'EUR',
   de: 'EUR',
   th: 'THB',
+  ja: 'JPY',
+  ja_JP: 'JPY',
 };
 
 const loadLanguage = () => {
@@ -46,7 +57,7 @@ const loadLanguage = () => {
   const navLang = window.navigator.language || window.navigator.languages?.[0];
   if (!navLang) return 'en';
   const short = navLang.slice(0, 2).toLowerCase();
-  if (['en', 'es', 'th', 'fr', 'it', 'de'].includes(short)) return short;
+  if (['en', 'es', 'th', 'fr', 'it', 'de', 'ja'].includes(short)) return short;
   return 'en';
 };
 

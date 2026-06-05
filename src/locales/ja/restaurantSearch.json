@@ -1,0 +1,18 @@
+{
+  "title": "レストラン",
+  "subtitle": "レストランを検索して投稿を探索",
+  "searchLabel": "レストラン検索",
+  "searchPlaceholder": "例：Burger Town",
+  "searching": "レストランを検索中...",
+  "empty": "その名前に一致するレストランはありません。",
+  "selectedLabel": "選択中のレストラン",
+  "change": "変更",
+  "cardSubtitle": "投稿を見る",
+  "cardAction": "表示",
+  "tabsMine": "あなた（{{count}}）",
+  "tabsFriends": "友達",
+  "tabsAll": "すべて",
+  "errors.load": "レストランを読み込めませんでした。",
+  "lockedTitle": "レストラン",
+  "lockedSubtitle": "レストランを検索するにはログインしてください。"
+}

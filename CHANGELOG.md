@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+
+- Added Japanese language support and Japanese yen currency support.
+- Added complete exchange-rate seeding guidance for all supported currencies.
+
 ## 1.1.0
 
 - Added burger profile preferences with translated ideal burger summaries and profile personalization progress.
