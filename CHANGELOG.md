@@ -6,6 +6,8 @@
 - Changed Wrapped slide copy to use real user stats for counts, spending and dominant burger types.
 - Added a Wrapped favorite-burger slide showing the user's highest-rated burger post.
 - Changed the Wrapped opening slide to highlight the burger count and tease the favorite burger reveal.
+- Added a paused final Wrapped summary slide with a homemade burger-photo collage and share-ready annual stats.
+- Expanded Wrapped with slides for most visited restaurant, burger-heavy month, most expensive burger, worst burger, restaurants discovered, homemade vs restaurant burgers and Hall of Fame.
 
 ## 1.3.0
 
