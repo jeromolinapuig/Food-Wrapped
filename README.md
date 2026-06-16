@@ -137,7 +137,7 @@ Responsabilidades:
 - Mostrar historial mediante `FeedTabs`.
 - Gestionar add/edit/delete de entradas.
 - Cargar invitaciones, grupos, notificaciones y datos del perfil.
-- Mostrar recordatorio para completar la personalizacion del perfil si falta foto, bio o preferencias burger.
+- El recordatorio de personalizacion incompleta del perfil se muestra desde la navegacion, no como modal de inicio.
 
 Llamadas Supabase relevantes:
 

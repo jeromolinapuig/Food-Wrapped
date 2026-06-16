@@ -26,6 +26,7 @@ const { supabaseMock, navigateMock, routerState } = vi.hoisted(() => ({
 }));
 
 vi.mock('@mui/icons-material', () => ({
+  Close: () => null,
   DynamicFeed: () => null,
   EmojiEvents: () => null,
   Groups: () => null,
@@ -86,6 +87,7 @@ const setupSupabase = (inviteCount: number) => {
 
 describe('BottomNav functional flows', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     navigateMock.mockReset();
     supabaseMock.from.mockReset();
     routerState.pathname = '/';
@@ -124,5 +126,20 @@ describe('BottomNav functional flows', () => {
     await waitFor(() => {
       expect(container.querySelector('.bw-bottom-nav-dot')).toBeInTheDocument();
     });
+  });
+
+  it('dismisses the incomplete profile suggestion', async () => {
+    const user = userEvent.setup();
+    const session: MockSession = { user: { id: 'user-1', email: 'user@example.com' } };
+
+    render(<BottomNav session={session as never} />);
+
+    expect(await screen.findByText('dashboard.profileReminderTitle')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('dashboard.profileReminderTitle')).not.toBeInTheDocument();
+    });
+    expect(window.localStorage.getItem('bw-profile-suggestion-dismissed-user-1')).toBe('true');
   });
 });

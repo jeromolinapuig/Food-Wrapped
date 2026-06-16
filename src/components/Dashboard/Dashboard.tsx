@@ -21,12 +21,6 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentMonthValue } from '../../utils/datetime';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import {
-  isBurgerBreadPreference,
-  isBurgerDonenessPreference,
-  isBurgerSaucePreference,
-  isBurgerTypePreference,
-} from '../../constants/burgerPreferences';
-import {
   DashboardMultiSelect,
   type MultiSelectOption,
 } from './DashboardFilters';
@@ -57,12 +51,6 @@ export type MeatType = 'beef' | 'chicken' | 'vegan' | 'other';
 type DashboardProfile = {
   username: string | null;
   display_name: string | null;
-  avatar_url?: string | null;
-  bio?: string | null;
-  favorite_burger_type?: string | null;
-  favorite_sauce?: string | null;
-  favorite_doneness?: string | null;
-  favorite_bread?: string | null;
 };
 
 type DbEntryRow = {
@@ -201,9 +189,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const lastSeenKey = `bw-notify-last-seen-${session.user.id}`;
   const username = (session.user.user_metadata as { username?: string } | null)?.username;
   const profileCacheKey = `bw-profile-${session.user.id}`;
-  const profileReminderDismissedKey = `bw-profile-reminder-dismissed-${session.user.id}`;
   const [headerUsername, setHeaderUsername] = useState<string | null>(null);
-  const [dashboardProfile, setDashboardProfile] = useState<DashboardProfile | null>(null);
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -235,10 +221,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [profileReminderDismissed, setProfileReminderDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem(profileReminderDismissedKey) === 'true';
-  });
   const cacheKey = `bw-dashboard-entries-${session.user.id}-2026`;
   const openAddModal = () => {
     setEditingEntry(null);
@@ -481,7 +463,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
 
     const profile = data as DashboardProfile;
     setHeaderUsername(profile.username ?? profile.display_name ?? null);
-    setDashboardProfile(profile);
   }, [session.user.id]);
 
   useEffect(() => {
@@ -492,7 +473,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         const parsed = JSON.parse(cached) as DashboardProfile;
         const fromCache = parsed.username ?? parsed.display_name ?? null;
         if (fromCache) setHeaderUsername(fromCache);
-        setDashboardProfile(parsed);
       } catch {
         // ignorar parseo
       }
@@ -686,26 +666,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const hasUnreadNotifications = Boolean(
     notificationsLatest && (!notificationsLastSeen || notificationsLatest > notificationsLastSeen)
   );
-  const isProfileComplete = Boolean(
-    dashboardProfile?.avatar_url &&
-    dashboardProfile.bio?.trim() &&
-    isBurgerTypePreference(dashboardProfile.favorite_burger_type) &&
-    isBurgerSaucePreference(dashboardProfile.favorite_sauce) &&
-    isBurgerDonenessPreference(dashboardProfile.favorite_doneness) &&
-    isBurgerBreadPreference(dashboardProfile.favorite_bread)
-  );
-  const showProfileReminder = Boolean(dashboardProfile && !isProfileComplete && !profileReminderDismissed);
-
-  const handleDismissProfileReminder = () => {
-    setProfileReminderDismissed(true);
-    sessionStorage.setItem(profileReminderDismissedKey, 'true');
-  };
-
-  const handleOpenProfileReminder = () => {
-    handleDismissProfileReminder();
-    navigate('/profile');
-  };
-
   const handleOpenPost = (entryId: string) => {
     navigate(`/posts/${entryId}`, { state: { returnTo: location.pathname } });
   };
@@ -1009,23 +969,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               disabled={mutating}
             >
               {mutating ? 'Procesando...' : 'Eliminar'}
-            </button>
-          </>
-        )}
-      />
-
-      <ConfirmDialog
-        open={showProfileReminder}
-        onClose={handleDismissProfileReminder}
-        title={t('dashboard.profileReminderTitle')}
-        message={t('dashboard.profileReminderText')}
-        actions={(
-          <>
-            <button type="button" className="bw-btn bw-btn-ghost" onClick={handleDismissProfileReminder}>
-              {t('dashboard.later')}
-            </button>
-            <button type="button" className="bw-btn bw-btn-primary" onClick={handleOpenProfileReminder}>
-              {t('dashboard.profileReminderAction')}
             </button>
           </>
         )}

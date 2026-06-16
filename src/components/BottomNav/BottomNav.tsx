@@ -1,7 +1,13 @@
-import { DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
+import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  isBurgerBreadPreference,
+  isBurgerDonenessPreference,
+  isBurgerSaucePreference,
+  isBurgerTypePreference,
+} from '../../constants/burgerPreferences';
 import { supabase } from '../../lib/supabaseClient';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { Avatar } from '../common/Avatar';
@@ -30,8 +36,11 @@ export function BottomNav({
   const [initial, setInitial] = useState<string>('?');
   const [inviteCount, setInviteCount] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [profileSuggestionDismissedUserId, setProfileSuggestionDismissedUserId] = useState<string | null>(null);
   const isGuest = !session;
   const userId = session?.user.id ?? null;
+  const profileSuggestionDismissedKey = userId ? `bw-profile-suggestion-dismissed-${userId}` : null;
 
   const activeKey = useMemo(() => {
     if (adminModeEnabled && isAdmin) {
@@ -60,16 +69,25 @@ export function BottomNav({
 
   const loadProfile = useCallback(async () => {
     if (!session || (adminModeEnabled && isAdmin)) return;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('profiles')
-      .select('avatar_url, equipped_frame, username, display_name')
+      .select('avatar_url, equipped_frame, username, display_name, bio, favorite_burger_type, favorite_sauce, favorite_doneness, favorite_bread')
       .eq('id', session.user.id)
       .single();
+
+    if (error && (error as { code?: string }).code === '42703') {
+      ({ data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, equipped_frame, username, display_name')
+        .eq('id', session.user.id)
+        .single());
+    }
 
     if (error || !data) {
       setAvatarUrl(null);
       setAvatarFrame(null);
       setInitial(session.user.email?.charAt(0).toUpperCase() ?? '?');
+      setProfileIncomplete(false);
       return;
     }
 
@@ -78,11 +96,24 @@ export function BottomNav({
       equipped_frame: 'gold' | 'silver' | 'bronze' | null;
       username: string | null;
       display_name: string | null;
+      bio?: string | null;
+      favorite_burger_type?: string | null;
+      favorite_sauce?: string | null;
+      favorite_doneness?: string | null;
+      favorite_bread?: string | null;
     };
     const base = profile.username ?? profile.display_name ?? session.user.email ?? '?';
     setAvatarUrl(profile.avatar_url);
     setAvatarFrame(profile.equipped_frame ?? null);
     setInitial(base.charAt(0).toUpperCase());
+    setProfileIncomplete(!(
+      profile.avatar_url &&
+      profile.bio?.trim() &&
+      isBurgerTypePreference(profile.favorite_burger_type) &&
+      isBurgerSaucePreference(profile.favorite_sauce) &&
+      isBurgerDonenessPreference(profile.favorite_doneness) &&
+      isBurgerBreadPreference(profile.favorite_bread)
+    ));
   }, [adminModeEnabled, isAdmin, session]);
 
   useEffect(() => {
@@ -98,11 +129,16 @@ export function BottomNav({
       if (custom.detail?.userId !== userId) return;
       setAvatarFrame(custom.detail?.frameKey ?? null);
     };
+    const handleProfileUpdated = () => {
+      void loadProfile();
+    };
     window.addEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+    window.addEventListener('bw-profile-updated', handleProfileUpdated);
     return () => {
       window.removeEventListener('bw-avatar-frame-updated', handleFrameUpdated);
+      window.removeEventListener('bw-profile-updated', handleProfileUpdated);
     };
-  }, [userId]);
+  }, [loadProfile, userId]);
 
   const loadInvites = useCallback(async () => {
     if (!userId || (adminModeEnabled && isAdmin)) return;
@@ -162,6 +198,18 @@ export function BottomNav({
     navigate(path);
   };
 
+  const handleDismissProfileSuggestion = () => {
+    setProfileSuggestionDismissedUserId(userId);
+    if (profileSuggestionDismissedKey) {
+      window.localStorage.setItem(profileSuggestionDismissedKey, 'true');
+    }
+  };
+
+  const handleOpenProfileSuggestion = () => {
+    handleDismissProfileSuggestion();
+    handleClick('/profile');
+  };
+
   useEffect(() => {
     if (adminModeEnabled && isAdmin) return;
     if (!moreOpen) return;
@@ -217,9 +265,17 @@ export function BottomNav({
     );
   }
 
+  const showProfileSuggestion = Boolean(
+    !isGuest &&
+    profileIncomplete &&
+    profileSuggestionDismissedUserId !== userId &&
+    (!profileSuggestionDismissedKey || window.localStorage.getItem(profileSuggestionDismissedKey) !== 'true') &&
+    activeKey !== 'profile'
+  );
+
   return (
     <nav
-      className={`bw-bottom-nav is-main ${moreOpen ? 'is-more-open' : ''}`}
+      className={`bw-bottom-nav is-main ${moreOpen ? 'is-more-open' : ''} ${showProfileSuggestion ? 'is-profile-suggestion-open' : ''}`}
       aria-label={t('common.navigation', { defaultValue: 'Navigation' })}
     >
       <button
@@ -299,37 +355,60 @@ export function BottomNav({
           </>
         )}
       </div>
-      <button
-        type="button"
-        className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}
-        onClick={() => {
-          if (isGuest) {
-            onRequireLogin?.();
-            return;
-          }
-          handleClick('/profile');
-        }}
-        aria-label={t('profile.title')}
-      >
-        <span className="bw-bottom-nav-avatar">
-          {isGuest ? (
-            <span className="bw-bottom-nav-icon">
-              <PersonOutline />
-            </span>
-          ) : (
-            <Avatar
-              url={avatarUrl}
-              initial={initial}
-              frameKey={avatarFrame}
-              alt="Mi perfil"
-              className="bw-bottom-nav-avatar-core"
-            />
-          )}
-        </span>
-        <span className="bw-bottom-nav-label">
-          {isGuest ? t('common.guest', { defaultValue: 'Guest' }) : t('common.profile', { defaultValue: 'Profile' })}
-        </span>
-      </button>
+      <div className="bw-bottom-nav-profile">
+        {showProfileSuggestion && (
+          <div className="bw-profile-suggestion" role="status">
+            <button
+              type="button"
+              className="bw-profile-suggestion-close"
+              onClick={handleDismissProfileSuggestion}
+              aria-label={t('common.close', { defaultValue: 'Close' })}
+            >
+              <Close fontSize="small" />
+            </button>
+            <span className="bw-profile-suggestion-title">{t('dashboard.profileReminderTitle')}</span>
+            <span className="bw-profile-suggestion-text">{t('dashboard.profileReminderText')}</span>
+            <button
+              type="button"
+              className="bw-profile-suggestion-action"
+              onClick={handleOpenProfileSuggestion}
+            >
+              {t('dashboard.profileReminderAction')}
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'profile' ? 'is-active' : ''}`}
+          onClick={() => {
+            if (isGuest) {
+              onRequireLogin?.();
+              return;
+            }
+            handleClick('/profile');
+          }}
+          aria-label={t('profile.title')}
+        >
+          <span className="bw-bottom-nav-avatar">
+            {isGuest ? (
+              <span className="bw-bottom-nav-icon">
+                <PersonOutline />
+              </span>
+            ) : (
+              <Avatar
+                url={avatarUrl}
+                initial={initial}
+                frameKey={avatarFrame}
+                alt="Mi perfil"
+                className="bw-bottom-nav-avatar-core"
+              />
+            )}
+          </span>
+          <span className="bw-bottom-nav-label">
+            {isGuest ? t('common.guest', { defaultValue: 'Guest' }) : t('common.profile', { defaultValue: 'Profile' })}
+          </span>
+        </button>
+      </div>
     </nav>
   );
 }

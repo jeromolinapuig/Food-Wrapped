@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- Changed the incomplete profile reminder from a home modal to a dismissible profile suggestion anchored to the navigation bar.
+- Fixed the profile suggestion layering so it appears above the add post button.
+
 ## 1.3.0
 
 - Added a responsive desktop layout with a wider app shell, sidebar navigation, expanded content grids and desktop-friendly fixed actions.
