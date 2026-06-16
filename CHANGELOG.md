@@ -4,6 +4,7 @@
 
 - Changed the incomplete profile reminder from a home modal to a dismissible profile suggestion anchored to the navigation bar.
 - Fixed the profile suggestion layering so it appears above the add post button.
+- Changed the profile suggestion border to match the home filter gradient style.
 
 ## 1.3.0
 

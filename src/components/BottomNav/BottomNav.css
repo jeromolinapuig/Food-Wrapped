@@ -249,8 +249,10 @@
   width: min(292px, calc(100vw - 32px));
   padding: 12px 40px 12px 14px;
   border-radius: 18px;
-  background: var(--bw-surface);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background:
+    linear-gradient(var(--bw-surface), var(--bw-surface)) padding-box,
+    linear-gradient(135deg, rgba(92, 213, 255, 0.78), var(--bw-accent), rgba(120, 108, 255, 0.72)) border-box;
+  border: 1px solid transparent;
   color: var(--bw-text);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
   display: grid;
@@ -264,12 +266,15 @@
   content: "";
   position: absolute;
   right: 24px;
-  bottom: -7px;
+  bottom: -8px;
   width: 14px;
   height: 14px;
-  background: var(--bw-surface);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background:
+    linear-gradient(var(--bw-surface), var(--bw-surface)) padding-box,
+    linear-gradient(135deg, var(--bw-accent), rgba(120, 108, 255, 0.72)) border-box;
+  border: 1px solid transparent;
+  border-top: 0;
+  border-left: 0;
   transform: rotate(45deg);
 }
 
@@ -322,12 +327,16 @@
 }
 
 :root[data-theme="dark"] .bw-profile-suggestion {
-  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(var(--bw-surface), var(--bw-surface)) padding-box,
+    linear-gradient(135deg, rgba(92, 213, 255, 0.7), rgba(255, 59, 141, 0.82), rgba(120, 108, 255, 0.72)) border-box;
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.56);
 }
 
 :root[data-theme="dark"] .bw-profile-suggestion::after {
-  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(var(--bw-surface), var(--bw-surface)) padding-box,
+    linear-gradient(135deg, rgba(255, 59, 141, 0.82), rgba(120, 108, 255, 0.72)) border-box;
 }
 
 @keyframes bw-profile-suggestion-pop {
@@ -416,18 +425,14 @@
   }
 
   .bw-profile-suggestion::after {
-    left: -7px;
+    left: -8px;
     right: auto;
     top: 50%;
     bottom: auto;
-    border: none;
-    border-left: 1px solid rgba(0, 0, 0, 0.08);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid transparent;
+    border-top: 0;
+    border-right: 0;
     transform: translateY(-50%) rotate(45deg);
-  }
-
-  :root[data-theme="dark"] .bw-profile-suggestion::after {
-    border-color: rgba(255, 255, 255, 0.12);
   }
 }
 
