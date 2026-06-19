@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import { AppShell } from '../common/AppShell';
+import { BackButton } from '../common/BackButton';
 import { ModalBase } from '../common/ModalBase';
 import { PageHeader } from '../common/PageHeader';
 import { ZoomableImage } from '../common/ZoomableImage';
@@ -66,6 +67,7 @@ type RestaurantGroup = {
 
 type MyTopBurgersPageProps = {
   session: Session;
+  onBack: () => void;
 };
 
 const formatPrice = (value: number | null, currency: string | null | undefined) => {
@@ -90,7 +92,7 @@ const firstRelation = <T,>(value: T | T[] | null): T | null => {
 const sortMetricValue = (burger: BurgerSummary, sortBy: SortBy) =>
   sortBy === 'rating' ? burger.rating : burger.price;
 
-export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
+export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageProps>) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -301,6 +303,7 @@ export function MyTopBurgersPage({ session }: Readonly<MyTopBurgersPageProps>) {
   return (
     <AppShell>
       <PageHeader
+        leading={<BackButton onClick={onBack} ariaLabel={t('common.back', { defaultValue: 'Back' })} />}
         title={t('myTopBurgers.title')}
         subtitle={t('myTopBurgers.subtitle')}
       />

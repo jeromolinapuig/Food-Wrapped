@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.2
+
+- Added an in-sheet restaurant review step before creating new restaurants from the add entry flow.
+- Improved restaurant autocomplete matching so searches with generic words can still find shorter restaurant names.
+- Changed the restaurant review confirmation to create and select the restaurant immediately.
+- Prevented saving entries with restaurant text that has not been selected or created in the database.
+- Loaded saved profile language and currency preferences when starting a session on a new device.
+- Added a back button to the My Top Burgers page that returns to the previous route.
+
 ## 1.3.1
 
 - Changed the incomplete profile reminder from a home modal to a dismissible profile suggestion anchored to the navigation bar.

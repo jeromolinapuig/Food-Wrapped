@@ -507,7 +507,7 @@ function App() {
           path="/my-top-burgers"
           element={
             session ? (
-              <MyTopBurgersPage session={session} />
+              <MyTopBurgersRoute session={session} />
             ) : (
               <LockedPage
                 title={t('myTopBurgers.title', { defaultValue: 'Mi top burgers' })}
@@ -576,6 +576,17 @@ function GroupRoute({ session, theme, onToggleTheme }: GroupRouteProps) {
       onToggleTheme={onToggleTheme}
       groupId={groupId}
       onBack={() => navigate('/groups')}
+    />
+  );
+}
+
+function MyTopBurgersRoute({ session }: { session: NonNullable<Session> }) {
+  const navigate = useNavigate();
+
+  return (
+    <MyTopBurgersPage
+      session={session}
+      onBack={() => navigate(-1)}
     />
   );
 }

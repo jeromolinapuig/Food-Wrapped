@@ -36,11 +36,20 @@ vi.mock('@mui/icons-material', () => ({
   Star: () => null,
 }));
 
+vi.mock('../common/BackButton', () => ({
+  BackButton: ({ onClick, ariaLabel }: { onClick: () => void; ariaLabel: string }) => (
+    <button type="button" onClick={onClick} aria-label={ariaLabel}>
+      back
+    </button>
+  ),
+}));
+
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: supabaseMock,
 }));
 
 const session: MockSession = { user: { id: 'user-123' } };
+const renderPage = (onBack = vi.fn()) => render(<MyTopBurgersPage session={session as never} onBack={onBack} />);
 
 const mockEntriesQuery = (result: { data: RawBurger[] | null; error: { message: string } | null }) => {
   const query = {
@@ -78,7 +87,7 @@ describe('MyTopBurgersPage functional flows', () => {
     });
 
     const user = userEvent.setup();
-    render(<MyTopBurgersPage session={session as never} />);
+    renderPage();
 
     expect(await screen.findByText('Smash Burger')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Smash Burger/i })).toHaveTextContent('myTopBurgers.price');
@@ -125,7 +134,7 @@ describe('MyTopBurgersPage functional flows', () => {
     });
 
     const user = userEvent.setup();
-    render(<MyTopBurgersPage session={session as never} />);
+    renderPage();
 
     const groupTitle = await screen.findByRole('heading', { name: 'Alpha' });
     const groupCard = groupTitle.closest('article');
@@ -169,7 +178,7 @@ describe('MyTopBurgersPage functional flows', () => {
       error: null,
     });
 
-    render(<MyTopBurgersPage session={session as never} />);
+    renderPage();
 
     const burger = await screen.findByRole('button', { name: /Smash Burger/i });
     expect(burger).toHaveTextContent('myTopBurgers.highestPrice');
@@ -182,7 +191,7 @@ describe('MyTopBurgersPage functional flows', () => {
       error: { message: 'boom-error' },
     });
 
-    render(<MyTopBurgersPage session={session as never} />);
+    renderPage();
 
     expect(await screen.findByText('boom-error')).toBeInTheDocument();
   });
@@ -193,8 +202,24 @@ describe('MyTopBurgersPage functional flows', () => {
       error: null,
     });
 
-    render(<MyTopBurgersPage session={session as never} />);
+    renderPage();
 
     expect(await screen.findByText('myTopBurgers.empty')).toBeInTheDocument();
+  });
+
+  it('shows a back button and asks the parent route to go back', async () => {
+    mockEntriesQuery({
+      data: [],
+      error: null,
+    });
+
+    const onBack = vi.fn();
+    const user = userEvent.setup();
+    renderPage(onBack);
+
+    expect(await screen.findByText('myTopBurgers.empty')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

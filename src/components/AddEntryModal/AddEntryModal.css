@@ -237,3 +237,119 @@
 .bw-suggestions li:hover {
   background: var(--bw-card-bg);
 }
+
+.bw-suggestions-add {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--bw-accent);
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] .bw-suggestions-add {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+.bw-modal.bw-modal-restaurant-review {
+  height: auto;
+  max-height: calc(100vh - 24px);
+}
+
+.bw-restaurant-review {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bw-restaurant-review-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(255, 59, 139, 0.22);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(255, 59, 139, 0.1), rgba(255, 255, 255, 0) 62%),
+    var(--bw-card-bg);
+  color: var(--bw-text);
+}
+
+.bw-restaurant-review-kicker {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 59, 139, 0.14);
+  color: var(--bw-accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bw-restaurant-review-name {
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.bw-restaurant-review-summary p {
+  margin: 0;
+  color: var(--bw-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bw-restaurant-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bw-restaurant-review-option {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  background: var(--bw-surface);
+  color: var(--bw-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.bw-restaurant-review-option:hover {
+  background: var(--bw-card-bg);
+}
+
+:root[data-theme="dark"] .bw-restaurant-review-option {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.bw-restaurant-review .bw-helper {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.04);
+  line-height: 1.45;
+}
+
+:root[data-theme="dark"] .bw-restaurant-review-summary {
+  border-color: rgba(255, 99, 160, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 59, 139, 0.18), rgba(255, 255, 255, 0) 62%),
+    var(--bw-card-bg);
+}
+
+:root[data-theme="dark"] .bw-restaurant-review .bw-helper {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bw-restaurant-review .bw-modal-actions {
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 0;
+  border-top: 0;
+  position: static;
+}
+
+.bw-restaurant-review .bw-modal-actions button:last-child {
+  flex: 1;
+}

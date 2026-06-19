@@ -12,7 +12,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Star, StarBorder, StarHalf } from '@mui/icons-material';
-import { addEntrySchema } from '../../schemas/addEntrySchema';
+import { addEntrySchema, type AddEntrySchema } from '../../schemas/addEntrySchema';
 import { formatLocalDateTime, MIN_DATETIME_STRING } from '../../utils/datetime';
 import { createAppTheme } from '../../theme';
 import { compressImage } from '../../utils/image';
@@ -35,6 +35,11 @@ type BurgerOption = {
   name: string | null;
   meat_type: MeatType | null;
 };
+
+type RestaurantReviewState = {
+  name: string;
+  suggestions: RestaurantOption[];
+} | null;
 
 type RatingPickerProps = {
   value: number | null;
@@ -99,6 +104,27 @@ const normalizeCompact = (value: string) =>
     .trim()
     .toLowerCase();
 
+const RESTAURANT_SEARCH_STOP_WORDS = new Set([
+  'bar',
+  'burger',
+  'burgers',
+  'hamburguesa',
+  'hamburguesas',
+  'hamburgueseria',
+  'restaurant',
+  'restaurante',
+]);
+
+const getRestaurantSearchTerms = (value: string) => {
+  const normalizedValue = normalizeName(value);
+  const compactValue = normalizeCompact(value);
+  const tokenTerms = normalizedValue
+    .split(' ')
+    .filter((term) => term.length >= 3 && !RESTAURANT_SEARCH_STOP_WORDS.has(term));
+
+  return Array.from(new Set([value.trim(), normalizedValue, compactValue, ...tokenTerms].filter(Boolean)));
+};
+
 type AddEntryModalProps = {
   open: boolean;
   onClose: () => void;
@@ -143,6 +169,7 @@ export function AddEntryModal({
   const [restaurantInput, setRestaurantInput] = useState('');
   const [restaurantSuggestions, setRestaurantSuggestions] = useState<RestaurantOption[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantOption | null>(null);
+  const [restaurantReview, setRestaurantReview] = useState<RestaurantReviewState>(null);
 
   const [isBurger, setIsBurger] = useState(true);
   const [burgerType, setBurgerType] = useState<MeatType>('beef');
@@ -217,6 +244,7 @@ export function AddEntryModal({
           ? null
           : { id: entry.restaurantId, name: entry.restaurantName ?? '' }
       );
+      setRestaurantReview(null);
       setIsBurger(true);
       setBurgerType(entry.meatType ?? 'beef');
       setBurgerSource(entry.burgerOrigin ?? 'restaurant');
@@ -246,6 +274,7 @@ export function AddEntryModal({
       setRestaurantInput(initialRestaurant?.name ?? '');
       setRestaurantSuggestions([]);
       setSelectedRestaurant(initialRestaurant ?? null);
+      setRestaurantReview(null);
       setIsBurger(true);
       setBurgerType('beef');
       setBurgerSource('restaurant');
@@ -280,40 +309,124 @@ export function AddEntryModal({
     requestClose();
   };
 
+  const fetchRestaurantOptions = async (value: string) => {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return [];
+
+    const query = getRestaurantSearchTerms(trimmedValue)
+      .flatMap((term) => {
+        const normalizedTerm = normalizeName(term);
+        const compactTerm = normalizeCompact(term);
+        return [
+          `name.ilike.%${term}%`,
+          `name_normalized.ilike.%${normalizedTerm}%`,
+          `name_compact.ilike.%${compactTerm}%`,
+        ];
+      })
+      .join(',');
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select('id, name')
+      .or(query)
+      .order('name')
+      .limit(10);
+
+    if (error) {
+      console.error(error);
+      return [];
+    }
+
+    return (data ?? []) as RestaurantOption[];
+  };
+
   const handleRestaurantChange = async (value: string) => {
     setRestaurantInput(value);
     setSelectedRestaurant(null);
+    setRestaurantReview(null);
 
     if (!value.trim()) {
       setRestaurantSuggestions([]);
       return;
     }
 
-    const trimmedValue = value.trim();
-    const normalizedValue = normalizeName(trimmedValue);
-    const compactValue = normalizeCompact(trimmedValue);
-    const { data, error } = await supabase
-      .from('restaurants')
-      .select('id, name')
-      .or(`name.ilike.%${trimmedValue}%,name_normalized.ilike.%${normalizedValue}%,name_compact.ilike.%${compactValue}%`)
-      .order('name')
-      .limit(10);
-
-    if (error) {
-      console.error(error);
-      setRestaurantSuggestions([]);
-    } else {
-      setRestaurantSuggestions((data ?? []) as RestaurantOption[]);
-    }
+    setRestaurantSuggestions(await fetchRestaurantOptions(value));
   };
 
   const selectRestaurant = (option: RestaurantOption) => {
     setSelectedRestaurant(option);
     setRestaurantInput(option.name);
     setRestaurantSuggestions([]);
+    setRestaurantReview(null);
     setSelectedBurger(null);
     setBurgerInput('');
     setBurgerSuggestions([]);
+  };
+
+  const openRestaurantReview = async (name: string) => {
+    const suggestions = await fetchRestaurantOptions(name);
+    const normalizedName = normalizeName(name);
+    setRestaurantReview({
+      name,
+      suggestions: suggestions.filter((option) => normalizeName(option.name) !== normalizedName),
+    });
+    setRestaurantSuggestions([]);
+  };
+
+  const closeRestaurantReview = () => {
+    setRestaurantReview(null);
+  };
+
+  const ensureRestaurant = async (name: string) => {
+    const trimmedRestaurant = name.trim();
+    const { data, error } = await supabase
+      .from('restaurants')
+      .upsert(
+        {
+          name: trimmedRestaurant,
+          name_normalized: normalizeName(trimmedRestaurant),
+          name_compact: normalizeCompact(trimmedRestaurant),
+          is_chain: false,
+          created_by: session.user.id,
+        },
+        { onConflict: 'name_normalized' }
+      )
+      .select('id, name')
+      .single();
+
+    if (error || !data) {
+      throw error ?? new Error('No se pudo crear el restaurante');
+    }
+
+    return { id: data.id, name: data.name } as RestaurantOption;
+  };
+
+  const confirmNewRestaurant = async () => {
+    if (!restaurantReview || formLoading) return;
+
+    setFormError(null);
+    setFormLoading(true);
+    try {
+      const restaurant = await ensureRestaurant(restaurantReview.name);
+      setRestaurantInput(restaurant.name);
+      setSelectedRestaurant(restaurant);
+      setBurgerInput('');
+      setSelectedBurger(null);
+      setBurgerSuggestions([]);
+      setRestaurantReview(null);
+    } catch (err: unknown) {
+      console.error(err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : 'No se pudo crear el restaurante';
+      setFormError(message);
+    } finally {
+      setFormLoading(false);
+    }
+
+    setRestaurantSuggestions([]);
   };
 
   const handlePhotoChange = async (file?: File | null) => {
@@ -435,11 +548,8 @@ export function AddEntryModal({
     if (option.meat_type) setBurgerType(option.meat_type);
   };
 
-  const handleAddEntry = async (e: FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    const validation = addEntrySchema.safeParse({
+  const validateEntryForm = () => {
+    return addEntrySchema.safeParse({
       datetime: datetimeInput,
       restaurant: restaurantInput,
       price: priceInput,
@@ -451,13 +561,9 @@ export function AddEntryModal({
       ingredients: ingredientsInput,
       additionalNotes,
     });
+  };
 
-    if (!validation.success) {
-      setFormError(validation.error.issues[0]?.message ?? 'Revisa los datos.');
-      return;
-    }
-
-    const parsed = validation.data;
+  const saveEntry = async (parsed: AddEntrySchema) => {
     const entryId = mode === 'edit' && entry ? entry.id : null;
     const price = Number(parsed.price.replace(',', '.'));
     const rating = Number(parsed.rating);
@@ -468,18 +574,39 @@ export function AddEntryModal({
       isBurger && burgerSource === 'homemade'
         ? (parsed.ingredients?.trim() ?? '').slice(0, INGREDIENTS_LIMIT) || null
         : null;
+    const trimmedRestaurant = restaurantInput.trim();
+    const normalizedRestaurant = normalizeName(trimmedRestaurant);
+    const editingSameRestaurant =
+      mode === 'edit' &&
+      entry?.restaurantName &&
+      normalizeName(entry.restaurantName.trim()) === normalizedRestaurant;
+    let existingRestaurantId =
+      selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
+
+    if ((!isBurger || burgerSource === 'restaurant') && !existingRestaurantId) {
+      const suggestions = await fetchRestaurantOptions(trimmedRestaurant);
+      const exactRestaurant = suggestions.find(
+        (option) => normalizeName(option.name) === normalizedRestaurant
+      );
+
+      if (exactRestaurant) {
+        existingRestaurantId = exactRestaurant.id;
+        setSelectedRestaurant(exactRestaurant);
+        setRestaurantInput(exactRestaurant.name);
+        setRestaurantSuggestions([]);
+      } else {
+        setRestaurantReview({
+          name: trimmedRestaurant,
+          suggestions: suggestions.filter((option) => normalizeName(option.name) !== normalizedRestaurant),
+        });
+        setRestaurantSuggestions([]);
+        return;
+      }
+    }
 
     setFormLoading(true);
 
     try {
-      const trimmedRestaurant = restaurantInput.trim();
-      const normalizedRestaurant = normalizeName(trimmedRestaurant);
-      const compactRestaurant = normalizeCompact(trimmedRestaurant);
-      const editingSameRestaurant =
-        mode === 'edit' &&
-        entry?.restaurantName &&
-        normalizeName(entry.restaurantName.trim()) === normalizedRestaurant;
-
       let photoUrl: string | null = photoPreview ?? null;
 
       // 0) Subir foto si hay file nuevo
@@ -500,33 +627,10 @@ export function AddEntryModal({
       let restaurantId: string | null = null;
 
       if (!isBurger || burgerSource === 'restaurant') {
-        restaurantId = selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
+        restaurantId = existingRestaurantId;
 
         if (!restaurantId) {
-          const { data, error } = await supabase
-            .from('restaurants')
-            .upsert(
-              {
-                name: trimmedRestaurant,
-                name_normalized: normalizedRestaurant,
-                name_compact: compactRestaurant,
-                is_chain: false,
-                created_by: session.user.id,
-              },
-              { onConflict: 'name_normalized' }
-            )
-            .select('id, name')
-            .single();
-
-          if (error || !data) {
-            throw error ?? new Error('No se pudo crear el restaurante');
-          }
-
-          restaurantId = data.id;
-          setSelectedRestaurant({ id: data.id, name: data.name });
-        }
-        if (!restaurantId) {
-          throw new Error('No se pudo determinar el restaurante.');
+          throw new Error('Selecciona o crea un restaurante antes de guardar.');
         }
       }
 
@@ -628,6 +732,20 @@ export function AddEntryModal({
     }
   };
 
+  const handleAddEntry = async (e: FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    const validation = validateEntryForm();
+
+    if (!validation.success) {
+      setFormError(validation.error.issues[0]?.message ?? 'Revisa los datos.');
+      return;
+    }
+
+    await saveEntry(validation.data);
+  };
+
   const isSubmitDisabled =
     formLoading ||
     !datetimeInput ||
@@ -637,6 +755,12 @@ export function AddEntryModal({
     (isBurger && burgerSource === 'homemade' && !ingredientsInput.trim()) ||
     (isBurger && burgerSource === 'restaurant' && !burgerInput.trim());
   const isCropSelectionReady = Boolean(photoCropArea && photoCropArea.width > 0 && photoCropArea.height > 0);
+  const trimmedRestaurantInput = restaurantInput.trim();
+  const hasExactRestaurantSuggestion = restaurantSuggestions.some(
+    (option) => normalizeName(option.name) === normalizeName(trimmedRestaurantInput)
+  );
+  const showAddRestaurantOption =
+    Boolean(trimmedRestaurantInput) && !selectedRestaurant && !hasExactRestaurantSuggestion;
 
   if (!open) return null;
 
@@ -647,22 +771,71 @@ export function AddEntryModal({
         className={`bw-modal-backdrop ${isClosing ? 'is-closing' : 'is-open'}`}
         onClick={handleBackdrop}
       >
-        <div
-          className={`bw-modal ${isClosing ? 'is-closing' : 'is-open'}`}
+          <div
+          className={`bw-modal ${restaurantReview ? 'bw-modal-restaurant-review' : ''} ${isClosing ? 'is-closing' : 'is-open'}`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bw-modal-header">
             <div>
               <h2 className="bw-modal-title">
-                {t(mode === 'edit' ? 'addEntry.titleEdit' : 'addEntry.titleCreate')}
+                {restaurantReview
+                  ? t('addEntry.reviewRestaurantTitle')
+                  : t(mode === 'edit' ? 'addEntry.titleEdit' : 'addEntry.titleCreate')}
               </h2>
-              <p className="bw-modal-subtitle">{t('addEntry.subtitle')}</p>
+              <p className="bw-modal-subtitle">
+                {restaurantReview ? t('addEntry.reviewRestaurantSubtitle') : t('addEntry.subtitle')}
+              </p>
             </div>
             <Button variant="outlined" size="small" onClick={requestClose} disabled={formLoading}>
               {t('common.close')}
             </Button>
           </div>
 
+          {restaurantReview ? (
+            <div className="bw-restaurant-review">
+              <div className="bw-restaurant-review-summary">
+                <span className="bw-restaurant-review-kicker">{t('addEntry.reviewRestaurantRequested')}</span>
+                <strong className="bw-restaurant-review-name">{restaurantReview.name}</strong>
+                <p>{t('addEntry.reviewRestaurantPendingCreate')}</p>
+              </div>
+
+              {restaurantReview.suggestions.length > 0 ? (
+                <div className="bw-field">
+                  <span className="bw-label">{t('addEntry.reviewRestaurantMatches')}</span>
+                  <div className="bw-restaurant-review-list">
+                    {restaurantReview.suggestions.map((restaurant) => (
+                      <button
+                        key={restaurant.id}
+                        type="button"
+                        className="bw-restaurant-review-option"
+                        onClick={() => selectRestaurant(restaurant)}
+                      >
+                        {restaurant.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="bw-helper">{t('addEntry.reviewRestaurantNoMatches')}</p>
+              )}
+
+              {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
+
+              <div className="bw-modal-actions">
+                <Button type="button" variant="outlined" onClick={closeRestaurantReview} disabled={formLoading}>
+                  {t('addEntry.reviewRestaurantBack')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="contained"
+                  onClick={confirmNewRestaurant}
+                  disabled={formLoading}
+                >
+                  {t('addEntry.reviewRestaurantCreate')}
+                </Button>
+              </div>
+            </div>
+          ) : (
           <form className="bw-modal-form" onSubmit={handleAddEntry}>
             <div className="bw-modal-fields">
               <div className="bw-field">
@@ -794,6 +967,7 @@ export function AddEntryModal({
                               } else {
                                 setRestaurantInput('');
                                 setRestaurantSuggestions([]);
+                                setRestaurantReview(null);
                                 setSelectedRestaurant(null);
                                 setBurgerInput('');
                                 setBurgerSuggestions([]);
@@ -838,13 +1012,21 @@ export function AddEntryModal({
                     autoComplete="off"
                     fullWidth
                   />
-                  {restaurantSuggestions.length > 0 && (
+                  {(restaurantSuggestions.length > 0 || showAddRestaurantOption) && (
                     <ul className="bw-suggestions">
                       {restaurantSuggestions.map((r) => (
                         <li key={r.id} onClick={() => selectRestaurant(r)}>
                           {r.name}
                         </li>
                       ))}
+                      {showAddRestaurantOption && (
+                        <li
+                          className="bw-suggestions-add"
+                          onClick={() => openRestaurantReview(trimmedRestaurantInput)}
+                        >
+                          {t('addEntry.addRestaurantOption', { name: trimmedRestaurantInput })}
+                        </li>
+                      )}
                     </ul>
                   )}
                 </div>
@@ -965,6 +1147,7 @@ export function AddEntryModal({
               </Button>
             </div>
           </form>
+          )}
         </div>
       </div>
 

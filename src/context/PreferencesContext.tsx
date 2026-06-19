@@ -33,6 +33,8 @@ const buildRatesFromEurRates = (eurRates: Record<string, number>) => {
 };
 
 const DEFAULT_RATES: Record<string, number> = buildRatesFromEurRates(DEFAULT_EUR_RATES);
+const SUPPORTED_LANGUAGES = ['en', 'es', 'th', 'fr', 'it', 'de', 'ja'];
+const SUPPORTED_CURRENCIES = ['EUR', 'THB', 'USD', 'GBP', 'AED', 'JPY'];
 
 const localeToCurrency: Record<string, string> = {
   es: 'EUR',
@@ -57,7 +59,7 @@ const loadLanguage = () => {
   const navLang = window.navigator.language || window.navigator.languages?.[0];
   if (!navLang) return 'en';
   const short = navLang.slice(0, 2).toLowerCase();
-  if (['en', 'es', 'th', 'fr', 'it', 'de', 'ja'].includes(short)) return short;
+  if (SUPPORTED_LANGUAGES.includes(short)) return short;
   return 'en';
 };
 
@@ -87,15 +89,64 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
     i18n.changeLanguage(language).catch(() => {});
     if (typeof window !== 'undefined' && languagePersist) {
       window.localStorage.setItem('bw-lang', language);
+    }
+    if (typeof document !== 'undefined') {
       document.documentElement.lang = language;
     }
-  }, [language]);
+  }, [language, languagePersist]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('bw-currency', currency);
     }
   }, [currency]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadProfilePreferences = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('preferred_language, preferred_currency')
+        .eq('id', userId)
+        .single();
+
+      if (cancelled || error || !data) return;
+
+      const profile = data as {
+        preferred_language?: string | null;
+        preferred_currency?: string | null;
+      };
+      const nextLanguage = profile.preferred_language ?? null;
+      const nextCurrency = profile.preferred_currency ?? null;
+
+      if (nextLanguage && SUPPORTED_LANGUAGES.includes(nextLanguage)) {
+        setLanguagePersist(true);
+        setLanguageState(nextLanguage);
+      }
+      if (nextCurrency && SUPPORTED_CURRENCIES.includes(nextCurrency)) {
+        setCurrencyState(nextCurrency);
+      }
+    };
+
+    void loadProfilePreferences();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) return;
+      void loadProfilePreferences();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const loadFx = async () => {
