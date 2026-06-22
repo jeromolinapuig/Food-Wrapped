@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,14 @@ type RestaurantSearchPageProps = {
 type RestaurantSearchLocationState = {
   selectedRestaurantId?: string;
   selectedRestaurantName?: string;
+};
+
+type TriedBurgerCard = {
+  id: string;
+  burgerName: string;
+  restaurantName: string;
+  photoUrl: string | null;
+  rating: number | null;
 };
 
 const normalizeName = (value: string) =>
@@ -54,6 +62,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantOption | null>(null);
   const [activeTab, setActiveTab] = useState<'mine' | 'friends' | 'all'>('mine');
   const [mineCount, setMineCount] = useState(0);
+  const [triedBurgerCards, setTriedBurgerCards] = useState<TriedBurgerCard[]>([]);
   const [mutualIds, setMutualIds] = useState<Set<string> | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [refreshFeedKey, setRefreshFeedKey] = useState(0);
@@ -64,8 +73,10 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
     const selectedRestaurantName = state?.selectedRestaurantName?.trim();
     if (!selectedRestaurantId || !selectedRestaurantName) return;
 
-    setSelectedRestaurant({ id: selectedRestaurantId, name: selectedRestaurantName });
-    setActiveTab('mine');
+    startTransition(() => {
+      setSelectedRestaurant({ id: selectedRestaurantId, name: selectedRestaurantName });
+      setActiveTab('mine');
+    });
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate]);
 
@@ -110,23 +121,61 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
     const loadMineCount = async () => {
       if (!selectedRestaurant) {
         setMineCount(0);
+        setTriedBurgerCards([]);
         return;
       }
-      const mineCountQuery = whereNotDeleted(
+      const [mineCountResponse, triedResponse] = await Promise.all([
+        whereNotDeleted(
         supabase
         .from('entries')
         .select('id', { count: 'exact', head: true })
         .eq('restaurant_id', selectedRestaurant.id)
         .eq('user_id', session.user.id)
-      );
-      const { count, error } = await mineCountQuery;
+        ),
+        supabase
+          .from('burger_wishlist')
+          .select(`
+            id,
+            rating,
+            photo_url,
+            restaurants ( name ),
+            burgers ( name )
+          `)
+          .eq('user_id', session.user.id)
+          .eq('restaurant_id', selectedRestaurant.id)
+          .eq('status', 'tried')
+          .order('tried_at', { ascending: false }),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error(error);
+      if (mineCountResponse.error) {
+        console.error(mineCountResponse.error);
         setMineCount(0);
-        return;
+      } else {
+        setMineCount(mineCountResponse.count ?? 0);
       }
-      setMineCount(count ?? 0);
+      if (triedResponse.error) {
+        console.error(triedResponse.error);
+        setTriedBurgerCards([]);
+      } else {
+        const rows = (triedResponse.data ?? []) as {
+          id: string;
+          rating: number | null;
+          photo_url: string | null;
+          restaurants: { name: string | null } | { name: string | null }[] | null;
+          burgers: { name: string | null } | { name: string | null }[] | null;
+        }[];
+        setTriedBurgerCards(rows.map((row) => {
+          const restaurant = Array.isArray(row.restaurants) ? row.restaurants[0] : row.restaurants;
+          const burger = Array.isArray(row.burgers) ? row.burgers[0] : row.burgers;
+          return {
+            id: row.id,
+            burgerName: burger?.name ?? t('burgerWishlist.unknownBurger'),
+            restaurantName: restaurant?.name ?? selectedRestaurant.name,
+            photoUrl: row.photo_url,
+            rating: row.rating,
+          };
+        }));
+      }
     };
 
     void loadMineCount();
@@ -134,7 +183,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
     return () => {
       cancelled = true;
     };
-  }, [selectedRestaurant, session.user.id]);
+  }, [selectedRestaurant, session.user.id, t]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -278,6 +327,31 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
     setIsAddModalOpen(false);
   };
 
+  const renderTriedBurgerCards = () => {
+    if (activeTab !== 'mine' || !triedBurgerCards.length) return null;
+    return (
+      <div className="bw-restaurant-tried-list">
+        {triedBurgerCards.map((card) => (
+          <article className="bw-history-card bw-restaurant-tried-card" key={card.id}>
+            <div className="bw-restaurant-tried-kicker">
+              {t('burgerWishlist.privateTriedCard', { defaultValue: 'Probada sin post' })}
+            </div>
+            <div className="bw-history-restaurant">{card.restaurantName}</div>
+            <div className="bw-feed-burger">{card.burgerName}</div>
+            {card.photoUrl && (
+              <div className="bw-restaurant-tried-photo">
+                <img src={card.photoUrl} alt={card.burgerName} loading="lazy" />
+              </div>
+            )}
+            <div className="bw-restaurant-tried-rating">
+              {t('burgerWishlist.ratingLabel')}: {card.rating != null ? card.rating.toFixed(1) : '-'}
+            </div>
+          </article>
+        ))}
+      </div>
+    );
+  };
+
   const renderResults = () => {
     if (loading) {
       return <p className="bw-helper">{t('restaurantSearch.searching', { defaultValue: 'Buscando restaurantes...' })}</p>;
@@ -359,7 +433,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
                     className={`bw-feed-tab ${activeTab === 'mine' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('mine')}
                   >
-                    {t('restaurantSearch.tabsMine', { count: mineCount, defaultValue: 'Tu ({{count}})' })}
+                    {t('restaurantSearch.tabsMine', { count: mineCount + triedBurgerCards.length, defaultValue: 'Tu ({{count}})' })}
                   </button>
                   <button
                     type="button"
@@ -379,6 +453,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
               </div>
 
               <div className="bw-restaurant-feed">
+                {renderTriedBurgerCards()}
                 <FeedTabs
                   key={`${selectedRestaurant.id}-${activeTab}-${refreshFeedKey}`}
                   currentUserId={session.user.id}

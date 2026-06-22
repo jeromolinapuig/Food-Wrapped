@@ -51,6 +51,7 @@ vi.mock('./components/PrivacyPage/PrivacyPage', () => ({ PrivacyPage: () => <div
 vi.mock('./components/UserDashboardPage/UserDashboardPage', () => ({ UserDashboardPage: () => <div>user-dashboard-page</div> }));
 vi.mock('./components/AdminReportsPage/AdminReportsPage', () => ({ AdminReportsPage: () => <div>admin-reports-page</div> }));
 vi.mock('./components/SavedPostsPage/SavedPostsPage', () => ({ SavedPostsPage: () => <div>saved-posts-page</div> }));
+vi.mock('./components/BurgerWishlistPage/BurgerWishlistPage', () => ({ BurgerWishlistPage: () => <div>burger-wishlist-page</div> }));
 vi.mock('./components/PostPage/PostPage', () => ({ PostPage: () => <div>post-page</div> }));
 vi.mock('./components/RestaurantSearchPage/RestaurantSearchPage', () => ({ RestaurantSearchPage: () => <div>restaurant-search-page</div> }));
 vi.mock('./components/MyTopBurgersPage/MyTopBurgersPage', () => ({ MyTopBurgersPage: () => <div>my-top-burgers-page</div> }));

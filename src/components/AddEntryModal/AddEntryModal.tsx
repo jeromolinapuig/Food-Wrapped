@@ -716,6 +716,24 @@ export function AddEntryModal({
         }
       }
 
+      if (isBurger && burgerSource === 'restaurant' && restaurantId && burgerId) {
+        const { error: wishlistCleanupError } = await supabase
+          .from('burger_wishlist')
+          .delete()
+          .match({
+            user_id: session.user.id,
+            restaurant_id: restaurantId,
+            burger_id: burgerId,
+            status: 'want_to_try',
+          });
+
+        if (wishlistCleanupError) {
+          console.error('Error cleaning burger wishlist after entry save', wishlistCleanupError);
+        } else {
+          window.dispatchEvent(new CustomEvent('bw-burger-wishlist-updated'));
+        }
+      }
+
       await onSaved();
       requestClose();
     } catch (err: unknown) {

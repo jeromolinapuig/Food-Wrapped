@@ -141,6 +141,27 @@ const setupSupabase = () => {
       };
     }
 
+    if (table === 'burger_wishlist') {
+      const query = Promise.resolve({
+        data: [{
+          id: 'wishlist-1',
+          rating: 4.5,
+          photo_url: 'https://example.com/burger.jpg',
+          restaurants: { name: 'Burger Town' },
+          burgers: { name: 'Private Burger' },
+        }],
+        error: null,
+      }) as Promise<unknown> & {
+        eq: () => typeof query;
+        order: () => typeof query;
+      };
+      query.eq = () => query;
+      query.order = () => query;
+      return {
+        select: () => query,
+      };
+    }
+
     return {
       select: () =>
         makeThenableQuery({

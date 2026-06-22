@@ -2,6 +2,7 @@
   "title": "Mi perfil",
   "subtitle": "Edita tus datos del perfil.",
   "savedPosts": "Posts guardados",
+  "burgerWishlist": "Burgers para probar",
   "usernameLabel": "Nombre de usuario",
   "usernamePlaceholder": "usuario",
   "usernameHelper": "Debe ser único. Este será tu nombre visible.",

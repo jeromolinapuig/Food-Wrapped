@@ -99,6 +99,7 @@ Definidas en `src/App.tsx`.
 | `/users/:userId`   | Dashboard publico de usuario           | Mixto con privacidad             |
 | `/posts/:entryId`  | Detalle de post                        | Mixto segun visibilidad          |
 | `/saved`           | Posts guardados                        | Autenticado                      |
+| `/burger-wishlist` | Burgers para probar                    | Autenticado                      |
 | `/restaurants`     | Busqueda/listado de restaurantes       | Mixto                            |
 | `/my-top-burgers`  | Ranking personal de hamburguesas       | Autenticado                      |
 | `/login`           | Login/signup/OAuth                     | Publico                          |
@@ -301,6 +302,33 @@ Query base:
   - `restaurants(name)`
   - `burgers(name)`
 
+### Burgers Para Probar
+
+Archivo:
+
+- `src/components/BurgerWishlistPage/BurgerWishlistPage.tsx`
+
+Responsabilidades:
+
+- Mostrar la lista privada de hamburguesas de restaurante que el usuario quiere probar.
+- Permitir quitar burgers pendientes.
+- Permitir marcar una burger como probada con una nota privada.
+- Guardar la foto del post elegido cuando se marca una burger como probada.
+- Mostrar burgers probadas desde este flujo en la pagina de restaurantes como cards privadas diferenciadas.
+- Mostrar en posts de otros usuarios si la burger esta pendiente o ya fue probada por el usuario.
+
+Tablas:
+
+- `burger_wishlist`
+- `entries` para detectar burgers ya registradas por el usuario sin duplicar posts ni estadisticas.
+- Relaciones:
+  - `restaurants(name)`
+  - `burgers(name, meat_type)`
+
+Regla de negocio visible:
+
+- Marcar una burger como probada desde este flujo no inserta en `entries`, por lo que no cuenta como post ni afecta estadisticas basadas en posts.
+
 ### Restaurantes
 
 Archivo:
@@ -359,6 +387,7 @@ El cliente referencia estas tablas directamente:
 - `entries`
 - `entry_bookmarks`
 - `entry_likes`
+- `burger_wishlist`
 - `exchange_rates`
 - `follows`
 - `group_invitations`

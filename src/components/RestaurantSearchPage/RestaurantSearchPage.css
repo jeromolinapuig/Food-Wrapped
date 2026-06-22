@@ -81,6 +81,47 @@
   margin-top: 6px;
 }
 
+.bw-restaurant-tried-list {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.bw-restaurant-tried-card {
+  border: 1px solid var(--bw-accent);
+  background: var(--bw-accent-soft);
+}
+
+.bw-restaurant-tried-kicker {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--bw-card-bg);
+  color: var(--bw-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.bw-restaurant-tried-photo {
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--bw-card-bg);
+}
+
+.bw-restaurant-tried-photo img {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.bw-restaurant-tried-rating {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--bw-text);
+}
+
 .bw-restaurant-error {
   font-size: 12px;
   color: #d7264d;
@@ -135,6 +176,10 @@
 }
 
 @media (min-width: 900px) {
+  .bw-restaurant-tried-photo img {
+    height: 320px;
+  }
+
   .bw-fab {
     width: 56px;
     height: 56px;

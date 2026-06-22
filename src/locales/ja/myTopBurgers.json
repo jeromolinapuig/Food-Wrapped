@@ -12,6 +12,7 @@
   "price": "価格",
   "highestPrice": "最高記録価格",
   "eatenOneTime": "1回食べました",
+  "triedPrivate": "食べたことがあります",
   "eatenManyTimes": "{{count}}回食べました",
   "lastEaten": "最後に食べた日：{{date}}",
   "noPhoto": "写真なし",

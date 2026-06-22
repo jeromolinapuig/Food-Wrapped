@@ -8,6 +8,8 @@ import { useEntryComments } from '../Comments/useEntryComments';
 import type { CommentMode } from '../Comments/types';
 import { FeedEntryCard } from './FeedEntryCard';
 import { FeedHeader } from './FeedHeader';
+import { TriedBurgerModal } from './TriedBurgerModal';
+import { useBurgerWishlist } from './useBurgerWishlist';
 import { useEntryReactions } from './useEntryReactions';
 import { useFeedEntries } from './useFeedEntries';
 import type {
@@ -134,6 +136,11 @@ export function FeedTabs({
     meatTypeFilter,
   });
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [triedBurgerModal, setTriedBurgerModal] = useState<{
+    entry: FeedEntry;
+    initialRating: number | null;
+    canDelete: boolean;
+  } | null>(null);
   const photoPreviewHistoryEntryRef = useRef(false);
   const {
     entryReactions,
@@ -143,6 +150,15 @@ export function FeedTabs({
     toggleLike,
     toggleSave,
   } = useEntryReactions({ viewerId, isReadOnly, onRequireLogin });
+  const {
+    burgerStatuses,
+    pendingBurgerKeys,
+    getBurgerKey,
+    loadBurgerStatuses,
+    toggleWantToTry,
+    saveTriedBurger,
+    deleteTriedBurger,
+  } = useBurgerWishlist({ viewerId, isReadOnly, onRequireLogin });
   const {
     entryComments,
     commentCounts,
@@ -171,8 +187,17 @@ export function FeedTabs({
     const entryIds = entries.map((entry) => entry.id);
     startTransition(() => {
       void loadEntryReactions(entryIds);
+      void loadBurgerStatuses(entries);
     });
-  }, [entries, headerOnly, loadEntryReactions]);
+  }, [entries, headerOnly, loadBurgerStatuses, loadEntryReactions]);
+
+  useEffect(() => {
+    const handleBurgerWishlistUpdated = () => {
+      void loadBurgerStatuses(entries);
+    };
+    window.addEventListener('bw-burger-wishlist-updated', handleBurgerWishlistUpdated);
+    return () => window.removeEventListener('bw-burger-wishlist-updated', handleBurgerWishlistUpdated);
+  }, [entries, loadBurgerStatuses]);
 
   useEffect(() => {
     if (!photoPreviewUrl) return;
@@ -347,6 +372,7 @@ export function FeedTabs({
             const reactions = entryReactions[entry.id] ?? { likeCount: 0, liked: false, saved: false };
             const isLikePending = Boolean(pendingLikes[entry.id]);
             const isSavePending = Boolean(pendingSaves[entry.id]);
+            const burgerKey = getBurgerKey(entry);
 
             return (
               <FeedEntryCard
@@ -362,6 +388,18 @@ export function FeedTabs({
                 isSavePending={isSavePending}
                 onToggleLike={toggleLike}
                 onToggleSave={toggleSave}
+                burgerStatus={burgerKey ? burgerStatuses[burgerKey] : null}
+                isBurgerActionPending={burgerKey ? Boolean(pendingBurgerKeys[burgerKey]) : false}
+                onToggleWantToTry={(selectedEntry) => void toggleWantToTry(selectedEntry)}
+                onOpenTriedModal={(selectedEntry) => {
+                  const selectedKey = getBurgerKey(selectedEntry);
+                  const selectedStatus = selectedKey ? burgerStatuses[selectedKey] : null;
+                  setTriedBurgerModal({
+                    entry: selectedEntry,
+                    initialRating: selectedStatus?.rating ?? null,
+                    canDelete: Boolean(selectedStatus?.canDeleteTried),
+                  });
+                }}
                 onOpenProfile={onOpenProfile}
                 onOpenEntry={onOpenEntry}
                 onEditEntry={onEditEntry}
@@ -408,6 +446,15 @@ export function FeedTabs({
         onCancel={() => setCommentConfirm(null)}
         onConfirm={deleteComment}
         isProcessing={commentConfirm ? Boolean(commentActioning[commentConfirm.comment.id]) : false}
+      />
+      <TriedBurgerModal
+        open={Boolean(triedBurgerModal)}
+        entry={triedBurgerModal?.entry ?? null}
+        initialRating={triedBurgerModal?.initialRating ?? null}
+        canDelete={Boolean(triedBurgerModal?.canDelete)}
+        onClose={() => setTriedBurgerModal(null)}
+        onSave={saveTriedBurger}
+        onDelete={deleteTriedBurger}
       />
 
     </section>

@@ -12,6 +12,7 @@
   "price": "Price",
   "highestPrice": "Highest recorded price",
   "eatenOneTime": "You have eaten it 1 time",
+  "triedPrivate": "You have tried it",
   "eatenManyTimes": "You have eaten it {{count}} times",
   "lastEaten": "You last ate it on {{date}}",
   "noPhoto": "No photo",

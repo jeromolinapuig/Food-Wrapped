@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cropper, { type Area } from 'react-easy-crop';
-import { Block, BookmarksOutlined, Check, Close } from '@mui/icons-material';
+import { Block, BookmarksOutlined, Check, Close, PlaylistAdd } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import { useTranslation } from 'react-i18next';
@@ -834,6 +834,16 @@ export function ProfilePage({
               aria-label={t('profile.savedPosts')}
             >
               <BookmarksOutlined fontSize="small" />
+            </button>
+            <button
+              type="button"
+              className="bw-icon-button bw-profile-wishlist-button"
+              onClick={() => {
+                navigate('/burger-wishlist');
+              }}
+              aria-label={t('profile.burgerWishlist')}
+            >
+              <PlaylistAdd fontSize="small" />
             </button>
             <div className="bw-profile-header">
               <button

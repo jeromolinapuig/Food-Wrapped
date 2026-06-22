@@ -18,6 +18,13 @@
   z-index: 2;
 }
 
+.bw-profile-wishlist-button {
+  position: absolute;
+  top: 12px;
+  right: 56px;
+  z-index: 2;
+}
+
 .bw-profile-header {
   display: flex;
   align-items: center;

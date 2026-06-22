@@ -12,6 +12,7 @@
   "price": "Prix",
   "highestPrice": "Prix le plus élevé enregistré",
   "eatenOneTime": "Tu l'as mangé 1 fois",
+  "triedPrivate": "Tu l'as essayée",
   "eatenManyTimes": "Tu l'as mangé {{count}} fois",
   "lastEaten": "Tu l'as mangé pour la dernière fois le {{date}}",
   "noPhoto": "Sans photo",

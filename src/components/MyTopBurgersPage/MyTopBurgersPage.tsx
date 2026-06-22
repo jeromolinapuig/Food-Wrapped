@@ -26,6 +26,7 @@ type BurgerRow = {
   photo_url: string | null;
   restaurant: { name: string | null } | null;
   burger: { name: string | null } | null;
+  isPrivateTried?: boolean;
 };
 
 type RawBurgerRow = {
@@ -46,12 +47,14 @@ type BurgerPost = {
   price: number | null;
   currency: string | null;
   photoUrl: string | null;
+  isPrivateTried?: boolean;
 };
 
 type BurgerSummary = {
   key: string;
   burgerName: string;
   count: number;
+  hasOnlyPrivateTried: boolean;
   lastDatetime: string;
   rating: number | null;
   price: number | null;
@@ -132,15 +135,32 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
         ;
       query = whereNotDeleted(query);
       query = query.not('restaurant_id', 'is', null);
-      const { data, error } = await query;
+      const [{ data, error }, triedResponse] = await Promise.all([
+        query,
+        supabase
+          .from('burger_wishlist')
+          .select(
+            `
+              id,
+              rating,
+              photo_url,
+              tried_at,
+              created_at,
+              restaurant:restaurants ( name ),
+              burger:burgers ( name )
+            `
+          )
+          .eq('user_id', session.user.id)
+          .eq('status', 'tried'),
+      ]);
 
       if (cancelled) return;
 
-      if (error) {
-        setError(error.message);
+      if (error || triedResponse.error) {
+        setError(error?.message ?? triedResponse.error?.message ?? 'Error loading burgers');
         setRows([]);
       } else {
-        const normalized = ((data ?? []) as RawBurgerRow[]).map((row) => ({
+        const normalizedEntries = ((data ?? []) as RawBurgerRow[]).map((row) => ({
           id: row.id,
           datetime: row.datetime,
           rating: row.rating,
@@ -150,7 +170,26 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
           restaurant: firstRelation(row.restaurant),
           burger: firstRelation(row.burger),
         }));
-        setRows(normalized);
+        const normalizedPrivateTried = ((triedResponse.data ?? []) as Array<{
+          id: string;
+          rating: number | null;
+          photo_url: string | null;
+          tried_at: string | null;
+          created_at: string | null;
+          restaurant: { name: string | null } | { name: string | null }[] | null;
+          burger: { name: string | null } | { name: string | null }[] | null;
+        }>).map((row) => ({
+          id: row.id,
+          datetime: row.tried_at ?? row.created_at ?? new Date().toISOString(),
+          rating: row.rating,
+          price: null,
+          currency: null,
+          photo_url: row.photo_url,
+          restaurant: firstRelation(row.restaurant),
+          burger: firstRelation(row.burger),
+          isPrivateTried: true,
+        }));
+        setRows([...normalizedEntries, ...normalizedPrivateTried]);
       }
 
       setLoading(false);
@@ -207,6 +246,7 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
           currency: string | null;
           photoUrl: string | null;
           photoTs: number;
+          privateTriedCount: number;
           posts: BurgerPost[];
         }
       >();
@@ -227,10 +267,14 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
           currency: entry.currency ?? null,
           photoUrl: null,
           photoTs: -Infinity,
+          privateTriedCount: 0,
           posts: [],
         };
 
         current.count += 1;
+        if (entry.isPrivateTried) {
+          current.privateTriedCount += 1;
+        }
         current.posts.push({
           id: entry.id,
           datetime: entry.datetime,
@@ -238,6 +282,7 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
           price: entry.price,
           currency: entry.currency ?? null,
           photoUrl: entry.photo_url,
+          isPrivateTried: entry.isPrivateTried,
         });
         if (entry.rating != null) {
           current.ratingSum += entry.rating;
@@ -265,6 +310,7 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
         key,
         burgerName: value.burgerName,
         count: value.count,
+        hasOnlyPrivateTried: value.privateTriedCount === value.count,
         lastDatetime: value.lastDatetime,
         rating: value.ratingCount ? value.ratingSum / value.ratingCount : null,
         price: value.highestPrice,
@@ -354,9 +400,11 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
                 <div className="bw-top-burgers-grid">
                   {group.burgers.map((burger) => {
                     const hasPhoto = Boolean(burger.photoUrl);
-                    const eatenTimesText = burger.count === 1
-                      ? t('myTopBurgers.eatenOneTime')
-                      : t('myTopBurgers.eatenManyTimes', { count: burger.count });
+                    const eatenTimesText = burger.hasOnlyPrivateTried
+                      ? t('myTopBurgers.triedPrivate', { defaultValue: 'La has probado' })
+                      : burger.count === 1
+                        ? t('myTopBurgers.eatenOneTime')
+                        : t('myTopBurgers.eatenManyTimes', { count: burger.count });
                     const lastDateText = t('myTopBurgers.lastEaten', {
                       date: new Date(burger.lastDatetime).toLocaleDateString(),
                     });
@@ -384,7 +432,9 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
                               <span>{t('myTopBurgers.rating')}: {burger.rating != null ? burger.rating.toFixed(1) : '-'}</span>
                               <span>{priceLabel}: {formatPrice(burger.price, burger.currency)}</span>
                             </div>
-                            <div className="bw-top-burgers-item-date">{lastDateText}</div>
+                            {!burger.hasOnlyPrivateTried && (
+                              <div className="bw-top-burgers-item-date">{lastDateText}</div>
+                            )}
                             <div className="bw-top-burgers-item-times">{eatenTimesText}</div>
                           </div>
                         </div>
@@ -438,10 +488,16 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
                     <div className="bw-top-burgers-post-photo is-empty">{t('myTopBurgers.noPhoto')}</div>
                   )}
                   <div className="bw-top-burgers-post-content">
-                    <div className="bw-top-burgers-post-date">{formattedDate}</div>
+                    {!post.isPrivateTried && (
+                      <div className="bw-top-burgers-post-date">{formattedDate}</div>
+                    )}
                     <div className="bw-top-burgers-item-meta">
                       <span>{t('myTopBurgers.rating')}: {post.rating != null ? post.rating.toFixed(1) : '-'}</span>
-                      <span>{t('myTopBurgers.price')}: {formatPrice(post.price, post.currency)}</span>
+                      {post.isPrivateTried ? (
+                        <span>{t('burgerWishlist.privateTriedCard', { defaultValue: 'Probada' })}</span>
+                      ) : (
+                        <span>{t('myTopBurgers.price')}: {formatPrice(post.price, post.currency)}</span>
+                      )}
                     </div>
                   </div>
                 </article>

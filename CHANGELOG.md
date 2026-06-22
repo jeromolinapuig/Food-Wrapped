@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+## 1.4.0
+
+- Added "Burgers para probar", a private list for restaurant burgers discovered from other users' posts.
+- Added feed actions to save burgers as pending or mark them as privately tried without creating public posts.
+- Added private tried burger ratings with the selected post photo, including editing and deletion.
+- Added private tried burgers to restaurant views and My Top Burgers without affecting post statistics.
+- Kept feed burger actions hidden when the viewer already has a post for the same burger.
+- Removed burgers from "Burgers para probar" automatically when the user saves a post for the same burger.
+
 ## 1.3.2
 
 - Added an in-sheet restaurant review step before creating new restaurants from the add entry flow.

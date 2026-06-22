@@ -1,11 +1,13 @@
 import {
   Bookmark,
   ChatBubbleOutline,
+  CheckCircleOutline,
   Delete,
   Edit,
   Favorite,
   FavoriteBorder,
   MoreVert,
+  PlaylistAdd,
   Share,
   Star,
   StarBorder,
@@ -19,6 +21,7 @@ import { UserAvatar } from '../common/UserAvatar';
 import { EntryComments } from '../Comments/EntryComments';
 import type { CommentMode, EntryComment } from '../Comments/types';
 import type { FeedEntry } from './types';
+import type { BurgerWishlistStatus } from './useBurgerWishlist';
 import { usePreferences } from '../../context/PreferencesContext';
 import { downloadEntryPostImage } from '../../utils/downloadEntryPostImage';
 
@@ -36,6 +39,10 @@ type FeedEntryCardProps = {
   isSavePending: boolean;
   onToggleLike: (entryId: string) => void;
   onToggleSave: (entryId: string) => void;
+  burgerStatus?: BurgerWishlistStatus | null;
+  isBurgerActionPending?: boolean;
+  onToggleWantToTry?: (entry: FeedEntry) => void;
+  onOpenTriedModal?: (entry: FeedEntry) => void;
   onOpenProfile?: (userId: string) => void;
   onOpenEntry?: (entryId: string) => void;
   onEditEntry?: (entry: FeedEntry) => void;
@@ -73,6 +80,10 @@ export function FeedEntryCard({
   isSavePending,
   onToggleLike,
   onToggleSave,
+  burgerStatus,
+  isBurgerActionPending = false,
+  onToggleWantToTry,
+  onOpenTriedModal,
   onOpenProfile,
   onOpenEntry,
   onEditEntry,
@@ -124,6 +135,10 @@ export function FeedEntryCard({
   const canComment = !adminMode;
   const canModerateComments = adminMode;
   const isMenuOpen = Boolean(menuAnchorEl);
+  const canUseBurgerActions =
+    Boolean(viewerId && !isSelf && !adminMode && !isHomemade && entry.restaurantId && entry.burgerId);
+  const shouldHideTriedActions = Boolean(burgerStatus?.tried && burgerStatus.hasOwnPost);
+  const triedRatingLabel = burgerStatus?.rating != null ? ` · ${burgerStatus.rating.toFixed(1)}` : '';
   const handleOpenRestaurant = () => {
     if (!entry.restaurantId || !entry.restaurantName) return;
     navigate('/restaurants', {
@@ -319,6 +334,54 @@ export function FeedEntryCard({
           )}
           {isHomemade && entry.ingredients && (
             <p className="bw-feed-ingredients">{t('feed.ingredients')}: {entry.ingredients}</p>
+          )}
+
+          {canUseBurgerActions && !shouldHideTriedActions && (
+            <div className="bw-feed-burger-actions">
+              {burgerStatus?.tried ? (
+                <>
+                  <span className="bw-feed-burger-status is-tried">
+                    <CheckCircleOutline fontSize="small" />
+                    {t('burgerWishlist.triedBadge')}{triedRatingLabel}
+                  </span>
+                  <button
+                    type="button"
+                    className="bw-feed-burger-action"
+                    onClick={() => onOpenTriedModal?.(entry)}
+                    disabled={isReadOnly || isBurgerActionPending}
+                  >
+                    <CheckCircleOutline fontSize="small" />
+                    <span>{t('burgerWishlist.editTried')}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={`bw-feed-burger-action ${burgerStatus?.wanted ? 'is-active' : ''}`}
+                    onClick={() => onToggleWantToTry?.(entry)}
+                    disabled={isReadOnly || isBurgerActionPending}
+                    aria-pressed={Boolean(burgerStatus?.wanted)}
+                  >
+                    <PlaylistAdd fontSize="small" />
+                    <span>
+                      {burgerStatus?.wanted
+                        ? t('burgerWishlist.inWishlist')
+                        : t('burgerWishlist.wantToTry')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="bw-feed-burger-action"
+                    onClick={() => onOpenTriedModal?.(entry)}
+                    disabled={isReadOnly || isBurgerActionPending}
+                  >
+                    <CheckCircleOutline fontSize="small" />
+                    <span>{t('burgerWishlist.triedAction')}</span>
+                  </button>
+                </>
+              )}
+            </div>
           )}
 
           <div className="bw-feed-footer">

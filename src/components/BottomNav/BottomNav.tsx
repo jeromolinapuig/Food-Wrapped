@@ -1,4 +1,4 @@
-import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, Store } from '@mui/icons-material';
+import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, PlaylistAdd, Store } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -56,6 +56,7 @@ export function BottomNav({
       if (returnTo.startsWith('/feed')) return 'feed';
       if (returnTo.startsWith('/ranking')) return 'more';
       if (returnTo.startsWith('/restaurants')) return 'more';
+      if (returnTo.startsWith('/burger-wishlist')) return 'more';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
@@ -63,6 +64,7 @@ export function BottomNav({
     if (location.pathname.startsWith('/groups')) return 'groups';
     if (location.pathname.startsWith('/ranking')) return 'more';
     if (location.pathname.startsWith('/restaurants')) return 'more';
+    if (location.pathname.startsWith('/burger-wishlist')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [adminModeEnabled, isAdmin, location.pathname, location.state]);
@@ -349,6 +351,23 @@ export function BottomNav({
                 <span className="bw-bottom-nav-menu-icon"><Store fontSize="small" /></span>
                 <span className="bw-bottom-nav-menu-label">
                   {t('common.restaurants', { defaultValue: 'Restaurants' })}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="bw-bottom-nav-menu-item"
+                role="menuitem"
+                onClick={() => {
+                  if (isGuest) {
+                    onRequireLogin?.();
+                    return;
+                  }
+                  handleClick('/burger-wishlist');
+                }}
+              >
+                <span className="bw-bottom-nav-menu-icon"><PlaylistAdd fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-label">
+                  {t('burgerWishlist.pageTitle', { defaultValue: 'Burgers to try' })}
                 </span>
               </button>
             </div>

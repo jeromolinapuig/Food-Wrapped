@@ -19,6 +19,7 @@ import { AdminFeedPage } from './components/AdminFeedPage/AdminFeedPage';
 import { AdminReportsPage } from './components/AdminReportsPage/AdminReportsPage';
 import { AdminUsersPage } from './components/AdminUsersPage/AdminUsersPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
+import { BurgerWishlistPage } from './components/BurgerWishlistPage/BurgerWishlistPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
@@ -489,6 +490,21 @@ function App() {
           }
         />
         <Route
+          path="/burger-wishlist"
+          element={
+            session ? (
+              <BurgerWishlistRoute session={session} />
+            ) : (
+              <LockedPage
+                title={t('burgerWishlist.pageTitle', { defaultValue: 'Burgers to try' })}
+                subtitle={t('burgerWishlist.lockedSubtitle', { defaultValue: 'Log in to see your burger wishlist.' })}
+                onLogin={handleLogin}
+                preview={<FeedPlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
           path="/restaurants"
           element={
             session ? (
@@ -585,6 +601,17 @@ function MyTopBurgersRoute({ session }: { session: NonNullable<Session> }) {
 
   return (
     <MyTopBurgersPage
+      session={session}
+      onBack={() => navigate(-1)}
+    />
+  );
+}
+
+function BurgerWishlistRoute({ session }: { session: NonNullable<Session> }) {
+  const navigate = useNavigate();
+
+  return (
+    <BurgerWishlistPage
       session={session}
       onBack={() => navigate(-1)}
     />
