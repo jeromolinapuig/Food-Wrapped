@@ -23,6 +23,7 @@ import { BurgerWishlistPage } from './components/BurgerWishlistPage/BurgerWishli
 import { PostPage } from './components/PostPage/PostPage';
 import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
+import { FeatureAnnouncementModal } from './components/FeatureAnnouncementModal/FeatureAnnouncementModal';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
@@ -39,6 +40,28 @@ type PostLocationState = { returnTo?: string };
 type AuthMetadata = { username?: string; username_set?: boolean };
 type AppMetadata = { provider?: string; providers?: string[] };
 
+const FEATURE_ANNOUNCEMENT_ID = 'burger-wishlist-v1';
+
+const getFeatureAnnouncementStorageKey = (userId: string) =>
+  `bw-feature-announcement-${FEATURE_ANNOUNCEMENT_ID}:${userId}`;
+
+const persistFeatureAnnouncementSeen = async (userId: string) => {
+  const { error } = await supabase
+    .from('user_feature_announcements')
+    .upsert(
+      {
+        user_id: userId,
+        announcement_id: FEATURE_ANNOUNCEMENT_ID,
+        seen_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,announcement_id' }
+    );
+
+  if (error) {
+    console.error('Error saving feature announcement state', error);
+  }
+};
+
 const deriveDefaultUsername = (email?: string | null) => {
   if (!email) return null;
   const atIndex = email.indexOf('@');
@@ -53,6 +76,7 @@ function App() {
   const [adminModeEnabled, setAdminModeEnabled] = useState(false);
   const [feedFocusUser, setFeedFocusUser] = useState<FocusUser | null>(null);
   const [feedOpenProfileUserId, setFeedOpenProfileUserId] = useState<string | null>(null);
+  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(false);
   const { t } = useTranslation();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'light';
@@ -213,6 +237,44 @@ function App() {
   }, [adminModeEnabled, isAdmin, location.pathname, navigate, session]);
 
   useEffect(() => {
+    if (!session || isLoginRoute || requiresUsername || location.pathname.startsWith('/admin')) {
+      setShowFeatureAnnouncement(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadFeatureAnnouncementState = async () => {
+      const { data, error } = await supabase
+        .from('user_feature_announcements')
+        .select('seen_at')
+        .eq('user_id', session.user.id)
+        .eq('announcement_id', FEATURE_ANNOUNCEMENT_ID)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('Error loading feature announcement state', error);
+        setShowFeatureAnnouncement(false);
+        return;
+      }
+
+      if (data) {
+        setShowFeatureAnnouncement(false);
+        return;
+      }
+
+      setShowFeatureAnnouncement(true);
+    };
+
+    void loadFeatureAnnouncementState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoginRoute, location.pathname, requiresUsername, session]);
+
+  useEffect(() => {
     if (!session || !requiresUsername) return;
     if (location.pathname === '/setup-username') return;
     navigate('/setup-username', { replace: true });
@@ -272,6 +334,17 @@ function App() {
   };
 
   const handleLogin = () => navigate('/login');
+  const dismissFeatureAnnouncement = () => {
+    if (session) {
+      window.localStorage.setItem(getFeatureAnnouncementStorageKey(session.user.id), '1');
+      void persistFeatureAnnouncementSeen(session.user.id);
+    }
+    setShowFeatureAnnouncement(false);
+  };
+  const handleViewFeatureFeed = () => {
+    dismissFeatureAnnouncement();
+    navigate('/feed');
+  };
   const handleAdminModeChange = (enabled: boolean) => {
     if (!isAdmin) return;
     setAdminModeEnabled(enabled);
@@ -567,6 +640,11 @@ function App() {
           adminModeEnabled={adminModeEnabled}
         />
       )}
+      <FeatureAnnouncementModal
+        open={showFeatureAnnouncement}
+        onDismiss={dismissFeatureAnnouncement}
+        onViewFeed={handleViewFeatureFeed}
+      />
     </>
   );
 }

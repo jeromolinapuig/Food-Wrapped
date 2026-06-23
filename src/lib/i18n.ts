@@ -190,6 +190,13 @@ import frBurgerWishlist from '../locales/fr/burgerWishlist.json';
 import itBurgerWishlist from '../locales/it/burgerWishlist.json';
 import deBurgerWishlist from '../locales/de/burgerWishlist.json';
 import jaBurgerWishlist from '../locales/ja/burgerWishlist.json';
+import enFeatureAnnouncement from '../locales/en/featureAnnouncement.json';
+import esFeatureAnnouncement from '../locales/es/featureAnnouncement.json';
+import thFeatureAnnouncement from '../locales/th/featureAnnouncement.json';
+import frFeatureAnnouncement from '../locales/fr/featureAnnouncement.json';
+import itFeatureAnnouncement from '../locales/it/featureAnnouncement.json';
+import deFeatureAnnouncement from '../locales/de/featureAnnouncement.json';
+import jaFeatureAnnouncement from '../locales/ja/featureAnnouncement.json';
 
 const resources = {
   en: {
@@ -216,7 +223,8 @@ const resources = {
     comments: enComments,
     restaurantSearch: enRestaurantSearch,
     myTopBurgers: enMyTopBurgers,
-    burgerWishlist: enBurgerWishlist
+    burgerWishlist: enBurgerWishlist,
+    featureAnnouncement: enFeatureAnnouncement
   },
   es: {
     common: esCommon,
@@ -242,7 +250,8 @@ const resources = {
     comments: esComments,
     restaurantSearch: esRestaurantSearch,
     myTopBurgers: esMyTopBurgers,
-    burgerWishlist: esBurgerWishlist
+    burgerWishlist: esBurgerWishlist,
+    featureAnnouncement: esFeatureAnnouncement
   },
   th: {
     common: thCommon,
@@ -268,7 +277,8 @@ const resources = {
     comments: thComments,
     restaurantSearch: thRestaurantSearch,
     myTopBurgers: thMyTopBurgers,
-    burgerWishlist: thBurgerWishlist
+    burgerWishlist: thBurgerWishlist,
+    featureAnnouncement: thFeatureAnnouncement
   },
   fr: {
     common: frCommon,
@@ -294,7 +304,8 @@ const resources = {
     comments: frComments,
     restaurantSearch: frRestaurantSearch,
     myTopBurgers: frMyTopBurgers,
-    burgerWishlist: frBurgerWishlist
+    burgerWishlist: frBurgerWishlist,
+    featureAnnouncement: frFeatureAnnouncement
   },
   it: {
     common: itCommon,
@@ -320,7 +331,8 @@ const resources = {
     comments: itComments,
     restaurantSearch: itRestaurantSearch,
     myTopBurgers: itMyTopBurgers,
-    burgerWishlist: itBurgerWishlist
+    burgerWishlist: itBurgerWishlist,
+    featureAnnouncement: itFeatureAnnouncement
   },
   de: {
     common: deCommon,
@@ -346,7 +358,8 @@ const resources = {
     comments: deComments,
     restaurantSearch: deRestaurantSearch,
     myTopBurgers: deMyTopBurgers,
-    burgerWishlist: deBurgerWishlist
+    burgerWishlist: deBurgerWishlist,
+    featureAnnouncement: deFeatureAnnouncement
   },
   ja: {
     common: jaCommon,
@@ -372,7 +385,8 @@ const resources = {
     comments: jaComments,
     restaurantSearch: jaRestaurantSearch,
     myTopBurgers: jaMyTopBurgers,
-    burgerWishlist: jaBurgerWishlist
+    burgerWishlist: jaBurgerWishlist,
+    featureAnnouncement: jaFeatureAnnouncement
   }
 };
 
@@ -418,7 +432,8 @@ i18n
       'comments',
       'restaurantSearch',
       'myTopBurgers',
-      'burgerWishlist'
+      'burgerWishlist',
+      'featureAnnouncement'
     ],
     interpolation: { escapeValue: false },
     returnNull: false,

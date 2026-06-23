@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.4.1
+
+- Added a feature announcement modal for the Burgers to try feed workflow.
+- Changed the feature announcement dismissal to persist per user in Supabase.
+- Fixed Thai translations in My Top Burgers and the feed title.
+
 ## 1.4.0
 
 - Added "Burgers para probar", a private list for restaurant burgers discovered from other users' posts.

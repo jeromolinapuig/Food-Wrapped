@@ -1,0 +1,10 @@
+{
+  "badge": "New",
+  "title": "Save burgers to try later",
+  "subtitle": "You can now build a private list from other users' feed posts.",
+  "highlightSave": "Find a burger in the feed and tap I want to try it.",
+  "highlightManage": "Keep pending burgers in Burgers to try until you taste them.",
+  "highlightPrivate": "Your tried ratings stay private and do not create public posts.",
+  "dismiss": "Not now",
+  "cta": "Go to feed"
+}

@@ -1,0 +1,10 @@
+{
+  "badge": "Nuovo",
+  "title": "Salva burger da provare più tardi",
+  "subtitle": "Ora puoi creare una lista privata dai post del feed di altri utenti.",
+  "highlightSave": "Trova un burger nel feed e tocca Voglio provarlo.",
+  "highlightManage": "Tieni i burger in sospeso in Burger da provare finché non li assaggi.",
+  "highlightPrivate": "Le tue valutazioni dei burger provati restano private e non creano post pubblici.",
+  "dismiss": "Non ora",
+  "cta": "Vai al feed"
+}

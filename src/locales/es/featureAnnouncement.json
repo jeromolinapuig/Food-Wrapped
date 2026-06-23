@@ -1,0 +1,10 @@
+{
+  "badge": "Nuevo",
+  "title": "Guarda burgers para probarlas luego",
+  "subtitle": "Ahora puedes crear una lista privada desde los posts del feed.",
+  "highlightSave": "Encuentra una burger en el feed y pulsa Quiero probarla.",
+  "highlightManage": "Mantén tus burgers pendientes en Burgers para probar hasta que las pruebes.",
+  "highlightPrivate": "Tus notas de burgers probadas son privadas y no crean posts públicos.",
+  "dismiss": "Ahora no",
+  "cta": "Ir al feed"
+}

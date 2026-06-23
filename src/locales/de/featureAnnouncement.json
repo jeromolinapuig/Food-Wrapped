@@ -1,0 +1,10 @@
+{
+  "badge": "Neu",
+  "title": "Burger zum späteren Probieren speichern",
+  "subtitle": "Du kannst jetzt aus Feed-Posts anderer Nutzer eine private Liste erstellen.",
+  "highlightSave": "Finde einen Burger im Feed und tippe auf Ich möchte ihn probieren.",
+  "highlightManage": "Behalte offene Burger in Burgers zum Probieren, bis du sie gegessen hast.",
+  "highlightPrivate": "Deine Bewertungen probierter Burger bleiben privat und erstellen keine öffentlichen Posts.",
+  "dismiss": "Jetzt nicht",
+  "cta": "Zum Feed"
+}
