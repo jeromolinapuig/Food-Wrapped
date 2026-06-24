@@ -29,6 +29,9 @@ import {
   getCurrencySymbol,
   getPriceFiltersForCurrency,
 } from './DashboardFilterOptions';
+import { AnnualSummaryCollapse } from './AnnualSummaryCollapse';
+import { BurgerCalendarHomeCard } from './BurgerCalendarHomeCard';
+import { getDateKey } from '../BurgerCalendarPage/utils';
 import '../../styles/layout.css';
 import '../../styles/shared.css';
 import './Dashboard.css';
@@ -52,6 +55,8 @@ type DashboardProfile = {
   username: string | null;
   display_name: string | null;
 };
+
+const ANNUAL_SUMMARY_YEAR = 2026;
 
 type DbEntryRow = {
   id: string;
@@ -221,7 +226,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const cacheKey = `bw-dashboard-entries-${session.user.id}-2026`;
+  const cacheKey = `bw-dashboard-entries-${session.user.id}-${ANNUAL_SUMMARY_YEAR}`;
   const openAddModal = () => {
     setEditingEntry(null);
     setIsAddModalOpen(true);
@@ -237,8 +242,8 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     if (showLoading) setLoading(true);
     setError(null);
 
-    const from = '2026-01-01';
-    const to = '2027-01-01';
+    const from = `${ANNUAL_SUMMARY_YEAR}-01-01`;
+    const to = `${ANNUAL_SUMMARY_YEAR + 1}-01-01`;
 
     const statsQuery = whereNotDeleted(
       supabase
@@ -663,6 +668,19 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   );
 
   const activeHistoryError = error ?? savedError;
+  const totalSpentLabel = formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency });
+  const burgerDaysThisMonth = useMemo(() => {
+    const now = new Date();
+    const currentMonthKeys = new Set<string>();
+    entries.forEach((entry) => {
+      if (!entry.is_burger) return;
+      const date = new Date(entry.datetime);
+      if (Number.isNaN(date.getTime())) return;
+      if (date.getFullYear() !== now.getFullYear() || date.getMonth() !== now.getMonth()) return;
+      currentMonthKeys.add(getDateKey(date));
+    });
+    return currentMonthKeys.size;
+  }, [entries]);
   const hasUnreadNotifications = Boolean(
     notificationsLatest && (!notificationsLastSeen || notificationsLatest > notificationsLastSeen)
   );
@@ -757,61 +775,74 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         )}
 
         <main className="bw-main bw-dashboard-main">
-          <section className="bw-stats-grid">
-            {loading ? (
-              [1, 2, 3, 4].map((id) => <DashboardStatSkeleton key={id} />)
-            ) : (
-              <>
-                <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
-                <StatCard
-                  icon={<House fontSize="small" />}
-                  value={`${stats.homemadeBurgers}`}
-                  label={t('dashboard.homemade')}
-                />
-                <StatCard
-                  icon={<Star fontSize="small" />}
-                  value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-                  label={t('dashboard.avgRating')}
-                />
-                <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label={t('dashboard.favorite')} />
-              </>
-            )}
-          </section>
+          <AnnualSummaryCollapse
+            year={ANNUAL_SUMMARY_YEAR}
+            totalBurgers={stats.totalBurgers}
+            averageRating={stats.averageRating}
+            totalSpentLabel={totalSpentLabel}
+            favoriteRestaurant={stats.favoriteRestaurant}
+          >
+            <section className="bw-stats-grid">
+              {loading ? (
+                [1, 2, 3, 4].map((id) => <DashboardStatSkeleton key={id} />)
+              ) : (
+                <>
+                  <StatCard icon={<LunchDining fontSize="small" />} value={`${stats.totalBurgers}`} label={t('dashboard.burgers')} />
+                  <StatCard
+                    icon={<House fontSize="small" />}
+                    value={`${stats.homemadeBurgers}`}
+                    label={t('dashboard.homemade')}
+                  />
+                  <StatCard
+                    icon={<Star fontSize="small" />}
+                    value={stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+                    label={t('dashboard.avgRating')}
+                  />
+                  <StatCard icon={<EmojiEvents fontSize="small" />} value={stats.favoriteRestaurant || '-'} label={t('dashboard.favorite')} />
+                </>
+              )}
+            </section>
 
-          <section className="bw-dashboard-row">
-            <div className="bw-card bw-burger-types">
-              <h2 className="bw-section-title">{t('dashboard.type')}</h2>
-              <div className="bw-burger-types-row">
-                <div className="bw-burger-type">
-                  <span className="bw-burger-type-emoji">
-                    <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
-                  </span>
-                  <span>{stats.burgerTypes.beef}</span>
-                </div>
-                <div className="bw-burger-type">
-                  <span className="bw-burger-type-emoji">
-                    <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
-                  </span>
-                  <span>{stats.burgerTypes.chicken}</span>
-                </div>
-                <div className="bw-burger-type">
-                  <span className="bw-burger-type-emoji">
-                    <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
-                  </span>
-                  <span>{stats.burgerTypes.vegan}</span>
+            <section className="bw-dashboard-row">
+              <div className="bw-card bw-burger-types">
+                <h2 className="bw-section-title">{t('dashboard.type')}</h2>
+                <div className="bw-burger-types-row">
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.beef}</span>
+                  </div>
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.chicken}</span>
+                  </div>
+                  <div className="bw-burger-type">
+                    <span className="bw-burger-type-emoji">
+                      <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
+                    </span>
+                    <span>{stats.burgerTypes.vegan}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            {loading ? (
-              <DashboardStatSkeleton />
-            ) : (
-              <StatCard
-                icon={<Euro fontSize="small" />}
-                value={formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency })}
-                label={t('dashboard.totalSpent')}
-              />
-            )}
-          </section>
+              {loading ? (
+                <DashboardStatSkeleton />
+              ) : (
+                <StatCard
+                  icon={<Euro fontSize="small" />}
+                  value={totalSpentLabel}
+                  label={t('dashboard.totalSpent')}
+                />
+              )}
+            </section>
+          </AnnualSummaryCollapse>
+
+          <BurgerCalendarHomeCard
+            burgerDaysThisMonth={burgerDaysThisMonth}
+            onOpen={() => navigate('/burger-calendar')}
+          />
 
           <section className="bw-dashboard-top-link">
             <button

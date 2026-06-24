@@ -190,6 +190,13 @@ import frBurgerWishlist from '../locales/fr/burgerWishlist.json';
 import itBurgerWishlist from '../locales/it/burgerWishlist.json';
 import deBurgerWishlist from '../locales/de/burgerWishlist.json';
 import jaBurgerWishlist from '../locales/ja/burgerWishlist.json';
+import enBurgerCalendar from '../locales/en/burgerCalendar.json';
+import esBurgerCalendar from '../locales/es/burgerCalendar.json';
+import thBurgerCalendar from '../locales/th/burgerCalendar.json';
+import frBurgerCalendar from '../locales/fr/burgerCalendar.json';
+import itBurgerCalendar from '../locales/it/burgerCalendar.json';
+import deBurgerCalendar from '../locales/de/burgerCalendar.json';
+import jaBurgerCalendar from '../locales/ja/burgerCalendar.json';
 import enFeatureAnnouncement from '../locales/en/featureAnnouncement.json';
 import esFeatureAnnouncement from '../locales/es/featureAnnouncement.json';
 import thFeatureAnnouncement from '../locales/th/featureAnnouncement.json';
@@ -224,6 +231,7 @@ const resources = {
     restaurantSearch: enRestaurantSearch,
     myTopBurgers: enMyTopBurgers,
     burgerWishlist: enBurgerWishlist,
+    burgerCalendar: enBurgerCalendar,
     featureAnnouncement: enFeatureAnnouncement
   },
   es: {
@@ -251,6 +259,7 @@ const resources = {
     restaurantSearch: esRestaurantSearch,
     myTopBurgers: esMyTopBurgers,
     burgerWishlist: esBurgerWishlist,
+    burgerCalendar: esBurgerCalendar,
     featureAnnouncement: esFeatureAnnouncement
   },
   th: {
@@ -278,6 +287,7 @@ const resources = {
     restaurantSearch: thRestaurantSearch,
     myTopBurgers: thMyTopBurgers,
     burgerWishlist: thBurgerWishlist,
+    burgerCalendar: thBurgerCalendar,
     featureAnnouncement: thFeatureAnnouncement
   },
   fr: {
@@ -305,6 +315,7 @@ const resources = {
     restaurantSearch: frRestaurantSearch,
     myTopBurgers: frMyTopBurgers,
     burgerWishlist: frBurgerWishlist,
+    burgerCalendar: frBurgerCalendar,
     featureAnnouncement: frFeatureAnnouncement
   },
   it: {
@@ -332,6 +343,7 @@ const resources = {
     restaurantSearch: itRestaurantSearch,
     myTopBurgers: itMyTopBurgers,
     burgerWishlist: itBurgerWishlist,
+    burgerCalendar: itBurgerCalendar,
     featureAnnouncement: itFeatureAnnouncement
   },
   de: {
@@ -359,6 +371,7 @@ const resources = {
     restaurantSearch: deRestaurantSearch,
     myTopBurgers: deMyTopBurgers,
     burgerWishlist: deBurgerWishlist,
+    burgerCalendar: deBurgerCalendar,
     featureAnnouncement: deFeatureAnnouncement
   },
   ja: {
@@ -386,6 +399,7 @@ const resources = {
     restaurantSearch: jaRestaurantSearch,
     myTopBurgers: jaMyTopBurgers,
     burgerWishlist: jaBurgerWishlist,
+    burgerCalendar: jaBurgerCalendar,
     featureAnnouncement: jaFeatureAnnouncement
   }
 };
@@ -433,6 +447,7 @@ i18n
       'restaurantSearch',
       'myTopBurgers',
       'burgerWishlist',
+      'burgerCalendar',
       'featureAnnouncement'
     ],
     interpolation: { escapeValue: false },

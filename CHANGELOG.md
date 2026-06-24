@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.5.0
+
+- Added Burger Calendar page to visualize burger entries by month, including monthly stats and day-level entry details.
+- Added a Burger Calendar access card to the dashboard.
+- Improved mobile dashboard layout with a collapsible annual summary.
+- Changed the expanded mobile annual summary to hide the compact card and show a separate collapse action.
+- Added a bouncy animation to the mobile annual summary expand and collapse states.
+
 ## 1.4.1
 
 - Added a feature announcement modal for the Burgers to try feed workflow.
