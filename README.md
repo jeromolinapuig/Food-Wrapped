@@ -94,15 +94,16 @@ Definidas en `src/App.tsx`.
 | `/feed`            | Feed social y busqueda de usuarios     | Mixto                            |
 | `/profile`         | Perfil propio                          | Autenticado                      |
 | `/groups`          | Listado y gestion de grupos            | Autenticado                      |
-| `/ranking`         | Ranking global                         | Mixto                            |
+| `/ranking`         | Ranking global                         | Autenticado                      |
 | `/groups/:groupId` | Detalle de grupo                       | Autenticado/miembro segun logica |
 | `/users/:userId`   | Dashboard publico de usuario           | Mixto con privacidad             |
 | `/posts/:entryId`  | Detalle de post                        | Mixto segun visibilidad          |
 | `/saved`           | Posts guardados                        | Autenticado                      |
 | `/burger-wishlist` | Burgers para probar                    | Autenticado                      |
-| `/restaurants`     | Busqueda/listado de restaurantes       | Mixto                            |
+| `/restaurants`     | Busqueda/listado de restaurantes       | Autenticado                      |
 | `/my-top-burgers`  | Ranking personal de hamburguesas       | Autenticado                      |
 | `/login`           | Login/signup/OAuth                     | Publico                          |
+| `/auth`            | Redireccion a `/login`                 | Publico                          |
 | `/privacy`         | Privacidad                             | Publico                          |
 | `/setup-username`  | Configuracion inicial de username      | Autenticado                      |
 | `/reset-password`  | Reset de password                      | Publico/con sesion de reset      |
@@ -181,6 +182,24 @@ Notas de privacidad:
 - Perfiles privados se filtran en cliente, pero esto no sustituye RLS.
 - RLS debe impedir lectura de entradas privadas o perfiles no autorizados aunque alguien llame directamente a Supabase.
 
+### Posts Guardados
+
+Archivo:
+
+- `src/components/SavedPostsPage/SavedPostsPage.tsx`
+
+Responsabilidades:
+
+- Cargar posts guardados por el usuario.
+- Reutilizar `FeedTabs` con filtro por ids guardados.
+- Refrescar la vista cuando cambian bookmarks desde otros componentes.
+- Navegar a detalle de post manteniendo retorno a `/saved`.
+
+Tablas:
+
+- `entry_bookmarks`
+- `entries` mediante `FeedTabs`
+
 ### Entradas
 
 Archivo principal:
@@ -223,6 +242,7 @@ Responsabilidades:
 - Refrescar sesion.
 - Logout.
 - Gestionar marcos/avatar frame.
+- Consultar resultados mensuales para desbloquear marcos de avatar.
 
 Storage:
 
@@ -234,6 +254,8 @@ Tablas:
 
 - `profiles`
 - `entries` para datos auxiliares de perfil y frames.
+- `follows` para contadores y listas.
+- `monthly_frame_results` para marcos mensuales desbloqueables.
 
 ### Grupos
 
@@ -340,11 +362,16 @@ Responsabilidades:
 - Buscar/seleccionar restaurantes.
 - Mostrar posts asociados.
 - Navegar a detalle de post.
+- Mostrar estados privados de burgers pendientes o probadas por el usuario.
 
-Tablas esperadas:
+Tablas:
 
 - `entries`
-- Relaciones de `restaurants` y `burgers` segun selects de entradas.
+- `restaurants`
+- `burger_wishlist`
+- `follows`
+- `profiles`
+- Relaciones de `burgers` segun selects de entradas.
 
 ### Rankings
 
@@ -363,6 +390,26 @@ Tablas:
 - `entries`
 - `profiles`
 
+### Comentarios
+
+Archivos:
+
+- `src/components/Comments/useEntryComments.ts`
+- `src/components/Comments/EntryComments.tsx`
+- `src/components/Comments/CommentConfirmDialog.tsx`
+
+Responsabilidades:
+
+- Cargar comentarios completos o previews por entrada.
+- Crear comentarios autenticados con limite de longitud.
+- Eliminar comentarios propios o moderados por administradores.
+- Resolver perfiles, avatares y marcos de autores.
+
+Tablas:
+
+- `entry_comments`
+- `profiles`
+
 ### Notificaciones
 
 Archivo:
@@ -378,31 +425,73 @@ Tablas:
 
 - `profiles`
 - `groups`
-- Otras tablas de interacciones segun el flujo que genere notificaciones.
+- `entries`
+- `entry_likes`
+- `entry_comments`
+- `follows`
+- `group_invitations`
+
+### Anuncios De Funcionalidad
+
+Archivo:
+
+- `src/components/FeatureAnnouncementModal/FeatureAnnouncementModal.tsx`
+
+Responsabilidades:
+
+- Mostrar novedades destacadas a usuarios autenticados.
+- Persistir el anuncio visto por usuario en Supabase.
+- Permitir navegar al feed desde el anuncio.
+
+Tablas:
+
+- `user_feature_announcements`
+
+### Administracion
+
+Archivos:
+
+- `src/components/AdminFeedPage/AdminFeedPage.tsx`
+- `src/components/AdminUsersPage/AdminUsersPage.tsx`
+- `src/components/AdminReportsPage/AdminReportsPage.tsx`
+
+Responsabilidades:
+
+- Activar modo admin desde el perfil si `profiles.is_admin` lo permite.
+- Moderar publicaciones y comentarios desde el feed admin.
+- Editar u ocultar posts mediante soft delete.
+- Buscar usuarios y abrir sus dashboards en vista admin.
+- Revisar reportes pendientes y marcarlos como resueltos o descartados.
+
+Tablas:
+
+- `profiles`
+- `entries`
+- `entry_comments` mediante el feed admin.
+- `entry_reports`
 
 ## Supabase: Tablas Usadas Por El Cliente
 
 El cliente referencia estas tablas directamente:
 
+- `burger_wishlist`
+- `burgers`
 - `entries`
 - `entry_bookmarks`
+- `entry_comments`
 - `entry_likes`
-- `burger_wishlist`
+- `entry_reports`
 - `exchange_rates`
 - `follows`
 - `group_invitations`
 - `group_members`
 - `groups`
+- `monthly_frame_results`
 - `profiles`
-
-Tambien se usan tablas relacionadas en selects embebidos:
-
 - `restaurants`
-- `burgers`
+- `user_feature_announcements`
 
-Y hay flujo de reportes usando:
-
-- `entry_reports`
+Algunas de estas tablas tambien se usan como relaciones embebidas en selects, especialmente `restaurants` y `burgers`.
 
 Si estas tablas existen en Supabase, sus policies deben considerarse parte critica de la seguridad.
 
@@ -495,14 +584,16 @@ Antes de ejecutar el SQL en produccion, actualizar los valores de `eur_rates` co
 
 ## Realtime
 
-El feed y dashboard usan canales Supabase:
+El feed, dashboard, grupos, follows y perfil usan canales Supabase:
 
 - `supabase.channel(...)`
-- `postgres_changes` sobre `entries`
+- `postgres_changes` sobre `entries`, `groups`, `group_members`, `group_invitations` y `follows`
 
 Uso:
 
 - Refrescar feed cuando cambian entradas.
+- Refrescar grupos e invitaciones cuando cambia la membresia o las invitaciones.
+- Refrescar contadores/listas de follows cuando cambian relaciones entre usuarios.
 - Evitar refrescos excesivos con throttling local.
 
 Seguridad:
