@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.6.0
+
+- Added a unified search page for users and restaurants.
+- Changed the bottom navigation to replace Groups with Search and move Groups into the More menu.
+- Changed the legacy restaurants route to redirect into the unified search page.
+- Fixed unified search page translations across supported languages.
+
 ## 1.5.1
 
 - Fixed the Burger Calendar week layout so weeks start on Monday.

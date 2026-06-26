@@ -1,4 +1,4 @@
-import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, PlaylistAdd, Store } from '@mui/icons-material';
+import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, PlaylistAdd, Search } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -52,18 +52,18 @@ export function BottomNav({
     if (location.pathname.startsWith('/users')) {
       const state = location.state as { returnTo?: string } | null;
       const returnTo = state?.returnTo ?? '';
-      if (returnTo.startsWith('/groups')) return 'groups';
+      if (returnTo.startsWith('/groups')) return 'more';
       if (returnTo.startsWith('/feed')) return 'feed';
+      if (returnTo.startsWith('/search')) return 'search';
       if (returnTo.startsWith('/ranking')) return 'more';
-      if (returnTo.startsWith('/restaurants')) return 'more';
       if (returnTo.startsWith('/burger-wishlist')) return 'more';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
     if (location.pathname.startsWith('/feed')) return 'feed';
-    if (location.pathname.startsWith('/groups')) return 'groups';
+    if (location.pathname.startsWith('/search')) return 'search';
+    if (location.pathname.startsWith('/groups')) return 'more';
     if (location.pathname.startsWith('/ranking')) return 'more';
-    if (location.pathname.startsWith('/restaurants')) return 'more';
     if (location.pathname.startsWith('/burger-wishlist')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
@@ -300,15 +300,12 @@ export function BottomNav({
       </button>
       <button
         type="button"
-        className={`bw-bottom-nav-item ${activeKey === 'groups' ? 'is-active' : ''}`}
-        onClick={() => handleClick('/groups')}
-        aria-label={t('common.groups', { defaultValue: 'Groups' })}
+        className={`bw-bottom-nav-item ${activeKey === 'search' ? 'is-active' : ''}`}
+        onClick={() => handleClick('/search')}
+        aria-label={t('common.search', { defaultValue: 'Search' })}
       >
-        <span className="bw-bottom-nav-icon">
-          <Groups />
-          {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
-        </span>
-        <span className="bw-bottom-nav-label">{t('common.groups', { defaultValue: 'Groups' })}</span>
+        <span className="bw-bottom-nav-icon"><Search /></span>
+        <span className="bw-bottom-nav-label">{t('common.search', { defaultValue: 'Search' })}</span>
       </button>
       <div className={`bw-bottom-nav-more ${activeKey === 'more' ? 'is-active' : ''}`}>
         <button
@@ -346,11 +343,14 @@ export function BottomNav({
                 type="button"
                 className="bw-bottom-nav-menu-item"
                 role="menuitem"
-                onClick={() => handleClick('/restaurants')}
+                onClick={() => handleClick('/groups')}
               >
-                <span className="bw-bottom-nav-menu-icon"><Store fontSize="small" /></span>
+                <span className="bw-bottom-nav-menu-icon">
+                  <Groups fontSize="small" />
+                  {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
+                </span>
                 <span className="bw-bottom-nav-menu-label">
-                  {t('common.restaurants', { defaultValue: 'Restaurants' })}
+                  {t('common.groups', { defaultValue: 'Groups' })}
                 </span>
               </button>
               <button

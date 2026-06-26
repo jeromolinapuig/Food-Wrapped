@@ -49,6 +49,14 @@ import itFeedPage from '../locales/it/feedPage.json';
 import deFeedPage from '../locales/de/feedPage.json';
 import jaFeedPage from '../locales/ja/feedPage.json';
 
+import enSearchPage from '../locales/en/searchPage.json';
+import esSearchPage from '../locales/es/searchPage.json';
+import thSearchPage from '../locales/th/searchPage.json';
+import frSearchPage from '../locales/fr/searchPage.json';
+import itSearchPage from '../locales/it/searchPage.json';
+import deSearchPage from '../locales/de/searchPage.json';
+import jaSearchPage from '../locales/ja/searchPage.json';
+
 import enFeedTabs from '../locales/en/feedTabs.json';
 import esFeedTabs from '../locales/es/feedTabs.json';
 import thFeedTabs from '../locales/th/feedTabs.json';
@@ -213,6 +221,7 @@ const resources = {
     locked: enLocked,
     feed: enFeed,
     feedPage: enFeedPage,
+    searchPage: enSearchPage,
     feedTabs: enFeedTabs,
     addEntry: enAddEntry,
     auth: enAuth,
@@ -241,6 +250,7 @@ const resources = {
     locked: esLocked,
     feed: esFeed,
     feedPage: esFeedPage,
+    searchPage: esSearchPage,
     feedTabs: esFeedTabs,
     addEntry: esAddEntry,
     auth: esAuth,
@@ -269,6 +279,7 @@ const resources = {
     locked: thLocked,
     feed: thFeed,
     feedPage: thFeedPage,
+    searchPage: thSearchPage,
     feedTabs: thFeedTabs,
     addEntry: thAddEntry,
     auth: thAuth,
@@ -297,6 +308,7 @@ const resources = {
     locked: frLocked,
     feed: frFeed,
     feedPage: frFeedPage,
+    searchPage: frSearchPage,
     feedTabs: frFeedTabs,
     addEntry: frAddEntry,
     auth: frAuth,
@@ -325,6 +337,7 @@ const resources = {
     locked: itLocked,
     feed: itFeed,
     feedPage: itFeedPage,
+    searchPage: itSearchPage,
     feedTabs: itFeedTabs,
     addEntry: itAddEntry,
     auth: itAuth,
@@ -353,6 +366,7 @@ const resources = {
     locked: deLocked,
     feed: deFeed,
     feedPage: deFeedPage,
+    searchPage: deSearchPage,
     feedTabs: deFeedTabs,
     addEntry: deAddEntry,
     auth: deAuth,
@@ -381,6 +395,7 @@ const resources = {
     locked: jaLocked,
     feed: jaFeed,
     feedPage: jaFeedPage,
+    searchPage: jaSearchPage,
     feedTabs: jaFeedTabs,
     addEntry: jaAddEntry,
     auth: jaAuth,
@@ -429,6 +444,7 @@ i18n
       'locked',
       'feed',
       'feedPage',
+      'searchPage',
       'feedTabs',
       'addEntry',
       'auth',

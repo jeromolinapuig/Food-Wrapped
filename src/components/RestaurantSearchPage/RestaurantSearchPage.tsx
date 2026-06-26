@@ -21,6 +21,10 @@ type RestaurantSearchPageProps = {
   theme: 'light' | 'dark';
 };
 
+type RestaurantSearchContentProps = RestaurantSearchPageProps & {
+  returnTo?: string;
+};
+
 type RestaurantSearchLocationState = {
   selectedRestaurantId?: string;
   selectedRestaurantName?: string;
@@ -50,7 +54,11 @@ const normalizeCompact = (value: string) =>
     .trim()
     .toLowerCase();
 
-export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSearchPageProps>) {
+export function RestaurantSearchContent({
+  session,
+  theme,
+  returnTo = '/restaurants',
+}: Readonly<RestaurantSearchContentProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -319,7 +327,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
   };
 
   const handleOpenEntry = (entryId: string) => {
-    navigate(`/posts/${entryId}`, { state: { returnTo: '/restaurants' } });
+    navigate(`/posts/${entryId}`, { state: { returnTo } });
   };
 
   const handleAddSaved = async () => {
@@ -387,13 +395,8 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
   };
 
   return (
-    <AppShell>
-      <PageHeader
-        title={t('restaurantSearch.title', { defaultValue: 'Restaurantes' })}
-        subtitle={t('restaurantSearch.subtitle', { defaultValue: 'Busca un restaurante y explora las publicaciones' })}
-      />
-      <main className="bw-main">
-        <section className="bw-restaurant-search">
+    <>
+      <section className="bw-restaurant-search">
           <div className="bw-field">
             <label className="bw-label" htmlFor="bw-restaurant-search">
               {t('restaurantSearch.searchLabel', { defaultValue: 'Buscar restaurante' })}
@@ -470,8 +473,7 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
           ) : (
             renderResults()
           )}
-        </section>
-      </main>
+      </section>
 
       {selectedRestaurant && (
         <div className="bw-fab-wrapper">
@@ -495,6 +497,22 @@ export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSear
         mode="create"
         initialRestaurant={selectedRestaurant}
       />
+    </>
+  );
+}
+
+export function RestaurantSearchPage({ session, theme }: Readonly<RestaurantSearchPageProps>) {
+  const { t } = useTranslation();
+
+  return (
+    <AppShell>
+      <PageHeader
+        title={t('restaurantSearch.title', { defaultValue: 'Restaurantes' })}
+        subtitle={t('restaurantSearch.subtitle', { defaultValue: 'Busca un restaurante y explora las publicaciones' })}
+      />
+      <main className="bw-main">
+        <RestaurantSearchContent session={session} theme={theme} />
+      </main>
     </AppShell>
   );
 }

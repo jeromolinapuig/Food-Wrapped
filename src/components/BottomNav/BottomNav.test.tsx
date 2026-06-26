@@ -34,7 +34,8 @@ vi.mock('@mui/icons-material', () => ({
   LocalDining: () => null,
   MoreHoriz: () => null,
   PersonOutline: () => null,
-  Store: () => null,
+  PlaylistAdd: () => null,
+  Search: () => null,
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -118,10 +119,12 @@ describe('BottomNav functional flows', () => {
   });
 
   it('shows invite dot when there are pending group invitations', async () => {
+    const user = userEvent.setup();
     const session: MockSession = { user: { id: 'user-1', email: 'user@example.com' } };
     setupSupabase(3);
 
     const { container } = render(<BottomNav session={session as never} />);
+    await user.click(screen.getByRole('button', { name: 'More' }));
 
     await waitFor(() => {
       expect(container.querySelector('.bw-bottom-nav-dot')).toBeInTheDocument();

@@ -1,0 +1,81 @@
+.bw-search-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: var(--bw-card-bg);
+}
+
+.bw-search-tab {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--bw-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.bw-search-tab.is-active {
+  background: var(--bw-accent);
+  color: #ffffff;
+}
+
+.bw-search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bw-search-input-wrap {
+  position: relative;
+}
+
+.bw-search-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bw-text-muted);
+  display: inline-flex;
+  pointer-events: none;
+}
+
+.bw-search-input {
+  padding-left: 36px;
+  padding-right: 38px;
+}
+
+.bw-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bw-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--bw-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bw-search-error {
+  font-size: 12px;
+  color: #d7264d;
+}
+
+.bw-search-locked-preview {
+  min-height: 180px;
+}

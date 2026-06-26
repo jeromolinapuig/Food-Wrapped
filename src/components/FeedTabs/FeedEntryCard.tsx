@@ -141,8 +141,9 @@ export function FeedEntryCard({
   const triedRatingLabel = burgerStatus?.rating != null ? ` · ${burgerStatus.rating.toFixed(1)}` : '';
   const handleOpenRestaurant = () => {
     if (!entry.restaurantId || !entry.restaurantName) return;
-    navigate('/restaurants', {
+    navigate('/search', {
       state: {
+        activeSearchTab: 'restaurants',
         selectedRestaurantId: entry.restaurantId,
         selectedRestaurantName: entry.restaurantName,
       },

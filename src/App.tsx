@@ -22,7 +22,7 @@ import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
 import { BurgerWishlistPage } from './components/BurgerWishlistPage/BurgerWishlistPage';
 import { BurgerCalendarPage } from './components/BurgerCalendarPage/BurgerCalendarPage';
 import { PostPage } from './components/PostPage/PostPage';
-import { RestaurantSearchPage } from './components/RestaurantSearchPage/RestaurantSearchPage';
+import { SearchPage } from './components/SearchPage/SearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
 import { FeatureAnnouncementModal } from './components/FeatureAnnouncementModal/FeatureAnnouncementModal';
 import { AppShell } from './components/common/AppShell';
@@ -33,7 +33,7 @@ import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
 type Theme = 'light' | 'dark';
-type FeedReturnPage = 'dashboard' | 'feed' | 'profile';
+type FeedReturnPage = 'dashboard' | 'feed' | 'profile' | 'search';
 type FocusUser = { id: string; username: string | null; displayName: string | null };
 type FeedLocationState = { openProfileUserId?: string | null };
 type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: string | null; adminView?: boolean };
@@ -357,7 +357,11 @@ function App() {
     user: { id: string; username: string | null; displayName: string | null },
     options?: { returnPage?: FeedReturnPage; returnProfileUserId?: string | null }
   ) => {
-    const returnTo = options?.returnPage === 'profile' ? '/profile' : '/feed';
+    const returnTo = options?.returnPage === 'profile'
+      ? '/profile'
+      : options?.returnPage === 'search'
+        ? '/search'
+        : '/feed';
     navigate(`/users/${user.id}`, {
       state: {
         returnTo,
@@ -465,6 +469,17 @@ function App() {
               onOpenUserDashboard={handleOpenUserDashboard}
               onRequireLogin={handleLogin}
               lockedPreview={<FeedPlaceholder />}
+            />
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <SearchPage
+              session={session}
+              theme={theme}
+              onRequireLogin={handleLogin}
+              onOpenUserDashboard={handleOpenUserDashboard}
             />
           }
         />
@@ -595,18 +610,7 @@ function App() {
         />
         <Route
           path="/restaurants"
-          element={
-            session ? (
-              <RestaurantSearchPage session={session} theme={theme} />
-            ) : (
-              <LockedPage
-                title={t('restaurantSearch.lockedTitle', { defaultValue: 'Restaurantes' })}
-                subtitle={t('restaurantSearch.lockedSubtitle', { defaultValue: 'Inicia sesión para buscar restaurantes.' })}
-                onLogin={handleLogin}
-                preview={<FeedPlaceholder />}
-              />
-            )
-          }
+          element={<Navigate to="/search" replace />}
         />
         <Route
           path="/my-top-burgers"

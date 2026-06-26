@@ -91,7 +91,8 @@ Definidas en `src/App.tsx`.
 | ------------------ | -------------------------------------- | -------------------------------- |
 | `/`                | Dashboard si hay sesion, landing si no | Mixto                            |
 | `/home`            | Alias/navegacion hacia inicio          | Mixto                            |
-| `/feed`            | Feed social y busqueda de usuarios     | Mixto                            |
+| `/feed`            | Feed social                            | Mixto                            |
+| `/search`          | Busqueda de usuarios y restaurantes    | Mixto                            |
 | `/profile`         | Perfil propio                          | Autenticado                      |
 | `/groups`          | Listado y gestion de grupos            | Autenticado                      |
 | `/ranking`         | Ranking global                         | Autenticado                      |
@@ -100,7 +101,7 @@ Definidas en `src/App.tsx`.
 | `/posts/:entryId`  | Detalle de post                        | Mixto segun visibilidad          |
 | `/saved`           | Posts guardados                        | Autenticado                      |
 | `/burger-wishlist` | Burgers para probar                    | Autenticado                      |
-| `/restaurants`     | Busqueda/listado de restaurantes       | Autenticado                      |
+| `/restaurants`     | Redireccion legacy a `/search`         | Mixto                            |
 | `/my-top-burgers`  | Ranking personal de hamburguesas       | Autenticado                      |
 | `/login`           | Login/signup/OAuth                     | Publico                          |
 | `/auth`            | Redireccion a `/login`                 | Publico                          |
