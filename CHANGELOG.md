@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.5.1
+
+- Fixed the Burger Calendar week layout so weeks start on Monday.
+- Changed Burger Calendar post days to use color intensity instead of visible count badges.
+- Changed public user profiles to show all months by default.
+
 ## 1.5.0
 
 - Added Burger Calendar page to visualize burger entries by month, including monthly stats and day-level entry details.

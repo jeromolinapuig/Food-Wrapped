@@ -12,7 +12,7 @@ export function BurgerCalendarGrid({ days, selectedDateKey, onSelectDate }: Read
   const { i18n } = useTranslation();
   const locale = i18n.language;
   const weekdays = Array.from({ length: 7 }, (_, index) =>
-    new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2026, 5, 7 + index))
+    new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2026, 5, 8 + index))
   );
 
   return (
@@ -51,7 +51,6 @@ export function BurgerCalendarGrid({ days, selectedDateKey, onSelectDate }: Read
               aria-pressed={selectedDateKey === day.dateKey}
             >
               <span>{day.date.getDate()}</span>
-              {count > 0 && <span className="bw-burger-calendar-day-count">{count}</span>}
             </button>
           );
         })}

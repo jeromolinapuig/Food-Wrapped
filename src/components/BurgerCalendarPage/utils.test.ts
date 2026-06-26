@@ -44,17 +44,24 @@ describe('BurgerCalendarPage utils', () => {
     it('returns visible days for the selected month including surrounding weeks', () => {
       const days = getMonthCalendarDays(2026, 5, []);
 
-      expect(days[0].dateKey).toBe('2026-05-31');
-      expect(days.at(-1)?.dateKey).toBe('2026-07-04');
+      expect(days[0].dateKey).toBe('2026-06-01');
+      expect(days.at(-1)?.dateKey).toBe('2026-07-05');
       expect(days).toHaveLength(35);
+    });
+
+    it('starts surrounding weeks on Monday when the month starts on Sunday', () => {
+      const days = getMonthCalendarDays(2026, 10, []);
+
+      expect(days[0].dateKey).toBe('2026-10-26');
+      expect(days[6].dateKey).toBe('2026-11-01');
     });
 
     it('marks current-month days correctly', () => {
       const days = getMonthCalendarDays(2026, 5, []);
-      const mayDay = days.find((day) => day.dateKey === '2026-05-31');
+      const julyDay = days.find((day) => day.dateKey === '2026-07-05');
       const juneDay = days.find((day) => day.dateKey === '2026-06-01');
 
-      expect(mayDay?.isCurrentMonth).toBe(false);
+      expect(julyDay?.isCurrentMonth).toBe(false);
       expect(juneDay?.isCurrentMonth).toBe(true);
     });
 

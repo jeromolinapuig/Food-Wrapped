@@ -1,6 +1,7 @@
 import type { BurgerCalendarDay, BurgerCalendarEntry, BurgerCalendarMonthStats } from './types';
 
 const pad = (value: number) => String(value).padStart(2, '0');
+const getMondayFirstWeekday = (date: Date) => (date.getDay() + 6) % 7;
 
 export function getDateKey(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -26,11 +27,11 @@ export function getMonthCalendarDays(
   const grouped = groupEntriesByDate(entries);
   const firstDay = new Date(year, month, 1);
   const start = new Date(firstDay);
-  start.setDate(firstDay.getDate() - firstDay.getDay());
+  start.setDate(firstDay.getDate() - getMondayFirstWeekday(firstDay));
 
   const lastDay = new Date(year, month + 1, 0);
   const end = new Date(lastDay);
-  end.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+  end.setDate(lastDay.getDate() + (6 - getMondayFirstWeekday(lastDay)));
 
   const todayKey = getDateKey(new Date());
   const days: BurgerCalendarDay[] = [];

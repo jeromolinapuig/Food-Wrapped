@@ -68,7 +68,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsCount, setPostsCount] = useState(0);
-  const [monthFilter, setMonthFilter] = useState<string[]>(() => [getCurrentMonthValue()]);
+  const [monthFilter, setMonthFilter] = useState<string[]>(['all']);
   const [priceFilter, setPriceFilter] = useState<FeedPriceFilter[]>(['all']);
   const [meatTypeFilter, setMeatTypeFilter] = useState<(MeatType | 'all')[]>(['all']);
   const [openFilterCount, setOpenFilterCount] = useState(0);

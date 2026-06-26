@@ -87,12 +87,16 @@ vi.mock('../StatCard/StatCard', () => ({
 
 vi.mock('../FeedTabs/FeedTabs', () => ({
   FeedTabs: (props: {
+    monthFilter?: string[];
     onOpenEntry?: (entryId: string) => void;
   }) => {
     return props.onOpenEntry ? (
-      <button type="button" onClick={() => props.onOpenEntry?.('entry-55')}>
-        open-user-entry
-      </button>
+      <>
+        <div data-testid="feed-month-filter">{props.monthFilter?.join(',')}</div>
+        <button type="button" onClick={() => props.onOpenEntry?.('entry-55')}>
+          open-user-entry
+        </button>
+      </>
     ) : (
       <div>feed-tabs-header</div>
     );
@@ -203,6 +207,7 @@ describe('UserDashboardPage', () => {
     expect(screen.getByTestId('stat-dashboard.avgRating')).toHaveTextContent('4.5');
     expect(screen.getByTestId('stat-dashboard.favorite')).toHaveTextContent('Burger Bar');
     expect(screen.getByTestId('stat-Hamburguesas caseras')).toHaveTextContent('1');
+    expect(screen.getByTestId('feed-month-filter')).toHaveTextContent('all');
 
     fireEvent.click(screen.getByRole('button', { name: 'open-user-entry' }));
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-55', {
