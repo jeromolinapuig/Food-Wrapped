@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.6.1
+
+- Changed feed post sharing to appear as a footer action with separate link and photo sharing options.
+- Changed link sharing to copy the post URL before opening the native share dialog.
+
 ## 1.6.0
 
 - Added a unified search page for users and restaurants.

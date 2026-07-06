@@ -6,6 +6,8 @@ import {
   Edit,
   Favorite,
   FavoriteBorder,
+  Image,
+  Link,
   MoreVert,
   PlaylistAdd,
   Share,
@@ -103,6 +105,7 @@ export function FeedEntryCard({
   onRequestDeleteComment,
 }: Readonly<FeedEntryCardProps>) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [shareAnchorEl, setShareAnchorEl] = useState<HTMLElement | null>(null);
   const [isDownloadPending, setIsDownloadPending] = useState(false);
   const navigate = useNavigate();
   const date = new Date(entry.datetime);
@@ -130,11 +133,13 @@ export function FeedEntryCard({
   const actionLockLabel = isReadOnly ? t('feed.lockAction') : undefined;
   const canOpenRestaurant = !isHomemade && Boolean(entry.restaurantId && entry.restaurantName);
   const hasPhoto = Boolean(entry.photoUrl);
-  const canSharePost = hasPhoto && isSelf;
+  const canSharePost = !adminMode;
+  const canSharePhoto = hasPhoto && isSelf;
   const canReport = Boolean(viewerId && !isSelf && !adminMode && onReportEntry);
   const canComment = !adminMode;
   const canModerateComments = adminMode;
   const isMenuOpen = Boolean(menuAnchorEl);
+  const isShareMenuOpen = Boolean(shareAnchorEl);
   const canUseBurgerActions =
     Boolean(viewerId && !isSelf && !adminMode && !isHomemade && entry.restaurantId && entry.burgerId);
   const shouldHideTriedActions = Boolean(burgerStatus?.tried && burgerStatus.hasOwnPost);
@@ -155,14 +160,42 @@ export function FeedEntryCard({
   const handleCloseMenu = () => {
     setMenuAnchorEl(null);
   };
+  const handleOpenShareMenu = (event: MouseEvent<HTMLElement>) => {
+    setShareAnchorEl(event.currentTarget);
+  };
+  const handleCloseShareMenu = () => {
+    setShareAnchorEl(null);
+  };
   const handleToggleSaveFromMenu = () => {
     handleCloseMenu();
     onToggleSave(entry.id);
   };
-  const handleSharePost = async () => {
-    handleCloseMenu();
+  const getPostShareUrl = () => `${window.location.origin}/posts/${entry.id}`;
+  const handleShareLink = async () => {
+    handleCloseShareMenu();
     if (!canSharePost) return;
-    if (isDownloadPending) return;
+    const url = getPostShareUrl();
+    const shareData = {
+      title: t('feed.sharePost', { defaultValue: 'Share post' }),
+      url,
+    };
+    try {
+      await navigator.clipboard?.writeText(url);
+    } catch (error) {
+      console.error('Error copying post link', error);
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      }
+    } catch (error) {
+      console.error('Error sharing post link', error);
+    }
+  };
+  const handleSharePhoto = async () => {
+    handleCloseShareMenu();
+    if (!canSharePost) return;
+    if (!canSharePhoto || isDownloadPending) return;
     setIsDownloadPending(true);
     try {
       await downloadEntryPostImage({
@@ -173,7 +206,7 @@ export function FeedEntryCard({
         notes: entry.additionalNotes,
       });
     } catch (error) {
-      console.error('Error downloading post image', error);
+      console.error('Error sharing post image', error);
     } finally {
       setIsDownloadPending(false);
     }
@@ -252,18 +285,6 @@ export function FeedEntryCard({
                 >
                   <ListItemText>
                     {t('feed.reportPost', { defaultValue: 'Report post' })}
-                  </ListItemText>
-                </MenuItem>
-              )}
-              {canSharePost && (
-                <MenuItem onClick={() => void handleSharePost()} disabled={isDownloadPending}>
-                  <ListItemIcon>
-                    <Share fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>
-                    {isDownloadPending
-                      ? t('feed.sharingPost', { defaultValue: 'Sharing post...' })
-                      : t('feed.sharePost', { defaultValue: 'Share post' })}
                   </ListItemText>
                 </MenuItem>
               )}
@@ -432,6 +453,49 @@ export function FeedEntryCard({
                         <ChatBubbleOutline fontSize="small" />
                         {commentCount > 0 && <span className="bw-feed-action-count">{commentCount}</span>}
                       </button>
+                    )}
+                    {canSharePost && (
+                      <>
+                        <button
+                          type="button"
+                          className="bw-feed-action"
+                          onClick={handleOpenShareMenu}
+                          title={t('feed.sharePost', { defaultValue: 'Share post' })}
+                          aria-label={t('feed.sharePost', { defaultValue: 'Share post' })}
+                          aria-haspopup="menu"
+                          aria-expanded={isShareMenuOpen ? 'true' : undefined}
+                        >
+                          <Share fontSize="small" />
+                        </button>
+                        <Menu
+                          anchorEl={shareAnchorEl}
+                          open={isShareMenuOpen}
+                          onClose={handleCloseShareMenu}
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        >
+                          <MenuItem onClick={() => void handleShareLink()}>
+                            <ListItemIcon>
+                              <Link fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>
+                              {t('feed.shareLink', { defaultValue: 'Share link' })}
+                            </ListItemText>
+                          </MenuItem>
+                          {canSharePhoto && (
+                            <MenuItem onClick={() => void handleSharePhoto()} disabled={isDownloadPending}>
+                              <ListItemIcon>
+                                <Image fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText>
+                                {isDownloadPending
+                                  ? t('feed.sharingPost', { defaultValue: 'Sharing post...' })
+                                  : t('feed.sharePhoto', { defaultValue: 'Share photo' })}
+                              </ListItemText>
+                            </MenuItem>
+                          )}
+                        </Menu>
+                      </>
                     )}
                   </div>
                 ) : null}

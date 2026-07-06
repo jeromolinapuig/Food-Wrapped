@@ -1,20 +1,26 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FeedEntryCard } from './FeedEntryCard';
 import type { FeedEntry } from './types';
 
 const navigateMock = vi.fn();
 const downloadMock = vi.fn().mockResolvedValue(undefined);
+const clipboardWriteTextMock = vi.fn().mockResolvedValue(undefined);
+const nativeShareMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@mui/icons-material', () => ({
   Bookmark: () => null,
   ChatBubbleOutline: () => null,
+  CheckCircleOutline: () => null,
   Delete: () => null,
   Edit: () => null,
   Favorite: () => null,
   FavoriteBorder: () => null,
+  Image: () => null,
+  Link: () => null,
   MoreVert: () => null,
+  PlaylistAdd: () => null,
   Share: () => null,
   Star: () => null,
   StarBorder: () => null,
@@ -73,6 +79,20 @@ const baseEntry: FeedEntry = {
 };
 
 describe('FeedEntryCard', () => {
+  beforeEach(() => {
+    downloadMock.mockClear();
+    clipboardWriteTextMock.mockClear();
+    nativeShareMock.mockClear();
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWriteTextMock },
+    });
+    Object.defineProperty(window.navigator, 'share', {
+      configurable: true,
+      value: nativeShareMock,
+    });
+  });
+
   it('lanza acciones de like, comentarios y owner actions', () => {
     const onToggleLike = vi.fn();
     const onOpenEntry = vi.fn();
@@ -118,7 +138,7 @@ describe('FeedEntryCard', () => {
     expect(onDeleteEntry).toHaveBeenCalledWith(baseEntry);
   });
 
-  it('abre menú y comparte post propio', async () => {
+  it('abre opciones de compartir y comparte la foto del post', async () => {
     render(
       <FeedEntryCard
         entry={baseEntry}
@@ -146,10 +166,84 @@ describe('FeedEntryCard', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     fireEvent.click(screen.getByRole('button', { name: 'Share post' }));
+    expect(screen.getByRole('button', { name: 'Share link' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Share photo' }));
     await waitFor(() => {
       expect(downloadMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('permite compartir enlace pero no foto en posts de otra persona', () => {
+    render(
+      <FeedEntryCard
+        entry={baseEntry}
+        viewerId="u2"
+        isUserFeed={false}
+        isReadOnly={false}
+        showOwnerActions={false}
+        reactions={{ likeCount: 0, liked: false, saved: false }}
+        isLikePending={false}
+        isSavePending={false}
+        onToggleLike={() => {}}
+        onToggleSave={() => {}}
+        onPreviewPhoto={() => {}}
+        commentMode="preview"
+        comments={[]}
+        commentCount={0}
+        commentLoading={false}
+        commentError={null}
+        commentDraft=""
+        commentSubmitting={false}
+        maxCommentLength={250}
+        onCommentDraftChange={() => {}}
+        onSubmitComment={() => {}}
+        onRequestDeleteComment={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share post' }));
+    expect(screen.getByRole('button', { name: 'Share link' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Share photo' })).not.toBeInTheDocument();
+  });
+
+  it('copia el enlace y abre el selector nativo al compartir enlace', async () => {
+    render(
+      <FeedEntryCard
+        entry={baseEntry}
+        viewerId="u2"
+        isUserFeed={false}
+        isReadOnly={false}
+        showOwnerActions={false}
+        reactions={{ likeCount: 0, liked: false, saved: false }}
+        isLikePending={false}
+        isSavePending={false}
+        onToggleLike={() => {}}
+        onToggleSave={() => {}}
+        onPreviewPhoto={() => {}}
+        commentMode="preview"
+        comments={[]}
+        commentCount={0}
+        commentLoading={false}
+        commentError={null}
+        commentDraft=""
+        commentSubmitting={false}
+        maxCommentLength={250}
+        onCommentDraftChange={() => {}}
+        onSubmitComment={() => {}}
+        onRequestDeleteComment={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share link' }));
+
+    await waitFor(() => {
+      expect(clipboardWriteTextMock).toHaveBeenCalledWith('http://localhost:3000/posts/e1');
+      expect(nativeShareMock).toHaveBeenCalledWith({
+        title: 'Share post',
+        url: 'http://localhost:3000/posts/e1',
+      });
     });
   });
 });
