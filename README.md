@@ -428,6 +428,7 @@ Archivo:
 - `supabase/functions/send-push/index.ts`
 - `supabase/functions/preview-admin-push/index.ts`
 - `supabase/functions/dispatch-admin-push/index.ts`
+- `supabase/functions/send-admin-push-now/index.ts`
 
 Responsabilidades:
 
@@ -436,9 +437,10 @@ Responsabilidades:
 - Pedir permiso solo tras una accion explicita del usuario y mostrar antes un modal explicativo propio.
 - Guiar a usuarios de iPhone/iPad para instalar la PWA antes de pedir permiso.
 - Registrar y retirar suscripciones por dispositivo.
-- Permitir elegir push de likes, comentarios, follows e invitaciones.
+- Permitir elegir push de likes, comentarios, follows, invitaciones y avisos administrativos.
 - Enviar Web Push desde una Edge Function; las claves privadas VAPID nunca se exponen al cliente.
 - Permitir que un administrador cree, edite y cancele campañas push antes de que empiecen a enviarse.
+- Permitir elegir entre envío inmediato con confirmación o programación por hora local.
 - Programar cada entrega en la fecha y hora local IANA registrada por cada dispositivo.
 - Previsualizar el título, mensaje y deep link exclusivamente en el dispositivo administrador actual.
 - Procesar las campañas programadas mediante un Cron de Supabase protegido por secreto y conservar el estado de cada entrega.
@@ -464,6 +466,12 @@ La migracion, los triggers, las policies RLS y el backfill de la bandeja estan e
 La programación administrativa, sus entregas por dispositivo y sus RPC protegidas están en
 `supabase/migrations/20260714000200_add_scheduled_admin_push_notifications.sql`. La configuración
 de secrets, despliegue y Cron está documentada en `supabase/README.md`.
+
+El envío administrativo inmediato y su seguimiento reutilizando la cola están en
+`supabase/migrations/20260714000300_add_immediate_admin_push_notifications.sql`.
+
+La preferencia independiente para avisos administrativos está en
+`supabase/migrations/20260714000400_add_admin_announcement_preference.sql`.
 
 ### Anuncios De Funcionalidad
 
@@ -497,7 +505,7 @@ Responsabilidades:
 - Editar u ocultar posts mediante soft delete.
 - Buscar usuarios y abrir sus dashboards en vista admin.
 - Revisar reportes pendientes y marcarlos como resueltos o descartados.
-- Crear, previsualizar, editar y cancelar campañas push programadas.
+- Enviar campañas push al instante o crear, previsualizar, editar y cancelar campañas programadas.
 
 Tablas:
 

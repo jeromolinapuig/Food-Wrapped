@@ -42,7 +42,8 @@
       "likes": "Mi piace sui miei post",
       "comments": "Commenti sui miei post",
       "follows": "Nuovi follower",
-      "groupInvites": "Inviti ai gruppi"
+      "groupInvites": "Inviti ai gruppi",
+      "adminAnnouncements": "Avvisi e novità dell’app"
     }
   }
 }

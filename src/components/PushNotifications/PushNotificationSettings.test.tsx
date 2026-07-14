@@ -11,6 +11,7 @@ const { pushMocks, supabaseMock } = vi.hoisted(() => ({
   },
   supabaseMock: {
     from: vi.fn(),
+    upsert: vi.fn(),
   },
 }));
 
@@ -33,6 +34,7 @@ vi.mock('@mui/icons-material', () => ({
 
 describe('PushNotificationSettings', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     Object.defineProperty(window, 'Notification', {
       configurable: true,
       value: { permission: 'default' },
@@ -40,13 +42,14 @@ describe('PushNotificationSettings', () => {
     pushMocks.getCurrentPushSubscription.mockResolvedValue(null);
     pushMocks.subscribeToPushNotifications.mockResolvedValue({ endpoint: 'endpoint' });
     pushMocks.unsubscribeFromPushNotifications.mockResolvedValue(undefined);
+    supabaseMock.upsert.mockResolvedValue({ data: null, error: null });
     supabaseMock.from.mockImplementation(() => ({
       select: () => ({
         eq: () => ({
           maybeSingle: async () => ({ data: null, error: null }),
         }),
       }),
-      upsert: async () => ({ data: null, error: null }),
+      upsert: supabaseMock.upsert,
     }));
   });
 
@@ -61,15 +64,19 @@ describe('PushNotificationSettings', () => {
     expect(await screen.findByText('notifications.push.activated')).toBeInTheDocument();
   });
 
-  it('persists per-event preferences', async () => {
+  it('persists the admin announcement preference separately', async () => {
     const user = userEvent.setup();
     render(<PushNotificationSettings userId="user-1" />);
 
     const toggles = await screen.findAllByRole('checkbox');
-    await user.click(toggles[0]);
+    expect(toggles).toHaveLength(5);
+    await user.click(toggles[4]);
 
     await waitFor(() => {
-      expect(supabaseMock.from).toHaveBeenCalledWith('notification_preferences');
+      expect(supabaseMock.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ admin_announcements_enabled: false }),
+        { onConflict: 'user_id' }
+      );
     });
   });
 });

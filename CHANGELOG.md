@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.8.1
+
+- Added an immediate-send option for admin Web Push campaigns, with explicit confirmation, delivery tracking and scheduled retry support.
+- Added a separate user preference for enabling or disabling administrative app announcements.
+
 ## 1.8.0
 
 - Added admin-created Web Push campaigns with device-local scheduling, future campaign editing and cancellation, delivery tracking, and single-device previews.

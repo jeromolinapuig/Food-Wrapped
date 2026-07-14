@@ -22,6 +22,7 @@ type NotificationPreferences = {
   comments_enabled: boolean;
   follows_enabled: boolean;
   group_invites_enabled: boolean;
+  admin_announcements_enabled: boolean;
 };
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -29,6 +30,7 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   comments_enabled: true,
   follows_enabled: true,
   group_invites_enabled: true,
+  admin_announcements_enabled: true,
 };
 
 const preferenceOptions: Array<{ key: keyof NotificationPreferences; label: string }> = [
@@ -36,6 +38,7 @@ const preferenceOptions: Array<{ key: keyof NotificationPreferences; label: stri
   { key: 'comments_enabled', label: 'comments' },
   { key: 'follows_enabled', label: 'follows' },
   { key: 'group_invites_enabled', label: 'groupInvites' },
+  { key: 'admin_announcements_enabled', label: 'adminAnnouncements' },
 ];
 
 export function PushNotificationSettings({ userId }: Readonly<PushNotificationSettingsProps>) {
@@ -58,7 +61,7 @@ export function PushNotificationSettings({ userId }: Readonly<PushNotificationSe
       setLoading(true);
       const { data, error } = await supabase
         .from('notification_preferences')
-        .select('likes_enabled, comments_enabled, follows_enabled, group_invites_enabled')
+        .select('likes_enabled, comments_enabled, follows_enabled, group_invites_enabled, admin_announcements_enabled')
         .eq('user_id', userId)
         .maybeSingle();
       if (cancelled) return;

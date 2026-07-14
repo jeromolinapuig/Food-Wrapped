@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminNotificationsPage } from './AdminNotificationsPage';
@@ -34,6 +34,7 @@ const scheduledCampaign = {
   body: 'Ya puedes consultar tu resumen.',
   target_url: '/feed',
   scheduled_for_local: '2099-07-20T20:00:00',
+  delivery_mode: 'scheduled',
   status: 'scheduled',
   created_at: '2099-07-14T10:00:00Z',
   queued_count: 4,
@@ -48,7 +49,12 @@ describe('AdminNotificationsPage', () => {
     pushMocks.syncCurrentPushSubscription.mockResolvedValue(null);
     pushMocks.getCurrentPushSubscription.mockResolvedValue({ endpoint: 'admin-endpoint' });
     pushMocks.subscribeToPushNotifications.mockResolvedValue({ endpoint: 'admin-endpoint' });
-    supabaseMock.functions.invoke.mockResolvedValue({ data: { sent: true }, error: null });
+    supabaseMock.functions.invoke.mockImplementation(async (functionName: string) => ({
+      data: functionName === 'send-admin-push-now'
+        ? { sent: 3, skipped: 1, failed: 0 }
+        : { sent: true },
+      error: null,
+    }));
     supabaseMock.rpc.mockImplementation(async (functionName: string) => {
       if (functionName === 'admin_list_notification_campaigns') {
         return { data: [scheduledCampaign], error: null };
@@ -94,6 +100,31 @@ describe('AdminNotificationsPage', () => {
       },
     });
     expect(await screen.findByText('Prueba enviada a este dispositivo.')).toBeInTheDocument();
+  });
+
+  it('sends an immediate notification after explicit confirmation', async () => {
+    const user = userEvent.setup();
+    render(<AdminNotificationsPage session={session as never} />);
+
+    const modeSelector = await screen.findByRole('group', { name: 'Tipo de envío' });
+    await user.click(within(modeSelector).getByRole('button', { name: 'Enviar ahora' }));
+    await user.type(screen.getByLabelText('Mensaje'), 'Aviso inmediato');
+
+    const sendButtons = screen.getAllByRole('button', { name: 'Enviar ahora' });
+    await user.click(sendButtons[sendButtons.length - 1]);
+    const confirmationTitle = await screen.findByText('Enviar notificación ahora');
+    const confirmation = confirmationTitle.closest('.bw-confirm-modal');
+    expect(confirmation).not.toBeNull();
+    await user.click(within(confirmation as HTMLElement).getByRole('button', { name: 'Enviar ahora' }));
+
+    expect(supabaseMock.functions.invoke).toHaveBeenCalledWith('send-admin-push-now', {
+      body: {
+        title: 'Burger Wrapped',
+        body: 'Aviso inmediato',
+        targetUrl: '/',
+      },
+    });
+    expect(await screen.findByText('Envío iniciado: 3 enviadas, 1 omitidas y 0 fallidas.')).toBeInTheDocument();
   });
 
   it('loads a future campaign into the editor and saves its changes', async () => {

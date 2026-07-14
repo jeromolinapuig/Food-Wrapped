@@ -42,7 +42,8 @@
       "likes": "Likes on my posts",
       "comments": "Comments on my posts",
       "follows": "New followers",
-      "groupInvites": "Group invitations"
+      "groupInvites": "Group invitations",
+      "adminAnnouncements": "App announcements and updates"
     }
   }
 }

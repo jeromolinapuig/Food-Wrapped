@@ -42,7 +42,8 @@
       "likes": "J'aime sur mes publications",
       "comments": "Commentaires sur mes publications",
       "follows": "Nouveaux abonnés",
-      "groupInvites": "Invitations à des groupes"
+      "groupInvites": "Invitations à des groupes",
+      "adminAnnouncements": "Annonces et nouveautés de l’application"
     }
   }
 }

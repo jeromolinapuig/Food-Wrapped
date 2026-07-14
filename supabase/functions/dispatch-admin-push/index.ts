@@ -1,25 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.89.0';
-import { getWebPushStatusCode, sendAdminPush } from '../_shared/adminPush.ts';
-
-type ClaimedDelivery = {
-  delivery_id: string;
-  subscription_id: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  title: string;
-  body: string;
-  target_url: string;
-  campaign_id: string;
-  push_enabled: boolean;
-  attempt_count: number;
-};
-
-const processInChunks = async <T>(items: T[], size: number, callback: (item: T) => Promise<void>) => {
-  for (let index = 0; index < items.length; index += size) {
-    await Promise.all(items.slice(index, index + size).map(callback));
-  }
-};
+import {
+  processAdminDeliveries,
+  type ClaimedAdminDelivery,
+} from '../_shared/processAdminDeliveries.ts';
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') {
@@ -55,64 +38,12 @@ Deno.serve(async (request) => {
       return new Response('Database error', { status: 500 });
     }
 
-    const deliveries = (data ?? []) as ClaimedDelivery[];
+    const deliveries = (data ?? []) as ClaimedAdminDelivery[];
     claimed += deliveries.length;
-
-    await processInChunks(deliveries, 25, async (delivery) => {
-      if (!delivery.push_enabled) {
-        skipped += 1;
-        await supabase
-          .from('admin_notification_deliveries')
-          .update({
-            status: 'skipped',
-            error_message: 'Global push preference disabled',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', delivery.delivery_id);
-        return;
-      }
-
-      try {
-        await sendAdminPush(delivery, {
-          title: delivery.title,
-          body: delivery.body,
-          targetUrl: delivery.target_url,
-          tag: `burger-wrapped-campaign-${delivery.campaign_id}`,
-        });
-        sent += 1;
-        await supabase
-          .from('admin_notification_deliveries')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            error_message: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', delivery.delivery_id);
-      } catch (sendError) {
-        const statusCode = getWebPushStatusCode(sendError);
-        if (statusCode === 404 || statusCode === 410) {
-          skipped += 1;
-          await supabase.from('push_subscriptions').delete().eq('id', delivery.subscription_id);
-          return;
-        }
-
-        failed += 1;
-        console.error('Scheduled admin push failed', {
-          deliveryId: delivery.delivery_id,
-          statusCode,
-          error: sendError,
-        });
-        await supabase
-          .from('admin_notification_deliveries')
-          .update({
-            status: 'failed',
-            error_message: sendError instanceof Error ? sendError.message.slice(0, 500) : 'Push delivery failed',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', delivery.delivery_id);
-      }
-    });
+    const batchResult = await processAdminDeliveries(supabase, deliveries);
+    sent += batchResult.sent;
+    skipped += batchResult.skipped;
+    failed += batchResult.failed;
 
     if (deliveries.length < 500) {
       break;

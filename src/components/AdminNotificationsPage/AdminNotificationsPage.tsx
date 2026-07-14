@@ -20,6 +20,7 @@ type AdminNotificationsPageProps = {
 };
 
 type CampaignStatus = 'scheduled' | 'completed' | 'cancelled';
+type DeliveryMode = 'scheduled' | 'immediate';
 
 type NotificationCampaign = {
   id: string;
@@ -27,6 +28,7 @@ type NotificationCampaign = {
   body: string;
   target_url: string;
   scheduled_for_local: string;
+  delivery_mode: DeliveryMode;
   status: CampaignStatus;
   created_at: string;
   queued_count: number;
@@ -85,8 +87,10 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsPageProps>) {
   const [campaigns, setCampaigns] = useState<NotificationCampaign[]>([]);
   const [form, setForm] = useState<CampaignForm>(getInitialForm);
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('scheduled');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [cancelCampaign, setCancelCampaign] = useState<NotificationCampaign | null>(null);
+  const [confirmImmediate, setConfirmImmediate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -131,6 +135,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
 
   const resetForm = () => {
     setEditingId(null);
+    setDeliveryMode('scheduled');
     setForm(getInitialForm());
     setError(null);
   };
@@ -193,6 +198,52 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
     setSaving(false);
   };
 
+  const requestImmediateSend = () => {
+    const validationError = validateContent();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setConfirmImmediate(true);
+  };
+
+  const handleSendNow = async () => {
+    setConfirmImmediate(false);
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    const { data, error: sendError } = await supabase.functions.invoke('send-admin-push-now', {
+      body: {
+        title: form.title.trim(),
+        body: form.body.trim(),
+        targetUrl: form.targetUrl.trim(),
+      },
+    });
+
+    if (sendError) {
+      setError(sendError.message);
+      setSaving(false);
+      return;
+    }
+
+    const result = data as { sent?: number; skipped?: number; failed?: number; error?: string } | null;
+    if (result?.error) {
+      setSuccess('La campaña se ha creado y el programador continuará intentando el envío.');
+      resetForm();
+      await loadCampaigns();
+      setSaving(false);
+      return;
+    }
+
+    const sent = Number(result?.sent ?? 0);
+    const skipped = Number(result?.skipped ?? 0);
+    const failed = Number(result?.failed ?? 0);
+    setSuccess(`Envío iniciado: ${sent} enviadas, ${skipped} omitidas y ${failed} fallidas.`);
+    resetForm();
+    await loadCampaigns();
+    setSaving(false);
+  };
+
   const handlePrepareDevice = async () => {
     setPreparingDevice(true);
     setError(null);
@@ -241,6 +292,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
 
   const handleEdit = (campaign: NotificationCampaign) => {
     setEditingId(campaign.id);
+    setDeliveryMode('scheduled');
     setForm({
       title: campaign.title,
       body: campaign.body,
@@ -275,7 +327,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
     <AppShell>
       <PageHeader
         title="Admin · Notificaciones"
-        subtitle="Programa campañas en la hora local de cada dispositivo"
+        subtitle="Envía avisos al instante o prográmalos en la hora local de cada dispositivo"
       />
 
       <main className="bw-main bw-admin-notifications">
@@ -284,11 +336,34 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
             <div>
               <h2>{editingId ? 'Editar notificación programada' : 'Nueva notificación'}</h2>
               <p className="bw-helper">
-                La fecha y la hora se interpretarán localmente en cada dispositivo suscrito.
+                {deliveryMode === 'scheduled'
+                  ? 'La fecha y la hora se interpretarán localmente en cada dispositivo suscrito.'
+                  : 'La notificación comenzará a enviarse a todos los dispositivos al confirmar.'}
               </p>
             </div>
             <Schedule aria-hidden="true" />
           </div>
+
+          {!editingId ? (
+            <div className="bw-admin-notification-mode" role="group" aria-label="Tipo de envío">
+              <button
+                type="button"
+                className={deliveryMode === 'immediate' ? 'is-active' : ''}
+                aria-pressed={deliveryMode === 'immediate'}
+                onClick={() => setDeliveryMode('immediate')}
+              >
+                Enviar ahora
+              </button>
+              <button
+                type="button"
+                className={deliveryMode === 'scheduled' ? 'is-active' : ''}
+                aria-pressed={deliveryMode === 'scheduled'}
+                onClick={() => setDeliveryMode('scheduled')}
+              >
+                Programar
+              </button>
+            </div>
+          ) : null}
 
           <div className="bw-field">
             <label className="bw-label" htmlFor="admin-notification-title">Título</label>
@@ -327,17 +402,19 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
             />
           </div>
 
-          <div className="bw-field">
-            <label className="bw-label" htmlFor="admin-notification-schedule">Fecha y hora local</label>
-            <input
-              id="admin-notification-schedule"
-              type="datetime-local"
-              className="bw-input"
-              min={minimumDateTime}
-              value={form.scheduledForLocal}
-              onChange={(event) => updateField('scheduledForLocal', event.target.value)}
-            />
-          </div>
+          {deliveryMode === 'scheduled' ? (
+            <div className="bw-field">
+              <label className="bw-label" htmlFor="admin-notification-schedule">Fecha y hora local</label>
+              <input
+                id="admin-notification-schedule"
+                type="datetime-local"
+                className="bw-input"
+                min={minimumDateTime}
+                value={form.scheduledForLocal}
+                onChange={(event) => updateField('scheduledForLocal', event.target.value)}
+              />
+            </div>
+          ) : null}
 
           {error ? <p className="bw-admin-notification-feedback is-error" role="alert">{error}</p> : null}
           {success ? <p className="bw-admin-notification-feedback is-success" role="status">{success}</p> : null}
@@ -368,10 +445,13 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
               type="button"
               className="bw-btn bw-btn-primary"
               disabled={saving || previewing}
-              onClick={() => void handleSave()}
+              onClick={() => deliveryMode === 'immediate' ? requestImmediateSend() : void handleSave()}
             >
-              <Schedule fontSize="small" />
-              {saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Programar notificación'}
+              {deliveryMode === 'immediate' ? <Send fontSize="small" /> : <Schedule fontSize="small" />}
+              {saving
+                ? deliveryMode === 'immediate' ? 'Enviando…' : 'Guardando…'
+                : deliveryMode === 'immediate' ? 'Enviar ahora'
+                  : editingId ? 'Guardar cambios' : 'Programar notificación'}
             </button>
             {editingId ? (
               <button type="button" className="bw-btn bw-btn-ghost" disabled={saving} onClick={resetForm}>
@@ -382,17 +462,19 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
         </section>
 
         <section className="bw-admin-notification-list" aria-labelledby="campaign-list-title">
-          <h2 id="campaign-list-title">Notificaciones programadas</h2>
+          <h2 id="campaign-list-title">Historial de notificaciones</h2>
           {loading ? <p className="bw-helper">Cargando notificaciones…</p> : null}
           {!loading && campaigns.length === 0 ? (
-            <div className="bw-card"><p className="bw-helper">Todavía no hay notificaciones programadas.</p></div>
+            <div className="bw-card"><p className="bw-helper">Todavía no hay notificaciones.</p></div>
           ) : null}
           {campaigns.map((campaign) => (
             <article className="bw-card bw-admin-notification-campaign" key={campaign.id}>
               <div className="bw-admin-notification-campaign-header">
                 <div>
                   <span className={`bw-admin-notification-status is-${campaign.status}`}>
-                    {statusLabels[campaign.status]}
+                    {campaign.delivery_mode === 'immediate' && campaign.status === 'scheduled'
+                      ? 'Enviando'
+                      : statusLabels[campaign.status]}
                   </span>
                   <h3>{campaign.title}</h3>
                 </div>
@@ -409,7 +491,11 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
               </div>
               <p>{campaign.body}</p>
               <dl className="bw-admin-notification-details">
-                <div><dt>Hora local</dt><dd>{formatScheduledLocal(campaign.scheduled_for_local)}</dd></div>
+                {campaign.delivery_mode === 'immediate' ? (
+                  <div><dt>Envío</dt><dd>Inmediato</dd></div>
+                ) : (
+                  <div><dt>Hora local</dt><dd>{formatScheduledLocal(campaign.scheduled_for_local)}</dd></div>
+                )}
                 <div><dt>Destino</dt><dd>{campaign.target_url}</dd></div>
                 <div><dt>Entregas</dt><dd>{campaign.sent_count} enviadas · {campaign.queued_count} pendientes</dd></div>
                 {campaign.failed_count > 0 ? <div><dt>Fallos</dt><dd>{campaign.failed_count}</dd></div> : null}
@@ -429,6 +515,23 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
           ))}
         </section>
       </main>
+
+      <ConfirmDialog
+        open={confirmImmediate}
+        onClose={() => setConfirmImmediate(false)}
+        title="Enviar notificación ahora"
+        message="La notificación empezará a enviarse inmediatamente a todos los dispositivos suscritos. Esta acción no se puede editar ni cancelar."
+        actions={(
+          <>
+            <button type="button" className="bw-btn bw-btn-ghost" onClick={() => setConfirmImmediate(false)}>
+              Volver
+            </button>
+            <button type="button" className="bw-btn bw-btn-primary" onClick={() => void handleSendNow()}>
+              Enviar ahora
+            </button>
+          </>
+        )}
+      />
 
       <ConfirmDialog
         open={Boolean(cancelCampaign)}

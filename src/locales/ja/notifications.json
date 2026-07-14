@@ -42,7 +42,8 @@
       "likes": "自分の投稿へのいいね",
       "comments": "自分の投稿へのコメント",
       "follows": "新しいフォロワー",
-      "groupInvites": "グループ招待"
+      "groupInvites": "グループ招待",
+      "adminAnnouncements": "アプリからのお知らせと最新情報"
     }
   }
 }
