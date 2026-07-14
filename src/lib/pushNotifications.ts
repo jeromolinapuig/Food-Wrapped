@@ -50,6 +50,14 @@ const dispatchSubscriptionChanged = () => {
   window.dispatchEvent(new CustomEvent(PUSH_SUBSCRIPTION_CHANGED_EVENT));
 };
 
+export const getDeviceTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
+
 export const getCurrentPushSubscription = async () => {
   if (getPushEnvironment() !== 'ready') return null;
   const registration = await navigator.serviceWorker.ready;
@@ -71,6 +79,7 @@ const registerSubscription = async (subscription: PushSubscription, userId: stri
     p_p256dh: p256dh,
     p_auth: auth,
     p_user_agent: navigator.userAgent,
+    p_timezone: getDeviceTimeZone(),
   });
 
   if (error) {

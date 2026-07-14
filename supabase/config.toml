@@ -2,3 +2,9 @@ project_id = "food-wrapped"
 
 [functions.send-push]
 verify_jwt = false
+
+[functions.preview-admin-push]
+verify_jwt = true
+
+[functions.dispatch-admin-push]
+verify_jwt = false

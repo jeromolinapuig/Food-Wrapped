@@ -33,6 +33,7 @@ vi.mock('@mui/icons-material', () => ({
   Home: () => null,
   LocalDining: () => null,
   MoreHoriz: () => null,
+  NotificationsActive: () => null,
   PersonOutline: () => null,
   PlaylistAdd: () => null,
   Search: () => null,

@@ -422,9 +422,12 @@ Archivo:
 - `src/components/NotificationsDrawer/NotificationsDrawer.tsx`
 - `src/components/PushNotifications/PushNotificationPrompt.tsx`
 - `src/components/PushNotifications/PushNotificationSettings.tsx`
+- `src/components/AdminNotificationsPage/AdminNotificationsPage.tsx`
 - `src/lib/pushNotifications.ts`
 - `public/sw.js`
 - `supabase/functions/send-push/index.ts`
+- `supabase/functions/preview-admin-push/index.ts`
+- `supabase/functions/dispatch-admin-push/index.ts`
 
 Responsabilidades:
 
@@ -435,6 +438,10 @@ Responsabilidades:
 - Registrar y retirar suscripciones por dispositivo.
 - Permitir elegir push de likes, comentarios, follows e invitaciones.
 - Enviar Web Push desde una Edge Function; las claves privadas VAPID nunca se exponen al cliente.
+- Permitir que un administrador cree, edite y cancele campañas push antes de que empiecen a enviarse.
+- Programar cada entrega en la fecha y hora local IANA registrada por cada dispositivo.
+- Previsualizar el título, mensaje y deep link exclusivamente en el dispositivo administrador actual.
+- Procesar las campañas programadas mediante un Cron de Supabase protegido por secreto y conservar el estado de cada entrega.
 
 Tablas:
 
@@ -448,9 +455,15 @@ Tablas:
 - `notifications`
 - `notification_preferences`
 - `push_subscriptions`
+- `admin_notification_campaigns`
+- `admin_notification_deliveries`
 
 La migracion, los triggers, las policies RLS y el backfill de la bandeja estan en
 `supabase/migrations/20260714000100_add_web_push_notifications.sql`.
+
+La programación administrativa, sus entregas por dispositivo y sus RPC protegidas están en
+`supabase/migrations/20260714000200_add_scheduled_admin_push_notifications.sql`. La configuración
+de secrets, despliegue y Cron está documentada en `supabase/README.md`.
 
 ### Anuncios De Funcionalidad
 
@@ -475,6 +488,7 @@ Archivos:
 - `src/components/AdminFeedPage/AdminFeedPage.tsx`
 - `src/components/AdminUsersPage/AdminUsersPage.tsx`
 - `src/components/AdminReportsPage/AdminReportsPage.tsx`
+- `src/components/AdminNotificationsPage/AdminNotificationsPage.tsx`
 
 Responsabilidades:
 
@@ -483,6 +497,7 @@ Responsabilidades:
 - Editar u ocultar posts mediante soft delete.
 - Buscar usuarios y abrir sus dashboards en vista admin.
 - Revisar reportes pendientes y marcarlos como resueltos o descartados.
+- Crear, previsualizar, editar y cancelar campañas push programadas.
 
 Tablas:
 
@@ -490,6 +505,8 @@ Tablas:
 - `entries`
 - `entry_comments` mediante el feed admin.
 - `entry_reports`
+- `admin_notification_campaigns`
+- `admin_notification_deliveries`
 
 ## Supabase: Tablas Usadas Por El Cliente
 
@@ -512,6 +529,8 @@ El cliente referencia estas tablas directamente:
 - `notifications`
 - `notification_preferences`
 - `push_subscriptions`
+- `admin_notification_campaigns`
+- `admin_notification_deliveries`
 - `restaurants`
 - `user_feature_announcements`
 

@@ -1,4 +1,4 @@
-import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, PersonOutline, PlaylistAdd, Search } from '@mui/icons-material';
+import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, NotificationsActive, PersonOutline, PlaylistAdd, Search } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -46,6 +46,7 @@ export function BottomNav({
     if (adminModeEnabled && isAdmin) {
       if (location.pathname.startsWith('/admin/users')) return 'admin-users';
       if (location.pathname.startsWith('/admin/reports')) return 'admin-reports';
+      if (location.pathname.startsWith('/admin/notifications')) return 'admin-notifications';
       if (location.pathname.startsWith('/profile')) return 'profile';
       return 'admin-feed';
     }
@@ -251,6 +252,15 @@ export function BottomNav({
         >
           <span className="bw-bottom-nav-icon"><EmojiEvents /></span>
           <span className="bw-bottom-nav-label">Reportes</span>
+        </button>
+        <button
+          type="button"
+          className={`bw-bottom-nav-item ${activeKey === 'admin-notifications' ? 'is-active' : ''}`}
+          onClick={() => handleClick('/admin/notifications')}
+          aria-label="Admin Notificaciones"
+        >
+          <span className="bw-bottom-nav-icon"><NotificationsActive /></span>
+          <span className="bw-bottom-nav-label">Avisos</span>
         </button>
         <button
           type="button"

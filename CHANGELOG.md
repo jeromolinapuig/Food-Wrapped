@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.8.0
+
+- Added admin-created Web Push campaigns with device-local scheduling, future campaign editing and cancellation, delivery tracking, and single-device previews.
+
 ## 1.7.0
 
 - Added opt-in Web Push notifications for likes, comments, follows and group invitations, including iOS Home Screen guidance, per-device subscriptions and user preferences.

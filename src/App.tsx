@@ -16,6 +16,7 @@ import { ProfilePage } from './components/ProfilePage/ProfilePage';
 import { PrivacyPage } from './components/PrivacyPage/PrivacyPage';
 import { UserDashboardPage } from './components/UserDashboardPage/UserDashboardPage';
 import { AdminFeedPage } from './components/AdminFeedPage/AdminFeedPage';
+import { AdminNotificationsPage } from './components/AdminNotificationsPage/AdminNotificationsPage';
 import { AdminReportsPage } from './components/AdminReportsPage/AdminReportsPage';
 import { AdminUsersPage } from './components/AdminUsersPage/AdminUsersPage';
 import { SavedPostsPage } from './components/SavedPostsPage/SavedPostsPage';
@@ -648,6 +649,10 @@ function App() {
         <Route
           path="/admin/reports"
           element={session && isAdmin && adminModeEnabled ? <AdminReportsPage session={session} /> : <Navigate to="/profile" replace />}
+        />
+        <Route
+          path="/admin/notifications"
+          element={session && isAdmin && adminModeEnabled ? <AdminNotificationsPage session={session} /> : <Navigate to="/profile" replace />}
         />
         <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
