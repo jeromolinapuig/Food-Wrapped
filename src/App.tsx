@@ -25,6 +25,7 @@ import { PostPage } from './components/PostPage/PostPage';
 import { SearchPage } from './components/SearchPage/SearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
 import { FeatureAnnouncementModal } from './components/FeatureAnnouncementModal/FeatureAnnouncementModal';
+import { PushNotificationPrompt } from './components/PushNotifications/PushNotificationPrompt';
 import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
@@ -664,6 +665,16 @@ function App() {
         open={showFeatureAnnouncement}
         onDismiss={dismissFeatureAnnouncement}
         onViewFeed={handleViewFeatureFeed}
+      />
+      <PushNotificationPrompt
+        userId={session?.user.id ?? null}
+        enabled={Boolean(
+          session &&
+          !isLoginRoute &&
+          !requiresUsername &&
+          !showFeatureAnnouncement &&
+          !location.pathname.startsWith('/admin')
+        )}
       />
     </>
   );

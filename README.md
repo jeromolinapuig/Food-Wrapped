@@ -15,6 +15,7 @@ Este README esta escrito como documentacion tecnica del proyecto. No incluye cre
 - CSS modular por componente mas estilos compartidos en `src/styles`.
 - Vercel Analytics.
 - Service Worker servido desde `public/sw.js`.
+- Web Push estandar con VAPID y una Supabase Edge Function.
 
 ## Scripts
 
@@ -42,6 +43,7 @@ Crear un `.env.local` local, sin subirlo al repositorio:
 VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=PUBLIC_SUPABASE_ANON_KEY
 VITE_HEART_AVATAR=false
+VITE_VAPID_PUBLIC_KEY=PUBLIC_VAPID_KEY
 ```
 
 Variables usadas:
@@ -49,6 +51,7 @@ Variables usadas:
 - `VITE_SUPABASE_URL`: URL publica del proyecto Supabase.
 - `VITE_SUPABASE_ANON_KEY`: clave anon/public de Supabase. Es publica en frontend, por lo que la seguridad debe vivir en RLS y policies.
 - `VITE_HEART_AVATAR`: feature flag opcional. Si es `true`, cambia la forma del avatar a corazon.
+- `VITE_VAPID_PUBLIC_KEY`: clave publica VAPID usada por el navegador para crear la suscripcion Web Push.
 
 Seguridad:
 
@@ -71,6 +74,7 @@ Responsabilidades:
 - Monta `App` dentro de `BrowserRouter` y `PreferencesProvider`.
 - Activa Vercel Analytics.
 - Registra `/sw.js` al cargar la pagina.
+- El Service Worker recibe eventos `push`, muestra la notificacion del sistema y abre el deep link al pulsarla.
 
 Cliente Supabase:
 
@@ -416,11 +420,21 @@ Tablas:
 Archivo:
 
 - `src/components/NotificationsDrawer/NotificationsDrawer.tsx`
+- `src/components/PushNotifications/PushNotificationPrompt.tsx`
+- `src/components/PushNotifications/PushNotificationSettings.tsx`
+- `src/lib/pushNotifications.ts`
+- `public/sw.js`
+- `supabase/functions/send-push/index.ts`
 
 Responsabilidades:
 
 - Mostrar notificaciones derivadas de likes, comentarios, follows, grupos o contexto de entradas.
 - Resolver nombres de usuarios y grupos.
+- Pedir permiso solo tras una accion explicita del usuario y mostrar antes un modal explicativo propio.
+- Guiar a usuarios de iPhone/iPad para instalar la PWA antes de pedir permiso.
+- Registrar y retirar suscripciones por dispositivo.
+- Permitir elegir push de likes, comentarios, follows e invitaciones.
+- Enviar Web Push desde una Edge Function; las claves privadas VAPID nunca se exponen al cliente.
 
 Tablas:
 
@@ -431,6 +445,12 @@ Tablas:
 - `entry_comments`
 - `follows`
 - `group_invitations`
+- `notifications`
+- `notification_preferences`
+- `push_subscriptions`
+
+La migracion, los triggers, las policies RLS y el backfill de la bandeja estan en
+`supabase/migrations/20260714000100_add_web_push_notifications.sql`.
 
 ### Anuncios De Funcionalidad
 
@@ -489,6 +509,9 @@ El cliente referencia estas tablas directamente:
 - `groups`
 - `monthly_frame_results`
 - `profiles`
+- `notifications`
+- `notification_preferences`
+- `push_subscriptions`
 - `restaurants`
 - `user_feature_announcements`
 
@@ -585,16 +608,17 @@ Antes de ejecutar el SQL en produccion, actualizar los valores de `eur_rates` co
 
 ## Realtime
 
-El feed, dashboard, grupos, follows y perfil usan canales Supabase:
+El feed, dashboard, grupos, follows, perfil y la bandeja de notificaciones usan canales Supabase:
 
 - `supabase.channel(...)`
-- `postgres_changes` sobre `entries`, `groups`, `group_members`, `group_invitations` y `follows`
+- `postgres_changes` sobre `entries`, `groups`, `group_members`, `group_invitations`, `follows` y `notifications`
 
 Uso:
 
 - Refrescar feed cuando cambian entradas.
 - Refrescar grupos e invitaciones cuando cambia la membresia o las invitaciones.
 - Refrescar contadores/listas de follows cuando cambian relaciones entre usuarios.
+- Refrescar el indicador de notificaciones cuando se inserta un aviso para el usuario actual.
 - Evitar refrescos excesivos con throttling local.
 
 Seguridad:
@@ -712,6 +736,7 @@ Variables necesarias en produccion:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_HEART_AVATAR` si se quiere activar el flag
+- `VITE_VAPID_PUBLIC_KEY` con la misma clave publica configurada en los secrets de la Edge Function
 
 No configurar claves privadas en variables `VITE_*`.
 
@@ -760,6 +785,9 @@ No son SQL final del proyecto, solo criterios que deberian existir:
 - `entries.update/delete`: solo propietario o admin.
 - `profiles.update`: solo `id = auth.uid()` para campos editables.
 - `entry_likes` y `entry_bookmarks`: `user_id = auth.uid()`.
+- `notifications`: cada usuario solo puede leer, marcar como leidas o borrar las suyas; no puede crear avisos directamente.
+- `notification_preferences`: cada usuario solo puede gestionar sus propias preferencias.
+- `push_subscriptions`: el cliente solo registra y elimina su dispositivo mediante RPC autenticadas.
 - `group_invitations`: invitado solo puede ver/aceptar sus invitaciones; owner/admin del grupo puede crear invitaciones.
 - Storage `avatars`: usuario solo puede escribir en su prefijo.
 - Storage `food-photos`: usuario solo puede subir fotos asociadas a sus propias entradas o a su prefijo.

@@ -377,57 +377,18 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   }, [session.user.id]);
 
   const loadNotificationsMeta = useCallback(async () => {
-    const notificationsEntriesQuery = whereNotDeleted(
-      supabase
-      .from('entries')
-      .select('id')
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('created_at')
       .eq('user_id', session.user.id)
-      .order('datetime', { ascending: false })
-      .limit(200)
-    );
-    const { data: entryRows, error: entryError } = await notificationsEntriesQuery;
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (entryError) {
-      console.error('Error loading notification entries', entryError);
+    if (error) {
+      console.error('Error loading notification metadata', error);
       return;
     }
-
-    const entryIds = (entryRows ?? []).map((row) => (row as { id: string }).id);
-
-    const [likesResponse, followsResponse, invitesResponse] = await Promise.all([
-      entryIds.length
-        ? supabase
-            .from('entry_likes')
-            .select('created_at')
-            .in('entry_id', entryIds)
-            .neq('user_id', session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-        : Promise.resolve({ data: [], error: null }),
-      supabase
-        .from('follows')
-        .select('created_at')
-        .eq('following_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('group_invitations')
-        .select('created_at')
-        .eq('invitee_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1),
-    ]);
-
-    const timestamps = [
-      (likesResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
-      (followsResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
-      (invitesResponse.data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null,
-    ].filter(Boolean) as string[];
-
-    const latest = timestamps.length
-      ? [...timestamps].sort((a, b) => a.localeCompare(b)).at(-1) ?? null
-      : null;
-    setNotificationsLatest(latest ?? null);
+    setNotificationsLatest((data?.[0] as { created_at?: string | null } | undefined)?.created_at ?? null);
   }, [session.user.id]);
 
   const loadHeaderUsername = useCallback(async () => {
@@ -591,6 +552,26 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   useEffect(() => {
     loadNotificationsMeta();
   }, [loadNotificationsMeta]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`dashboard-notifications-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => void loadNotificationsMeta()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadNotificationsMeta, session.user.id]);
 
   useEffect(() => {
     if (!notificationsOpen) return;

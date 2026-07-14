@@ -3,7 +3,6 @@ import { ChatBubbleOutline, Favorite, GroupAdd, Notifications, PersonAdd } from 
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
-import { whereNotDeleted } from '../../lib/whereNotDeleted';
 import '../../styles/shared.css';
 import './NotificationsDrawer.css';
 
@@ -54,6 +53,16 @@ type ProfileRow = {
   display_name: string | null;
 };
 
+type DatabaseNotificationRow = {
+  id: string;
+  type: 'like' | 'comment' | 'follow' | 'group_invite';
+  actor_id: string | null;
+  entry_id: string | null;
+  group_id: string | null;
+  invitation_id: string | null;
+  created_at: string | null;
+};
+
 export function NotificationsDrawer({
   open,
   currentUserId,
@@ -80,120 +89,67 @@ export function NotificationsDrawer({
     setLoading(true);
     setError(null);
 
-    let entriesQuery = supabase
-      .from('entries')
-      .select('id, datetime')
+    const { data, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('id, type, actor_id, entry_id, group_id, invitation_id, created_at')
       .eq('user_id', currentUserId)
-      ;
-    entriesQuery = whereNotDeleted(entriesQuery);
-    entriesQuery = entriesQuery.order('datetime', { ascending: false }).limit(200);
-    const { data: entryRows, error: entriesError } = await entriesQuery;
+      .order('created_at', { ascending: false })
+      .limit(200);
 
-    if (entriesError) {
-      setError('No se pudieron cargar las notificaciones.');
-      setLoading(false);
-      return;
-    }
-
-    const entryIds = (entryRows ?? []).map((row) => (row as { id: string }).id);
-
-    const [likesResponse, commentsResponse, followsResponse, invitesResponse] = await Promise.all([
-      entryIds.length
-        ? supabase
-            .from('entry_likes')
-            .select('entry_id, user_id, created_at')
-            .in('entry_id', entryIds)
-            .neq('user_id', currentUserId)
-            .order('created_at', { ascending: false })
-            .limit(200)
-        : Promise.resolve({ data: [], error: null }),
-      entryIds.length
-        ? supabase
-            .from('entry_comments')
-            .select('entry_id, user_id, created_at')
-            .in('entry_id', entryIds)
-            .neq('user_id', currentUserId)
-            .order('created_at', { ascending: false })
-            .limit(200)
-        : Promise.resolve({ data: [], error: null }),
-      supabase
-        .from('follows')
-        .select('follower_id, created_at')
-        .eq('following_id', currentUserId)
-        .order('created_at', { ascending: false })
-        .limit(50),
-      supabase
-        .from('group_invitations')
-        .select('id, group_id, inviter_id, created_at')
-        .eq('invitee_id', currentUserId)
-        .order('created_at', { ascending: false })
-        .limit(50),
-    ]);
-
-    if (likesResponse.error || commentsResponse.error || followsResponse.error || invitesResponse.error) {
-      console.error(
-        'Error loading notifications',
-        likesResponse.error ?? commentsResponse.error ?? followsResponse.error ?? invitesResponse.error
-      );
+    if (notificationsError) {
+      console.error('Error loading notifications', notificationsError);
       setError(t('notifications.loading'));
       setLoading(false);
       return;
     }
 
+    const rows = (data ?? []) as DatabaseNotificationRow[];
+
     const likesByEntry = new Map<string, { likerIds: string[]; createdAt: string | null }>();
-    const likerSet = new Set<string>();
-    (likesResponse.data ?? []).forEach((row) => {
-      const typed = row as { entry_id: string; user_id: string; created_at: string | null };
-      if (!typed.entry_id || !typed.user_id) return;
-      if (typed.user_id === currentUserId) return;
-      likerSet.add(typed.user_id);
-      const existing = likesByEntry.get(typed.entry_id);
-      if (!existing) {
-        likesByEntry.set(typed.entry_id, { likerIds: [typed.user_id], createdAt: typed.created_at ?? null });
-        return;
-      }
-      if (!existing.likerIds.includes(typed.user_id)) {
-        existing.likerIds.push(typed.user_id);
-      }
-      if (typed.created_at && (!existing.createdAt || typed.created_at > existing.createdAt)) {
-        existing.createdAt = typed.created_at;
-      }
-    });
-
     const commentsByEntry = new Map<string, { commenterIds: string[]; createdAt: string | null }>();
-    const commenterSet = new Set<string>();
-    (commentsResponse.data ?? []).forEach((row) => {
-      const typed = row as { entry_id: string; user_id: string; created_at: string | null };
-      if (!typed.entry_id || !typed.user_id) return;
-      if (typed.user_id === currentUserId) return;
-      commenterSet.add(typed.user_id);
-      const existing = commentsByEntry.get(typed.entry_id);
+    const actorIds = new Set<string>();
+    const groupIds = new Set<string>();
+
+    rows.forEach((row) => {
+      if (row.actor_id) actorIds.add(row.actor_id);
+      if (row.group_id) groupIds.add(row.group_id);
+      if (row.type !== 'like' || !row.entry_id || !row.actor_id) return;
+      const existing = likesByEntry.get(row.entry_id);
       if (!existing) {
-        commentsByEntry.set(typed.entry_id, { commenterIds: [typed.user_id], createdAt: typed.created_at ?? null });
+        likesByEntry.set(row.entry_id, { likerIds: [row.actor_id], createdAt: row.created_at });
         return;
       }
-      if (!existing.commenterIds.includes(typed.user_id)) {
-        existing.commenterIds.push(typed.user_id);
+      if (!existing.likerIds.includes(row.actor_id)) {
+        existing.likerIds.push(row.actor_id);
       }
-      if (typed.created_at && (!existing.createdAt || typed.created_at > existing.createdAt)) {
-        existing.createdAt = typed.created_at;
+      if (row.created_at && (!existing.createdAt || row.created_at > existing.createdAt)) {
+        existing.createdAt = row.created_at;
       }
     });
 
-    const followRows = (followsResponse.data ?? []) as { follower_id: string; created_at: string | null }[];
-    const followerIds = followRows.map((row) => row.follower_id);
-    const inviteRows = (invitesResponse.data ?? []) as { id: string; inviter_id: string; group_id: string; created_at: string | null }[];
-    const inviterIds = inviteRows.map((row) => row.inviter_id);
-    const groupIds = inviteRows.map((row) => row.group_id);
+    rows.forEach((row) => {
+      if (row.type !== 'comment' || !row.entry_id || !row.actor_id) return;
+      const existing = commentsByEntry.get(row.entry_id);
+      if (!existing) {
+        commentsByEntry.set(row.entry_id, { commenterIds: [row.actor_id], createdAt: row.created_at });
+        return;
+      }
+      if (!existing.commenterIds.includes(row.actor_id)) {
+        existing.commenterIds.push(row.actor_id);
+      }
+      if (row.created_at && (!existing.createdAt || row.created_at > existing.createdAt)) {
+        existing.createdAt = row.created_at;
+      }
+    });
 
-    const userIds = Array.from(new Set([...likerSet, ...commenterSet, ...followerIds, ...inviterIds].filter(Boolean)));
+    const userIds = Array.from(actorIds);
 
     const [profilesResponse, groupsResponse] = await Promise.all([
       userIds.length
         ? supabase.from('profiles').select('id, username, display_name').in('id', userIds)
         : Promise.resolve({ data: [], error: null }),
-      groupIds.length
-        ? supabase.from('groups').select('id, name').in('id', groupIds)
+      groupIds.size
+        ? supabase.from('groups').select('id, name').in('id', Array.from(groupIds))
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -231,20 +187,25 @@ export function NotificationsDrawer({
       createdAt: data.createdAt,
     }));
 
-    const followItems: NotificationItem[] = followRows.map((row) => ({
-      id: `follow-${row.follower_id}`,
+    const followItems: NotificationItem[] = rows.filter(
+      (row): row is DatabaseNotificationRow & { actor_id: string } => row.type === 'follow' && Boolean(row.actor_id)
+    ).map((row) => ({
+      id: row.id,
       type: 'follow',
-      userId: row.follower_id,
-      createdAt: row.created_at ?? null,
+      userId: row.actor_id,
+      createdAt: row.created_at,
     }));
 
-    const inviteItems: NotificationItem[] = inviteRows.map((row) => ({
-      id: `invite-${row.id}`,
+    const inviteItems: NotificationItem[] = rows.filter(
+      (row): row is DatabaseNotificationRow & { actor_id: string; group_id: string } =>
+        row.type === 'group_invite' && Boolean(row.actor_id) && Boolean(row.group_id)
+    ).map((row) => ({
+      id: row.id,
       type: 'invite',
-      inviteId: row.id,
-      inviterId: row.inviter_id,
+      inviteId: row.invitation_id ?? row.id,
+      inviterId: row.actor_id,
       groupId: row.group_id,
-      createdAt: row.created_at ?? null,
+      createdAt: row.created_at,
     }));
 
     const combined = [...likeItems, ...commentItems, ...followItems, ...inviteItems].sort((a, b) => {
@@ -260,8 +221,9 @@ export function NotificationsDrawer({
       return acc;
     }, null);
     onLatestChange?.(latest);
+
     setLoading(false);
-  }, [currentUserId, onLatestChange]);
+  }, [currentUserId, onLatestChange, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -269,6 +231,21 @@ export function NotificationsDrawer({
       void loadNotifications();
     });
   }, [loadNotifications, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const markAsRead = async () => {
+      const { error: markReadError } = await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('user_id', currentUserId)
+        .is('read_at', null);
+      if (markReadError) {
+        console.error('Error marking notifications as read', markReadError);
+      }
+    };
+    void markAsRead();
+  }, [currentUserId, open]);
 
   useEffect(() => {
     startTransition(() => {

@@ -10,5 +10,39 @@
   "commentedMany": "{{name}} and many others commented on your post.",
   "followed": "@{{name}} followed you.",
   "invited": "@{{inviter}} invited you to join {{group}}.",
-  "yourGroup": "your group"
+  "yourGroup": "your group",
+  "push": {
+    "promptTitle": "Turn on notifications",
+    "promptDescription": "Find out about new likes, comments, followers and group invitations even when Burger Wrapped is closed.",
+    "installTitle": "Add Burger Wrapped to your Home Screen",
+    "installDescription": "On iPhone and iPad, notifications are available from the installed Home Screen app.",
+    "installStepShare": "Tap Safari's Share button.",
+    "installStepHome": "Choose Add to Home Screen.",
+    "installStepOpen": "Open Burger Wrapped from its new icon and turn on notifications.",
+    "notNow": "Not now",
+    "activate": "Turn on",
+    "activating": "Turning on...",
+    "activationError": "Notifications could not be enabled. Please try again.",
+    "permissionDenied": "Permission was denied. You can change it in your browser or system notification settings.",
+    "permissionDeniedSettings": "Notifications are blocked. Allow Burger Wrapped notifications in your browser or system settings.",
+    "settingsTitle": "Push notifications",
+    "settingsDescription": "Manage this device and choose which activity you want to receive.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "configurationMissing": "Push delivery has not been configured for this environment yet.",
+    "unsupported": "This browser does not support push notifications.",
+    "activateDevice": "Enable on this device",
+    "deactivateDevice": "Disable on this device",
+    "updating": "Updating...",
+    "activated": "Notifications are active on this device.",
+    "deactivated": "Notifications have been disabled on this device.",
+    "receiveTitle": "Notify me about",
+    "preferencesError": "Your notification preferences could not be saved.",
+    "preference": {
+      "likes": "Likes on my posts",
+      "comments": "Comments on my posts",
+      "follows": "New followers",
+      "groupInvites": "Group invitations"
+    }
+  }
 }

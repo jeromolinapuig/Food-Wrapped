@@ -52,6 +52,7 @@ vi.mock('@mui/icons-material', () => ({
   BookmarksOutlined: () => null,
   Check: () => null,
   Close: () => null,
+  PlaylistAdd: () => null,
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -98,6 +99,14 @@ vi.mock('../FollowListModal/FollowListModal', () => ({
   FollowListModal: ({ open, mode }: { open: boolean; mode: string | null }) => (
     <div>{open ? `follow-modal-${mode}` : 'follow-modal-closed'}</div>
   ),
+}));
+
+vi.mock('../PushNotifications/PushNotificationSettings', () => ({
+  PushNotificationSettings: () => <div>push-notification-settings</div>,
+}));
+
+vi.mock('../../lib/pushNotifications', () => ({
+  unregisterCurrentPushSubscription: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('react-easy-crop', () => ({

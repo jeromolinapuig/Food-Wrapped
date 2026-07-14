@@ -9,6 +9,40 @@
   "commentedPlural": "{{name}} และอีก {{count}} คนแสดงความคิดเห็นในโพสต์ของคุณ",
   "commentedMany": "{{name}} และอีกหลายคนแสดงความคิดเห็นในโพสต์ของคุณ",
   "followed": "@{{name}} ติดตามคุณ",
-  "invited": "@{{inviter}} เชิญคุณให้เข้าร่วม {{group}}",
-  "yourGroup": "กลุ่มของคุณ"
+  "invited": "@{{inviter}} เชิญคุณเข้าร่วม {{group}}",
+  "yourGroup": "กลุ่มของคุณ",
+  "push": {
+    "promptTitle": "เปิดการแจ้งเตือน",
+    "promptDescription": "รับแจ้งเตือนการถูกใจ ความคิดเห็น ผู้ติดตาม และคำเชิญ แม้ปิด Burger Wrapped อยู่",
+    "installTitle": "เพิ่ม Burger Wrapped ไปยังหน้าจอโฮม",
+    "installDescription": "บน iPhone และ iPad การแจ้งเตือนใช้ได้จากแอปที่เพิ่มไว้บนหน้าจอโฮม",
+    "installStepShare": "แตะปุ่มแชร์ใน Safari",
+    "installStepHome": "เลือกเพิ่มไปยังหน้าจอโฮม",
+    "installStepOpen": "เปิด Burger Wrapped จากไอคอนใหม่แล้วเปิดการแจ้งเตือน",
+    "notNow": "ไว้ภายหลัง",
+    "activate": "เปิดใช้งาน",
+    "activating": "กำลังเปิด...",
+    "activationError": "ไม่สามารถเปิดการแจ้งเตือนได้ โปรดลองอีกครั้ง",
+    "permissionDenied": "สิทธิ์ถูกปฏิเสธ คุณเปลี่ยนได้ในการตั้งค่าเบราว์เซอร์หรือระบบ",
+    "permissionDeniedSettings": "การแจ้งเตือนถูกบล็อก โปรดอนุญาต Burger Wrapped ในการตั้งค่าเบราว์เซอร์หรือระบบ",
+    "settingsTitle": "การแจ้งเตือนแบบพุช",
+    "settingsDescription": "จัดการอุปกรณ์นี้และเลือกกิจกรรมที่ต้องการรับ",
+    "active": "เปิดอยู่",
+    "inactive": "ปิดอยู่",
+    "configurationMissing": "ยังไม่ได้ตั้งค่าการส่งพุชสำหรับสภาพแวดล้อมนี้",
+    "unsupported": "เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบพุช",
+    "activateDevice": "เปิดบนอุปกรณ์นี้",
+    "deactivateDevice": "ปิดบนอุปกรณ์นี้",
+    "updating": "กำลังอัปเดต...",
+    "activated": "เปิดการแจ้งเตือนบนอุปกรณ์นี้แล้ว",
+    "deactivated": "ปิดการแจ้งเตือนบนอุปกรณ์นี้แล้ว",
+    "receiveTitle": "แจ้งเตือนฉันเกี่ยวกับ",
+    "preferencesError": "ไม่สามารถบันทึกการตั้งค่าการแจ้งเตือนได้",
+    "preference": {
+      "likes": "การถูกใจโพสต์ของฉัน",
+      "comments": "ความคิดเห็นในโพสต์ของฉัน",
+      "follows": "ผู้ติดตามใหม่",
+      "groupInvites": "คำเชิญเข้ากลุ่ม"
+    }
+  }
 }

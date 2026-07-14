@@ -1,7 +1,7 @@
 {
   "title": "Notificaciones",
   "loading": "Cargando notificaciones...",
-  "noNotifications": "No tienes notificaciones todavia.",
+  "noNotifications": "No tienes notificaciones todavía.",
   "likedSingle": "A {{name}} le ha gustado tu post.",
   "likedPlural": "A {{name}} y a {{count}} persona más les ha gustado tu post.",
   "likedMany": "A {{name}} y a muchos más les ha gustado tu post.",
@@ -9,6 +9,40 @@
   "commentedPlural": "{{name}} y {{count}} persona más comentaron tu post.",
   "commentedMany": "{{name}} y muchos más comentaron tu post.",
   "followed": "@{{name}} te ha seguido.",
-  "invited": "@{{name}} te ha invitado al grupo \"{{group}}\".",
-  "yourGroup": "tu grupo"
+  "invited": "@{{inviter}} te ha invitado al grupo «{{group}}».",
+  "yourGroup": "tu grupo",
+  "push": {
+    "promptTitle": "Activa las notificaciones",
+    "promptDescription": "Entérate de nuevos likes, comentarios, seguidores e invitaciones aunque Burger Wrapped esté cerrada.",
+    "installTitle": "Añade Burger Wrapped a tu pantalla de inicio",
+    "installDescription": "En iPhone y iPad, las notificaciones están disponibles desde la app instalada en la pantalla de inicio.",
+    "installStepShare": "Pulsa el botón Compartir de Safari.",
+    "installStepHome": "Selecciona Añadir a pantalla de inicio.",
+    "installStepOpen": "Abre Burger Wrapped desde el nuevo icono y activa las notificaciones.",
+    "notNow": "Ahora no",
+    "activate": "Activar",
+    "activating": "Activando...",
+    "activationError": "No se pudieron activar las notificaciones. Inténtalo de nuevo.",
+    "permissionDenied": "Has rechazado el permiso. Puedes cambiarlo en los ajustes de notificaciones del navegador o del sistema.",
+    "permissionDeniedSettings": "Las notificaciones están bloqueadas. Permite las notificaciones de Burger Wrapped desde los ajustes del navegador o del sistema.",
+    "settingsTitle": "Notificaciones push",
+    "settingsDescription": "Gestiona este dispositivo y elige qué actividad quieres recibir.",
+    "active": "Activas",
+    "inactive": "Inactivas",
+    "configurationMissing": "El envío push todavía no está configurado en este entorno.",
+    "unsupported": "Este navegador no admite notificaciones push.",
+    "activateDevice": "Activar en este dispositivo",
+    "deactivateDevice": "Desactivar en este dispositivo",
+    "updating": "Actualizando...",
+    "activated": "Las notificaciones están activas en este dispositivo.",
+    "deactivated": "Las notificaciones se han desactivado en este dispositivo.",
+    "receiveTitle": "Avisarme de",
+    "preferencesError": "No se pudieron guardar tus preferencias de notificaciones.",
+    "preference": {
+      "likes": "Likes en mis posts",
+      "comments": "Comentarios en mis posts",
+      "follows": "Nuevos seguidores",
+      "groupInvites": "Invitaciones a grupos"
+    }
+  }
 }

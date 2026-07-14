@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.7.0
+
+- Added opt-in Web Push notifications for likes, comments, follows and group invitations, including iOS Home Screen guidance, per-device subscriptions and user preferences.
+- Added a persistent Supabase notification inbox with database triggers, RLS policies, Realtime updates and an Edge Function delivery pipeline.
+
 ## 1.6.1
 
 - Changed feed post sharing to appear as a footer action with separate link and photo sharing options.

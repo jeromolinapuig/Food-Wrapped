@@ -1,0 +1,4 @@
+project_id = "food-wrapped"
+
+[functions.send-push]
+verify_jwt = false

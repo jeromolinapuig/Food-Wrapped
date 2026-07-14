@@ -11,10 +11,12 @@ import { PageHeader } from '../common/PageHeader';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { ModalBase } from '../common/ModalBase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { PushNotificationSettings } from '../PushNotifications/PushNotificationSettings';
 import { cropImageFile } from '../../utils/cropImage';
 import { compressImage } from '../../utils/image';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { lockBodyScroll } from '../../utils/scrollLock';
+import { unregisterCurrentPushSubscription } from '../../lib/pushNotifications';
 import { usePreferences } from '../../context/PreferencesContext';
 import {
   BURGER_BREAD_OPTIONS,
@@ -761,6 +763,7 @@ export function ProfilePage({
   };
   const handleSignOut = async () => {
     try {
+      await unregisterCurrentPushSubscription();
       await supabase.auth.signOut();
       sessionStorage.clear();
     } catch (err) {
@@ -1106,6 +1109,8 @@ export function ProfilePage({
                 </div>
                 <p className="bw-helper" style={{ marginTop: 6 }}>{t('profile.preferencesNote')}</p>
               </div>
+
+              <PushNotificationSettings userId={session.user.id} />
 
               {profile?.is_admin ? (
                 <div className="bw-privacy-toggle">

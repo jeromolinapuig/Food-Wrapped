@@ -31,82 +31,26 @@ vi.mock('../../utils/scrollLock', () => ({
 
 const setupSupabase = () => {
   supabaseMock.from.mockImplementation((table: string) => {
-    if (table === 'entries') {
-      return {
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              order: () => ({
-                limit: async () => ({
-                  data: [{ id: 'entry-1', datetime: '2026-02-01T10:00:00.000Z' }],
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
-    }
-
-    if (table === 'entry_likes') {
-      return {
-        select: () => ({
-          in: () => ({
-            neq: () => ({
-              order: () => ({
-                limit: async () => ({
-                  data: [{ entry_id: 'entry-1', user_id: 'u-like', created_at: '2026-02-03T09:00:00.000Z' }],
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
-    }
-
-    if (table === 'entry_comments') {
-      return {
-        select: () => ({
-          in: () => ({
-            neq: () => ({
-              order: () => ({
-                limit: async () => ({
-                  data: [{ entry_id: 'entry-1', user_id: 'u-comment', created_at: '2026-02-02T09:00:00.000Z' }],
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
-    }
-
-    if (table === 'follows') {
+    if (table === 'notifications') {
       return {
         select: () => ({
           eq: () => ({
             order: () => ({
               limit: async () => ({
-                data: [{ follower_id: 'u-follow', created_at: '2026-02-01T09:00:00.000Z' }],
+                data: [
+                  { id: 'n-like', type: 'like', actor_id: 'u-like', entry_id: 'entry-1', group_id: null, invitation_id: null, created_at: '2026-02-03T09:00:00.000Z' },
+                  { id: 'n-comment', type: 'comment', actor_id: 'u-comment', entry_id: 'entry-1', group_id: null, invitation_id: null, created_at: '2026-02-02T09:00:00.000Z' },
+                  { id: 'n-follow', type: 'follow', actor_id: 'u-follow', entry_id: null, group_id: null, invitation_id: null, created_at: '2026-02-01T09:00:00.000Z' },
+                  { id: 'n-invite', type: 'group_invite', actor_id: 'u-inviter', entry_id: null, group_id: 'g-1', invitation_id: 'inv-1', created_at: '2026-02-02T12:00:00.000Z' },
+                ],
                 error: null,
               }),
             }),
           }),
         }),
-      };
-    }
-
-    if (table === 'group_invitations') {
-      return {
-        select: () => ({
+        update: () => ({
           eq: () => ({
-            order: () => ({
-              limit: async () => ({
-                data: [{ id: 'inv-1', inviter_id: 'u-inviter', group_id: 'g-1', created_at: '2026-02-02T12:00:00.000Z' }],
-                error: null,
-              }),
-            }),
+            is: async () => ({ data: null, error: null }),
           }),
         }),
       };

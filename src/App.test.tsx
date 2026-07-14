@@ -60,6 +60,7 @@ vi.mock('./components/BurgerWishlistPage/BurgerWishlistPage', () => ({ BurgerWis
 vi.mock('./components/PostPage/PostPage', () => ({ PostPage: () => <div>post-page</div> }));
 vi.mock('./components/SearchPage/SearchPage', () => ({ SearchPage: () => <div>search-page</div> }));
 vi.mock('./components/MyTopBurgersPage/MyTopBurgersPage', () => ({ MyTopBurgersPage: () => <div>my-top-burgers-page</div> }));
+vi.mock('./components/PushNotifications/PushNotificationPrompt', () => ({ PushNotificationPrompt: () => null }));
 vi.mock('./components/common/AppShell', () => ({ AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
 vi.mock('./components/common/PageHeader', () => ({ PageHeader: ({ title }: { title: ReactNode }) => <h1>{title}</h1> }));
 vi.mock('./components/common/LockedPlaceholders', () => ({

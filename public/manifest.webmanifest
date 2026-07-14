@@ -1,7 +1,9 @@
 {
   "name": "Burger Wrapped",
   "short_name": "BurgerWrapped",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#050509",
   "theme_color": "#050509",

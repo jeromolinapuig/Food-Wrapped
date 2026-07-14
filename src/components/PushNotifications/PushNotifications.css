@@ -1,0 +1,145 @@
+.bw-push-prompt-modal {
+  height: auto;
+  max-height: calc(100vh - 24px);
+  gap: 16px;
+}
+
+.bw-push-prompt-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bw-accent-soft);
+  color: var(--bw-accent);
+  font-size: 38px;
+}
+
+.bw-push-prompt-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.bw-push-prompt-copy .bw-modal-title,
+.bw-push-prompt-copy .bw-modal-subtitle {
+  margin: 0;
+}
+
+.bw-push-install-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 24px;
+  color: var(--bw-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.bw-push-error {
+  margin: 0;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.bw-push-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bw-push-actions .bw-btn {
+  width: 100%;
+}
+
+.bw-push-settings {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  background: var(--bw-card-bg);
+}
+
+:root[data-theme='dark'] .bw-push-settings {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.bw-push-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bw-push-settings-header .bw-helper {
+  margin: 4px 0 0;
+}
+
+.bw-push-status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(171, 171, 171, 0.18);
+  color: var(--bw-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bw-push-status.is-active {
+  background: var(--bw-accent-soft);
+  color: var(--bw-accent);
+}
+
+.bw-push-info {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bw-accent-soft);
+  color: var(--bw-text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bw-push-preferences {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme='dark'] .bw-push-preferences {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.bw-push-preferences-title {
+  padding: 10px 0 4px;
+  color: var(--bw-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bw-push-preference-row {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--bw-text);
+  font-size: 14px;
+}
+
+.bw-push-settings-notice {
+  margin: 0;
+}
+
+@media (min-width: 900px) {
+  .bw-push-prompt-modal {
+    max-width: 460px;
+  }
+}
