@@ -136,33 +136,61 @@ export const subscribeToPushNotifications = async (userId: string) => {
     throw new PushNotificationError('unsupported', 'Push notifications are not available in this browser.');
   }
 
-  const subscribe = (registration: ServiceWorkerRegistration) => registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
-
-  // When the worker has already become ready, this starts subscribe() in the
-  // same call stack as the click. PushManager handles the native permission
-  // prompt itself in Safari, Chrome and other standards-based browsers.
-  const subscriptionPromise = readyServiceWorker
-    ? subscribe(readyServiceWorker)
-    : getReadyServiceWorker().then(subscribe);
-
-  let subscription: PushSubscription;
+  // WebKit only exposes a Home Screen web app in iOS notification settings
+  // after this native prompt has been requested from a direct user action.
+  // Keep this as the first asynchronous browser call in the activation flow.
+  let permission: NotificationPermission;
   try {
-    subscription = await subscriptionPromise;
+    permission = Notification.permission === 'granted'
+      ? 'granted'
+      : await Notification.requestPermission();
   } catch (error) {
-    const errorName = error instanceof DOMException ? error.name : '';
-    if (Notification.permission === 'denied' || errorName === 'NotAllowedError') {
+    if (Notification.permission === 'denied') {
       throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
     }
     throw new PushNotificationError(
       'subscription_failed',
-      error instanceof Error ? error.message : 'The browser could not create a push subscription.'
+      error instanceof Error ? error.message : 'The browser could not request notification permission.'
     );
   }
 
-  await registerSubscription(subscription, userId);
+  if (permission !== 'granted') {
+    if (permission === 'denied' || Notification.permission === 'denied') {
+      throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
+    }
+    throw new PushNotificationError('subscription_failed', 'Notification permission remains undecided.');
+  }
+
+  const registration = await getReadyServiceWorker();
+  let subscription = await registration.pushManager.getSubscription();
+  let createdSubscription = false;
+
+  if (!subscription) {
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      createdSubscription = true;
+    } catch (error) {
+      if (Notification.permission === 'denied') {
+        throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
+      }
+      throw new PushNotificationError(
+        'subscription_failed',
+        error instanceof Error ? error.message : 'The browser could not create a push subscription.'
+      );
+    }
+  }
+
+  try {
+    await registerSubscription(subscription, userId);
+  } catch (error) {
+    if (createdSubscription) {
+      await subscription.unsubscribe().catch(() => false);
+    }
+    throw error;
+  }
 
   dispatchSubscriptionChanged();
   return subscription;

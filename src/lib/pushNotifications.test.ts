@@ -22,10 +22,14 @@ const subscription = {
   unsubscribe: vi.fn(),
 } as unknown as PushSubscription;
 
-const prepareBrowser = (subscribe: ReturnType<typeof vi.fn>) => {
+const prepareBrowser = (
+  subscribe: ReturnType<typeof vi.fn>,
+  permission: NotificationPermission = 'default',
+  requestedPermission: NotificationPermission = 'granted'
+) => {
   const registration = {
     pushManager: {
-      getSubscription: vi.fn(),
+      getSubscription: vi.fn().mockResolvedValue(null),
       subscribe,
     },
   } as unknown as ServiceWorkerRegistration;
@@ -37,7 +41,7 @@ const prepareBrowser = (subscribe: ReturnType<typeof vi.fn>) => {
   Object.defineProperty(window, 'PushManager', { configurable: true, value: class PushManager {} });
   Object.defineProperty(window, 'Notification', {
     configurable: true,
-    value: { permission: 'default', requestPermission: vi.fn() },
+    value: { permission, requestPermission: vi.fn().mockResolvedValue(requestedPermission) },
   });
 };
 
@@ -50,14 +54,14 @@ describe('pushNotifications Safari-compatible subscription flow', () => {
     fromMock.mockReturnValue({ upsert: upsertMock });
   });
 
-  it('starts PushManager.subscribe without requesting permission separately', async () => {
+  it('requests notification permission from the activation before subscribing', async () => {
     const subscribe = vi.fn().mockResolvedValue(subscription);
     prepareBrowser(subscribe);
     const { subscribeToPushNotifications } = await import('./pushNotifications');
 
     await subscribeToPushNotifications('user-1');
 
-    expect(Notification.requestPermission).not.toHaveBeenCalled();
+    expect(Notification.requestPermission).toHaveBeenCalledOnce();
     expect(subscribe).toHaveBeenCalledWith({
       userVisibleOnly: true,
       applicationServerKey: new Uint8Array([1, 2, 3, 4]),
@@ -68,13 +72,27 @@ describe('pushNotifications Safari-compatible subscription flow', () => {
     );
   });
 
-  it('maps WebKit permission rejections to a permission error', async () => {
-    prepareBrowser(vi.fn().mockRejectedValue(new DOMException('Not allowed', 'NotAllowedError')));
+  it('does not tell the user to visit settings while permission remains undecided', async () => {
+    const subscribe = vi.fn();
+    prepareBrowser(subscribe, 'default', 'default');
+    const { subscribeToPushNotifications } = await import('./pushNotifications');
+
+    await expect(subscribeToPushNotifications('user-1')).rejects.toMatchObject({
+      code: 'subscription_failed',
+    });
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+
+  it('maps an actual notification denial to a permission error', async () => {
+    const subscribe = vi.fn();
+    prepareBrowser(subscribe, 'denied', 'denied');
     const { subscribeToPushNotifications } = await import('./pushNotifications');
 
     await expect(subscribeToPushNotifications('user-1')).rejects.toMatchObject({
       code: 'permission_denied',
     });
+    expect(Notification.requestPermission).toHaveBeenCalledOnce();
+    expect(subscribe).not.toHaveBeenCalled();
   });
 
   it('explains the minimum iOS version when an installed app has no Push API', async () => {
