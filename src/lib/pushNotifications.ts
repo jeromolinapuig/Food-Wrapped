@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 export const VAPID_PUBLIC_KEY = String(import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '').trim();
 export const PUSH_SUBSCRIPTION_CHANGED_EVENT = 'bw-push-subscription-changed';
 
-export type PushEnvironment = 'ready' | 'ios_requires_install' | 'unsupported';
+export type PushEnvironment = 'ready' | 'ios_requires_install' | 'ios_requires_update' | 'unsupported';
 
 export class PushNotificationError extends Error {
   readonly code: 'configuration' | 'permission_denied' | 'unsupported' | 'subscription_failed';
@@ -24,6 +24,14 @@ const isIos = () => {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
 
+const hasPushApis = () => (
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
+  'Notification' in window &&
+  'serviceWorker' in navigator &&
+  'PushManager' in window
+);
+
 export const isStandaloneApp = () => {
   if (typeof window === 'undefined') return false;
   const iosStandalone = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
@@ -33,11 +41,32 @@ export const isStandaloneApp = () => {
 export const getPushEnvironment = (): PushEnvironment => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return 'unsupported';
   if (isIos() && !isStandaloneApp()) return 'ios_requires_install';
-  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+  if (isIos() && !hasPushApis()) return 'ios_requires_update';
+  if (!hasPushApis()) {
     return 'unsupported';
   }
   return 'ready';
 };
+
+let readyServiceWorker: ServiceWorkerRegistration | null = null;
+let readyServiceWorkerPromise: Promise<ServiceWorkerRegistration> | null = null;
+
+const getReadyServiceWorker = () => {
+  if (readyServiceWorker) return Promise.resolve(readyServiceWorker);
+  if (!readyServiceWorkerPromise) {
+    readyServiceWorkerPromise = navigator.serviceWorker.ready.then((registration) => {
+      readyServiceWorker = registration;
+      return registration;
+    });
+  }
+  return readyServiceWorkerPromise;
+};
+
+// Keep the registration ready before the user taps the activation button. WebKit
+// requires PushManager.subscribe() to be started directly from that user gesture.
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  void getReadyServiceWorker().catch(() => undefined);
+}
 
 const urlBase64ToUint8Array = (value: string) => {
   const padding = '='.repeat((4 - (value.length % 4)) % 4);
@@ -60,7 +89,7 @@ export const getDeviceTimeZone = () => {
 
 export const getCurrentPushSubscription = async () => {
   if (getPushEnvironment() !== 'ready') return null;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getReadyServiceWorker();
   return registration.pushManager.getSubscription();
 };
 
@@ -107,31 +136,33 @@ export const subscribeToPushNotifications = async (userId: string) => {
     throw new PushNotificationError('unsupported', 'Push notifications are not available in this browser.');
   }
 
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
-  }
-
-  const registration = await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
-  let createdSubscription = false;
-
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
+  const subscribe = (registration: ServiceWorkerRegistration) => registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-    createdSubscription = true;
+
+  // When the worker has already become ready, this starts subscribe() in the
+  // same call stack as the click. PushManager handles the native permission
+  // prompt itself in Safari, Chrome and other standards-based browsers.
+  const subscriptionPromise = readyServiceWorker
+    ? subscribe(readyServiceWorker)
+    : getReadyServiceWorker().then(subscribe);
+
+  let subscription: PushSubscription;
+  try {
+    subscription = await subscriptionPromise;
+  } catch (error) {
+    const errorName = error instanceof DOMException ? error.name : '';
+    if (Notification.permission === 'denied' || errorName === 'NotAllowedError') {
+      throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
+    }
+    throw new PushNotificationError(
+      'subscription_failed',
+      error instanceof Error ? error.message : 'The browser could not create a push subscription.'
+    );
   }
 
-  try {
-    await registerSubscription(subscription, userId);
-  } catch (error) {
-    if (createdSubscription) {
-      await subscription.unsubscribe().catch(() => false);
-    }
-    throw error;
-  }
+  await registerSubscription(subscription, userId);
 
   dispatchSubscriptionChanged();
   return subscription;

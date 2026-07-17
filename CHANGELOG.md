@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.8.2
+
+- Fixed Web Push activation on iPhone and iPad by starting the subscription directly from the user action and showing the iOS 16.4 requirement when the platform APIs are unavailable.
+
 ## 1.8.1
 
 - Added an immediate-send option for admin Web Push campaigns, with explicit confirmation, delivery tracking and scheduled retry support.

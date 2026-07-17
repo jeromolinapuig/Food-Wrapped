@@ -134,6 +134,8 @@ export function PushNotificationSettings({ userId }: Readonly<PushNotificationSe
     ? 'configurationMissing'
     : environment === 'ios_requires_install'
       ? 'installDescription'
+      : environment === 'ios_requires_update'
+        ? 'iosRequiresUpdate'
       : environment === 'unsupported'
         ? 'unsupported'
         : Notification.permission === 'denied'

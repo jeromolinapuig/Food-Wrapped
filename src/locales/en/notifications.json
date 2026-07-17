@@ -30,6 +30,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "configurationMissing": "Push delivery has not been configured for this environment yet.",
+    "iosRequiresUpdate": "Web notifications require iOS or iPadOS 16.4 or later. Update the device, then reopen Burger Wrapped from its Home Screen icon.",
     "unsupported": "This browser does not support push notifications.",
     "activateDevice": "Enable on this device",
     "deactivateDevice": "Disable on this device",

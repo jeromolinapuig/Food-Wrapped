@@ -26,7 +26,13 @@ export function PushNotificationPrompt({ userId, enabled }: Readonly<PushNotific
   const environment = getPushEnvironment();
 
   useEffect(() => {
-    if (!userId || !enabled || !VAPID_PUBLIC_KEY || environment === 'unsupported') {
+    if (
+      !userId ||
+      !enabled ||
+      !VAPID_PUBLIC_KEY ||
+      environment === 'unsupported' ||
+      environment === 'ios_requires_update'
+    ) {
       setOpen(false);
       return;
     }
