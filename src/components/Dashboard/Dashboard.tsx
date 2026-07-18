@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ADD_ENTRY_NOTIFICATION_TARGET } from '../../constants/notificationTargets';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, House, LocalDining, LunchDining, Notifications, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -235,6 +236,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     setIsAddModalOpen(false);
     setEditingEntry(null);
   };
+
+  useEffect(() => {
+    const targetQuery = ADD_ENTRY_NOTIFICATION_TARGET.split('?')[1];
+    if (!targetQuery || location.search !== `?${targetQuery}`) return;
+
+    setEditingEntry(null);
+    setIsAddModalOpen(true);
+    navigate(location.pathname, { replace: true });
+  }, [location.pathname, location.search, navigate]);
 
   // --- Cargar entradas del año 2026 ---
   const loadEntries = useCallback(async (options?: { showLoading?: boolean }) => {

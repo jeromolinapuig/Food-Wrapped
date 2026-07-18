@@ -84,6 +84,28 @@ describe('AdminNotificationsPage', () => {
     });
   });
 
+  it('offers typed app destinations and schedules the add-entry action', async () => {
+    const user = userEvent.setup();
+    render(<AdminNotificationsPage session={session as never} />);
+
+    const target = await screen.findByRole('combobox', { name: 'Ruta al abrir' });
+    expect(within(target).getByRole('option', { name: 'Añadir una burger' })).toHaveValue('/?action=add-entry');
+    await user.selectOptions(target, '/?action=add-entry');
+    await user.type(screen.getByLabelText('Mensaje'), 'Vamos, registra tu burger de hoy');
+    await user.clear(screen.getByLabelText('Fecha y hora local'));
+    await user.type(screen.getByLabelText('Fecha y hora local'), '2099-08-01T20:00');
+    await user.click(screen.getByRole('button', { name: 'Programar notificación' }));
+
+    await waitFor(() => {
+      expect(supabaseMock.rpc).toHaveBeenCalledWith('admin_create_notification_campaign', {
+        p_title: 'Burger Wrapped',
+        p_body: 'Vamos, registra tu burger de hoy',
+        p_target_url: '/?action=add-entry',
+        p_scheduled_for_local: '2099-08-01T20:00:00',
+      });
+    });
+  });
+
   it('previews the current form only on the admin device', async () => {
     const user = userEvent.setup();
     render(<AdminNotificationsPage session={session as never} />);

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Edit, NotificationsActive, Schedule, Send } from '@mui/icons-material';
+import {
+  isNotificationTargetUrl,
+  NOTIFICATION_TARGET_OPTIONS,
+  type NotificationTargetUrl,
+} from '../../constants/notificationTargets';
 import { supabase } from '../../lib/supabaseClient';
 import {
   getCurrentPushSubscription,
@@ -41,7 +46,7 @@ type NotificationCampaign = {
 type CampaignForm = {
   title: string;
   body: string;
-  targetUrl: string;
+  targetUrl: NotificationTargetUrl;
   scheduledForLocal: string;
 };
 
@@ -140,7 +145,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
     setError(null);
   };
 
-  const updateField = (field: keyof CampaignForm, value: string) => {
+  const updateField = <Field extends keyof CampaignForm>(field: Field, value: CampaignForm[Field]) => {
     setForm((current) => ({ ...current, [field]: value }));
     setError(null);
     setSuccess(null);
@@ -153,8 +158,8 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
     if (!form.body.trim() || form.body.trim().length > 240) {
       return 'El mensaje debe tener entre 1 y 240 caracteres.';
     }
-    if (!form.targetUrl.startsWith('/') || form.targetUrl.startsWith('//')) {
-      return 'El enlace debe ser una ruta interna que empiece por /.';
+    if (!isNotificationTargetUrl(form.targetUrl)) {
+      return 'Elige una ruta válida de la aplicación.';
     }
     return null;
   };
@@ -296,7 +301,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
     setForm({
       title: campaign.title,
       body: campaign.body,
-      targetUrl: campaign.target_url,
+      targetUrl: isNotificationTargetUrl(campaign.target_url) ? campaign.target_url : '/',
       scheduledForLocal: campaign.scheduled_for_local.slice(0, 16),
     });
     setError(null);
@@ -392,14 +397,17 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
 
           <div className="bw-field">
             <label className="bw-label" htmlFor="admin-notification-url">Ruta al abrir</label>
-            <input
+            <select
               id="admin-notification-url"
-              className="bw-input"
-              maxLength={500}
+              className="bw-select"
               value={form.targetUrl}
-              onChange={(event) => updateField('targetUrl', event.target.value)}
-              placeholder="/feed"
-            />
+              onChange={(event) => updateField('targetUrl', event.target.value as NotificationTargetUrl)}
+            >
+              {NOTIFICATION_TARGET_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <span className="bw-helper">Se abrirá: {form.targetUrl}</span>
           </div>
 
           {deliveryMode === 'scheduled' ? (

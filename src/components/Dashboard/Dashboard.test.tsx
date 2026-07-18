@@ -5,6 +5,7 @@ import { Dashboard } from './Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 
 const navigateMock = vi.fn();
+const routerLocation = { pathname: '/dashboard', search: '' };
 
 vi.mock('@mui/icons-material', () => ({
   EmojiEvents: () => null,
@@ -44,7 +45,7 @@ function setTableResponses(table: string, responses: QueryResult[]) {
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
-  useLocation: () => ({ pathname: '/dashboard' }),
+  useLocation: () => routerLocation,
 }));
 
 vi.mock('../../lib/supabaseClient', () => ({
@@ -134,6 +135,8 @@ describe('Dashboard', () => {
   beforeEach(() => {
     const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
     navigateMock.mockReset();
+    routerLocation.pathname = '/dashboard';
+    routerLocation.search = '';
     fromMock.mockReset();
     fromMock.mockImplementation((table: string) => {
       const queue = tableQueues.get(table) ?? [];
@@ -233,5 +236,25 @@ describe('Dashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open-entry' }));
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-42', { state: { returnTo: '/dashboard' } });
+  });
+
+  it('abre el modal de creación desde el destino de una notificación', async () => {
+    routerLocation.pathname = '/';
+    routerLocation.search = '?action=add-entry';
+    setTableResponses('entries', [{ data: [], error: null }, { data: [], error: null }]);
+    setTableResponses('entry_bookmarks', [{ data: [], error: null }]);
+    setTableResponses('profiles', [{ data: { username: 'canon-user', display_name: null }, error: null }]);
+    setTableResponses('follows', [{ data: [], error: null }]);
+    setTableResponses('group_invitations', [{ data: [], error: null }]);
+
+    render(
+      <Dashboard
+        session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never}
+        theme="light"
+      />
+    );
+
+    expect(await screen.findByText('add-modal-open')).toBeInTheDocument();
+    expect(navigateMock).toHaveBeenCalledWith('/', { replace: true });
   });
 });
