@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.8.4
+
+- Fixed Web Push permission activation in Safari by starting the push subscription directly from the user's tap instead of requesting notification permission separately.
+- Improved the Spanish recovery guidance for notification permissions previously blocked on iPhone or iPad.
+
 ## 1.8.3
 
 - Fixed new restaurant confirmation so saving resumes automatically without losing the burger name or requiring the user to submit the post again.

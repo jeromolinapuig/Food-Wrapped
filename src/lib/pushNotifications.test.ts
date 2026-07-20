@@ -54,14 +54,14 @@ describe('pushNotifications Safari-compatible subscription flow', () => {
     fromMock.mockReturnValue({ upsert: upsertMock });
   });
 
-  it('requests notification permission from the activation before subscribing', async () => {
+  it('subscribes directly from the activation so WebKit can show its permission prompt', async () => {
     const subscribe = vi.fn().mockResolvedValue(subscription);
     prepareBrowser(subscribe);
     const { subscribeToPushNotifications } = await import('./pushNotifications');
 
     await subscribeToPushNotifications('user-1');
 
-    expect(Notification.requestPermission).toHaveBeenCalledOnce();
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
     expect(subscribe).toHaveBeenCalledWith({
       userVisibleOnly: true,
       applicationServerKey: new Uint8Array([1, 2, 3, 4]),
@@ -72,15 +72,15 @@ describe('pushNotifications Safari-compatible subscription flow', () => {
     );
   });
 
-  it('does not tell the user to visit settings while permission remains undecided', async () => {
-    const subscribe = vi.fn();
+  it('does not tell the user to visit settings when the subscription prompt is dismissed', async () => {
+    const subscribe = vi.fn().mockRejectedValue(new Error('Permission prompt dismissed'));
     prepareBrowser(subscribe, 'default', 'default');
     const { subscribeToPushNotifications } = await import('./pushNotifications');
 
     await expect(subscribeToPushNotifications('user-1')).rejects.toMatchObject({
       code: 'subscription_failed',
     });
-    expect(subscribe).not.toHaveBeenCalled();
+    expect(subscribe).toHaveBeenCalledOnce();
   });
 
   it('maps an actual notification denial to a permission error', async () => {
@@ -91,7 +91,7 @@ describe('pushNotifications Safari-compatible subscription flow', () => {
     await expect(subscribeToPushNotifications('user-1')).rejects.toMatchObject({
       code: 'permission_denied',
     });
-    expect(Notification.requestPermission).toHaveBeenCalledOnce();
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
     expect(subscribe).not.toHaveBeenCalled();
   });
 

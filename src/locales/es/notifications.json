@@ -24,7 +24,7 @@
     "activating": "Activando...",
     "activationError": "No se pudieron activar las notificaciones. Inténtalo de nuevo.",
     "permissionDenied": "Has rechazado el permiso. Puedes cambiarlo en los ajustes de notificaciones del navegador o del sistema.",
-    "permissionDeniedSettings": "Las notificaciones están bloqueadas. Permite las notificaciones de Burger Wrapped desde los ajustes del navegador o del sistema.",
+    "permissionDeniedSettings": "Las notificaciones están bloqueadas. En iPhone o iPad, ve a Ajustes > Notificaciones > Burger Wrapped y activa Permitir notificaciones.",
     "settingsTitle": "Notificaciones push",
     "settingsDescription": "Gestiona este dispositivo y elige qué actividad quieres recibir.",
     "active": "Activas",

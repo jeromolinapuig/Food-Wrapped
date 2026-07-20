@@ -136,33 +136,21 @@ export const subscribeToPushNotifications = async (userId: string) => {
     throw new PushNotificationError('unsupported', 'Push notifications are not available in this browser.');
   }
 
-  // WebKit only exposes a Home Screen web app in iOS notification settings
-  // after this native prompt has been requested from a direct user action.
-  // Keep this as the first asynchronous browser call in the activation flow.
-  let permission: NotificationPermission;
-  try {
-    permission = Notification.permission === 'granted'
-      ? 'granted'
-      : await Notification.requestPermission();
-  } catch (error) {
-    if (Notification.permission === 'denied') {
-      throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
-    }
-    throw new PushNotificationError(
-      'subscription_failed',
-      error instanceof Error ? error.message : 'The browser could not request notification permission.'
-    );
+  // In normal UI flows this was populated while the screen was loading. Avoid
+  // even a resolved-promise hop on WebKit so subscribe() stays in the tap task.
+  const registration = readyServiceWorker ?? await getReadyServiceWorker();
+  if (Notification.permission === 'denied') {
+    throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
   }
 
-  if (permission !== 'granted') {
-    if (permission === 'denied' || Notification.permission === 'denied') {
-      throw new PushNotificationError('permission_denied', 'Notification permission was not granted.');
-    }
-    throw new PushNotificationError('subscription_failed', 'Notification permission remains undecided.');
-  }
-
-  const registration = await getReadyServiceWorker();
-  let subscription = await registration.pushManager.getSubscription();
+  // Calling subscribe() is what requests push permission. In WebKit this call must
+  // originate from the tap itself; asking through Notification.requestPermission()
+  // first can consume the transient user activation before subscribe() is reached.
+  // The registration is preloaded above, and the settings screen also waits for it
+  // while loading, so this is the first permission-requiring call after the tap.
+  let subscription = Notification.permission === 'granted'
+    ? await registration.pushManager.getSubscription()
+    : null;
   let createdSubscription = false;
 
   if (!subscription) {
