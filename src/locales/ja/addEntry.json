@@ -24,6 +24,8 @@
   "reviewRestaurantTitle": "新しいレストラン？",
   "reviewRestaurantSubtitle": "名前を確認するか、似ているレストランを選んでください。",
   "reviewRestaurantRequested": "レストラン",
+  "reviewRestaurantClosest": "このレストランですか？",
+  "reviewRestaurantExisting": "すでに登録されています。この投稿で使用するには選択してください。",
   "reviewRestaurantPendingCreate": "今すぐ作成され、この投稿に選択されます。",
   "reviewRestaurantMatches": "似ているレストラン",
   "reviewRestaurantNoMatches": "明確に一致するレストランは見つかりませんでした。",

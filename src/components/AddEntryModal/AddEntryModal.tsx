@@ -170,6 +170,7 @@ export function AddEntryModal({
   const [restaurantSuggestions, setRestaurantSuggestions] = useState<RestaurantOption[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantOption | null>(null);
   const [restaurantReview, setRestaurantReview] = useState<RestaurantReviewState>(null);
+  const [saveAfterRestaurantReview, setSaveAfterRestaurantReview] = useState(false);
 
   const [isBurger, setIsBurger] = useState(true);
   const [burgerType, setBurgerType] = useState<MeatType>('beef');
@@ -232,6 +233,7 @@ export function AddEntryModal({
     const nowString = formatLocalDateTime(new Date());
     setMaxDateTime(nowString);
     setIsClosing(false);
+    setSaveAfterRestaurantReview(false);
     if (mode === 'edit' && entry) {
       const date = new Date(entry.datetime);
       const iso = formatLocalDateTime(date); // yyyy-MM-ddTHH:mm
@@ -343,6 +345,7 @@ export function AddEntryModal({
     setRestaurantInput(value);
     setSelectedRestaurant(null);
     setRestaurantReview(null);
+    setSaveAfterRestaurantReview(false);
 
     if (!value.trim()) {
       setRestaurantSuggestions([]);
@@ -357,12 +360,14 @@ export function AddEntryModal({
     setRestaurantInput(option.name);
     setRestaurantSuggestions([]);
     setRestaurantReview(null);
+    setSaveAfterRestaurantReview(false);
     setSelectedBurger(null);
     setBurgerInput('');
     setBurgerSuggestions([]);
   };
 
   const openRestaurantReview = async (name: string) => {
+    setSaveAfterRestaurantReview(false);
     const suggestions = await fetchRestaurantOptions(name);
     const normalizedName = normalizeName(name);
     setRestaurantReview({
@@ -374,6 +379,7 @@ export function AddEntryModal({
 
   const closeRestaurantReview = () => {
     setRestaurantReview(null);
+    setSaveAfterRestaurantReview(false);
   };
 
   const ensureRestaurant = async (name: string) => {
@@ -409,10 +415,20 @@ export function AddEntryModal({
       const restaurant = await ensureRestaurant(restaurantReview.name);
       setRestaurantInput(restaurant.name);
       setSelectedRestaurant(restaurant);
-      setBurgerInput('');
       setSelectedBurger(null);
       setBurgerSuggestions([]);
       setRestaurantReview(null);
+      const shouldContinueSaving = saveAfterRestaurantReview;
+      setSaveAfterRestaurantReview(false);
+
+      if (shouldContinueSaving) {
+        const validation = validateEntryForm();
+        if (!validation.success) {
+          setFormError(validation.error.issues[0]?.message ?? 'Revisa los datos.');
+        } else {
+          await saveEntry(validation.data, restaurant);
+        }
+      }
     } catch (err: unknown) {
       console.error(err);
       const message =
@@ -563,7 +579,7 @@ export function AddEntryModal({
     });
   };
 
-  const saveEntry = async (parsed: AddEntrySchema) => {
+  async function saveEntry(parsed: AddEntrySchema, restaurantOverride?: RestaurantOption) {
     const entryId = mode === 'edit' && entry ? entry.id : null;
     const price = Number(parsed.price.replace(',', '.'));
     const rating = Number(parsed.rating);
@@ -581,7 +597,7 @@ export function AddEntryModal({
       entry?.restaurantName &&
       normalizeName(entry.restaurantName.trim()) === normalizedRestaurant;
     let existingRestaurantId =
-      selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
+      restaurantOverride?.id ?? selectedRestaurant?.id ?? (editingSameRestaurant ? entry?.restaurantId ?? null : null);
 
     if ((!isBurger || burgerSource === 'restaurant') && !existingRestaurantId) {
       const suggestions = await fetchRestaurantOptions(trimmedRestaurant);
@@ -595,6 +611,7 @@ export function AddEntryModal({
         setRestaurantInput(exactRestaurant.name);
         setRestaurantSuggestions([]);
       } else {
+        setSaveAfterRestaurantReview(true);
         setRestaurantReview({
           name: trimmedRestaurant,
           suggestions: suggestions.filter((option) => normalizeName(option.name) !== normalizedRestaurant),
@@ -748,7 +765,7 @@ export function AddEntryModal({
     } finally {
       setFormLoading(false);
     }
-  };
+  }
 
   const handleAddEntry = async (e: FormEvent) => {
     e.preventDefault();
@@ -779,6 +796,8 @@ export function AddEntryModal({
   );
   const showAddRestaurantOption =
     Boolean(trimmedRestaurantInput) && !selectedRestaurant && !hasExactRestaurantSuggestion;
+  const closestRestaurantMatch = restaurantReview?.suggestions[0] ?? null;
+  const remainingRestaurantMatches = restaurantReview?.suggestions.slice(1) ?? [];
 
   if (!open) return null;
 
@@ -811,17 +830,38 @@ export function AddEntryModal({
 
           {restaurantReview ? (
             <div className="bw-restaurant-review">
-              <div className="bw-restaurant-review-summary">
-                <span className="bw-restaurant-review-kicker">{t('addEntry.reviewRestaurantRequested')}</span>
-                <strong className="bw-restaurant-review-name">{restaurantReview.name}</strong>
-                <p>{t('addEntry.reviewRestaurantPendingCreate')}</p>
-              </div>
+              {closestRestaurantMatch ? (
+                <button
+                  type="button"
+                  className="bw-restaurant-review-summary bw-restaurant-review-best-match"
+                  onClick={() => selectRestaurant(closestRestaurantMatch)}
+                  disabled={formLoading}
+                >
+                  <span className="bw-restaurant-review-kicker">{t('addEntry.reviewRestaurantClosest')}</span>
+                  <strong className="bw-restaurant-review-name">{closestRestaurantMatch.name}</strong>
+                  <p>{t('addEntry.reviewRestaurantExisting')}</p>
+                </button>
+              ) : (
+                <div className="bw-restaurant-review-summary">
+                  <span className="bw-restaurant-review-kicker">{t('addEntry.reviewRestaurantRequested')}</span>
+                  <strong className="bw-restaurant-review-name">{restaurantReview.name}</strong>
+                  <p>{t('addEntry.reviewRestaurantPendingCreate')}</p>
+                </div>
+              )}
 
-              {restaurantReview.suggestions.length > 0 ? (
+              {closestRestaurantMatch && (
+                <div className="bw-restaurant-review-requested">
+                  <span>{t('addEntry.reviewRestaurantRequested')}</span>
+                  <strong>{restaurantReview.name}</strong>
+                  <small>{t('addEntry.reviewRestaurantPendingCreate')}</small>
+                </div>
+              )}
+
+              {remainingRestaurantMatches.length > 0 ? (
                 <div className="bw-field">
                   <span className="bw-label">{t('addEntry.reviewRestaurantMatches')}</span>
                   <div className="bw-restaurant-review-list">
-                    {restaurantReview.suggestions.map((restaurant) => (
+                    {remainingRestaurantMatches.map((restaurant) => (
                       <button
                         key={restaurant.id}
                         type="button"
@@ -833,9 +873,9 @@ export function AddEntryModal({
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : !closestRestaurantMatch ? (
                 <p className="bw-helper">{t('addEntry.reviewRestaurantNoMatches')}</p>
-              )}
+              ) : null}
 
               {formError && <p style={{ color: 'red', fontSize: 12 }}>{formError}</p>}
 
@@ -986,6 +1026,7 @@ export function AddEntryModal({
                                 setRestaurantInput('');
                                 setRestaurantSuggestions([]);
                                 setRestaurantReview(null);
+                                setSaveAfterRestaurantReview(false);
                                 setSelectedRestaurant(null);
                                 setBurgerInput('');
                                 setBurgerSuggestions([]);

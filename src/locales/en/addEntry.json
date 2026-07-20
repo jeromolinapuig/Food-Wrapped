@@ -24,6 +24,8 @@
   "reviewRestaurantTitle": "New restaurant?",
   "reviewRestaurantSubtitle": "Confirm the name or pick a similar one.",
   "reviewRestaurantRequested": "Restaurant",
+  "reviewRestaurantClosest": "Is this the restaurant?",
+  "reviewRestaurantExisting": "It already exists. Select it to use it in this post.",
   "reviewRestaurantPendingCreate": "It will be created now and selected for this entry.",
   "reviewRestaurantMatches": "Similar restaurants",
   "reviewRestaurantNoMatches": "We did not find clear matches.",

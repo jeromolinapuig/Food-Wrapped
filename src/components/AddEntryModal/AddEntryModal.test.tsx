@@ -272,7 +272,10 @@ describe('AddEntryModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'addEntry.save' }));
 
     expect(await screen.findByText('addEntry.reviewRestaurantTitle')).toBeInTheDocument();
-    expect(screen.getByText('Hundred')).toBeInTheDocument();
+    const closestRestaurant = screen.getByRole('button', { name: /Hundred/ });
+    expect(closestRestaurant).toHaveClass('bw-restaurant-review-best-match');
+    fireEvent.click(closestRestaurant);
+    expect(await screen.findByLabelText('addEntry.restaurantLabel')).toHaveValue('Hundred');
     expect(supabaseMock.state.restaurantsUpsert).not.toHaveBeenCalled();
     await waitFor(() => expect(supabaseMock.state.entriesInsert).not.toHaveBeenCalled());
   });
@@ -308,5 +311,44 @@ describe('AddEntryModal', () => {
     expect(screen.queryByText('addEntry.addRestaurantOption')).not.toBeInTheDocument();
     expect(screen.queryByText('Selecciona fecha y hora.')).not.toBeInTheDocument();
     expect(supabaseMock.state.entriesInsert).not.toHaveBeenCalled();
+  });
+
+  it('continua guardando la publicacion tras confirmar un restaurante nuevo', async () => {
+    supabaseMock.state.restaurantRows = [];
+    const onSaved = vi.fn();
+
+    render(
+      <AddEntryModal
+        open
+        onClose={() => {}}
+        onSaved={onSaved}
+        session={{ user: { id: 'u1' } } as never}
+        theme="light"
+        mode="create"
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText('addEntry.datetime'), {
+      target: { value: '2026-01-02T12:00' },
+    });
+    fireEvent.change(screen.getByLabelText('addEntry.restaurantLabel'), {
+      target: { value: 'Nueva Burger' },
+    });
+    fireEvent.change(screen.getByLabelText('addEntry.burgerLabel'), {
+      target: { value: 'Classic' },
+    });
+    fireEvent.change(screen.getByLabelText('addEntry.priceLabel'), {
+      target: { value: '12.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'addEntry.score 4.5' }));
+    fireEvent.click(screen.getByRole('button', { name: 'addEntry.save' }));
+
+    expect(await screen.findByText('addEntry.reviewRestaurantTitle')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'addEntry.reviewRestaurantCreate' }));
+
+    await waitFor(() => expect(supabaseMock.state.entriesInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ restaurant_id: 'new-restaurant' })
+    ));
+    expect(onSaved).toHaveBeenCalledOnce();
   });
 });

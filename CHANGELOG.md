@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.8.3
+
+- Fixed new restaurant confirmation so saving resumes automatically without losing the burger name or requiring the user to submit the post again.
+- Changed the new restaurant review modal to feature the closest existing restaurant as the primary selectable card while keeping the entered name as the create-new alternative.
+
 ## 1.8.2
 
 - Fixed Web Push activation on iPhone and iPad by starting the subscription directly from the user action and showing the iOS 16.4 requirement when the platform APIs are unavailable.
