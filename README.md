@@ -98,6 +98,7 @@ Definidas en `src/App.tsx`.
 | `/feed`            | Feed social                            | Mixto                            |
 | `/search`          | Busqueda de usuarios y restaurantes    | Mixto                            |
 | `/profile`         | Perfil propio                          | Autenticado                      |
+| `/profile/settings`| Ajustes del perfil y de la cuenta      | Autenticado                      |
 | `/groups`          | Listado y gestion de grupos            | Autenticado                      |
 | `/ranking`         | Ranking global                         | Autenticado                      |
 | `/groups/:groupId` | Detalle de grupo                       | Autenticado/miembro segun logica |

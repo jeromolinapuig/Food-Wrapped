@@ -127,12 +127,23 @@
   color: #d7264d;
 }
 
-.bw-fab-wrapper {
-  position: sticky;
-  bottom: 85px;
+.bw-restaurant-fab-wrapper {
+  position: fixed;
+  right: max(16px, calc((100vw - var(--bw-mobile-shell-max)) / 2 + 16px));
+  bottom: 90px;
+  z-index: 62;
   display: flex;
-  justify-content: center;
-  margin-top: auto;
+  justify-content: flex-end;
+  width: auto;
+  pointer-events: none;
+}
+
+.bw-restaurant-fab-wrapper.is-hidden {
+  display: none;
+}
+
+.bw-restaurant-fab-wrapper .bw-fab {
+  pointer-events: auto;
 }
 
 .bw-fab {
@@ -178,6 +189,11 @@
 @media (min-width: 900px) {
   .bw-restaurant-tried-photo img {
     height: 320px;
+  }
+
+  .bw-restaurant-fab-wrapper {
+    right: 32px;
+    bottom: 32px;
   }
 
   .bw-fab {

@@ -489,6 +489,29 @@ function App() {
           path="/profile"
           element={
             session ? (
+              <UserDashboardPage
+                session={session}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onNavigate={handleNavigate}
+                userId={session.user.id}
+                isOwnProfile
+                onOpenSettings={() => navigate('/profile/settings')}
+              />
+            ) : (
+              <LockedPage
+                title={t('locked.profileTitle')}
+                subtitle={t('locked.profileSubtitle')}
+                onLogin={handleLogin}
+                preview={<ProfilePlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/profile/settings"
+          element={
+            session ? (
               <ProfilePage
                 session={session}
                 theme={theme}
@@ -500,12 +523,7 @@ function App() {
                 }
               />
             ) : (
-              <LockedPage
-                title={t('locked.profileTitle')}
-                subtitle={t('locked.profileSubtitle')}
-                onLogin={handleLogin}
-                preview={<ProfilePlaceholder />}
-              />
+              <Navigate to="/profile" replace />
             )
           }
         />

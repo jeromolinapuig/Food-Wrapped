@@ -210,7 +210,7 @@ export function BottomNav({
 
   const handleOpenProfileSuggestion = () => {
     handleDismissProfileSuggestion();
-    handleClick('/profile');
+    handleClick('/profile/settings');
   };
 
   useEffect(() => {

@@ -476,7 +476,7 @@ export function RestaurantSearchContent({
       </section>
 
       {selectedRestaurant && (
-        <div className="bw-fab-wrapper">
+        <div className={`bw-restaurant-fab-wrapper ${isAddModalOpen ? 'is-hidden' : ''}`}>
           <button
             className="bw-fab"
             onClick={() => setIsAddModalOpen(true)}

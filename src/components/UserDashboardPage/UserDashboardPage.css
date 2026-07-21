@@ -1,5 +1,77 @@
 /* UserDashboardPage */
 
+.bw-profile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bw-user-profile-intro {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.bw-user-profile-name,
+.bw-user-profile-handle,
+.bw-user-profile-bio {
+  margin: 0;
+}
+
+.bw-user-profile-name {
+  font-size: 18px;
+}
+
+.bw-user-profile-handle,
+.bw-user-profile-bio.is-empty {
+  color: var(--bw-text-muted);
+  font-size: 13px;
+}
+
+.bw-user-profile-bio {
+  line-height: 1.5;
+}
+
+.bw-user-profile-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.bw-user-profile-details > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bw-accent-soft);
+}
+
+.bw-user-profile-details span {
+  color: var(--bw-text-muted);
+  font-size: 11px;
+}
+
+.bw-user-profile-details strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.bw-user-profile-preference-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bw-user-profile-preference-list span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--bw-accent-soft);
+  color: var(--bw-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .bw-private-card {
   text-align: center;
   font-weight: 600;

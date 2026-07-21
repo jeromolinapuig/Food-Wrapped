@@ -8,6 +8,7 @@ import type { FeedPriceFilter, FeedPriceFilterRange } from '../FeedTabs/types';
 import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
+import { TopMenu } from '../TopMenu/TopMenu';
 import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
@@ -57,10 +58,21 @@ type UserDashboardPageProps = {
   onNavigate: (page: 'dashboard' | 'feed' | 'profile' | 'groups' | 'ranking') => void;
   userId: string;
   isAdminView?: boolean;
-  onBack: () => void;
+  onBack?: () => void;
+  isOwnProfile?: boolean;
+  onOpenSettings?: () => void;
 };
 
-export function UserDashboardPage({ session, userId, isAdminView = false, onBack }: Readonly<UserDashboardPageProps>) {
+export function UserDashboardPage({
+  session,
+  userId,
+  theme,
+  onToggleTheme,
+  isAdminView = false,
+  onBack,
+  isOwnProfile = false,
+  onOpenSettings,
+}: Readonly<UserDashboardPageProps>) {
   const { t } = useTranslation();
   const { currency: viewerCurrency, convertAmount, formatCurrency } = usePreferences();
   const navigate = useNavigate();
@@ -78,6 +90,11 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
     avatarUrl: string | null;
     avatarFrame: 'gold' | 'silver' | 'bronze' | null;
     isPrivate?: boolean | null;
+    bio?: string | null;
+    favoriteBurgerType?: string | null;
+    favoriteSauce?: string | null;
+    favoriteDoneness?: string | null;
+    favoriteBread?: string | null;
   } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const viewerId = session?.user.id ?? null;
@@ -85,7 +102,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('username, display_name, avatar_url, equipped_frame, is_private')
+      .select('username, display_name, avatar_url, equipped_frame, is_private, bio, favorite_burger_type, favorite_sauce, favorite_doneness, favorite_bread')
       .eq('id', userId)
       .single();
 
@@ -101,6 +118,11 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
       avatarUrl: (data as { avatar_url: string | null }).avatar_url,
       avatarFrame: ((data as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
       isPrivate: (data as { is_private: boolean | null }).is_private,
+      bio: (data as { bio?: string | null }).bio ?? null,
+      favoriteBurgerType: (data as { favorite_burger_type?: string | null }).favorite_burger_type ?? null,
+      favoriteSauce: (data as { favorite_sauce?: string | null }).favorite_sauce ?? null,
+      favoriteDoneness: (data as { favorite_doneness?: string | null }).favorite_doneness ?? null,
+      favoriteBread: (data as { favorite_bread?: string | null }).favorite_bread ?? null,
     });
   }, [userId]);
 
@@ -161,6 +183,15 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   }, [isAdminView, profile, userId, viewerId]);
 
   const loadEntries = useCallback(async () => {
+    if (isOwnProfile) {
+      startTransition(() => {
+        setEntries([]);
+        setLoading(false);
+        setError(null);
+        setPostsCount(0);
+      });
+      return;
+    }
     if (privacyBlocked) {
       startTransition(() => {
         setEntries([]);
@@ -212,7 +243,7 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
     }
 
     setLoading(false);
-  }, [isAdminView, privacyBlocked, userId, viewerId]);
+  }, [isAdminView, isOwnProfile, privacyBlocked, userId, viewerId]);
 
   useEffect(() => {
     startTransition(() => {
@@ -325,6 +356,12 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   const headerAvatar = profile?.avatarUrl ?? null;
   const headerAvatarFrame = profile?.avatarFrame ?? null;
   const headerAlt = profile?.displayName ?? profile?.username ?? 'Perfil';
+  const preferenceChips = [
+    profile?.favoriteBurgerType ? t(`profile.burgerPreferences.types.${profile.favoriteBurgerType}`) : null,
+    profile?.favoriteSauce ? t(`profile.burgerPreferences.sauces.${profile.favoriteSauce}`) : null,
+    profile?.favoriteDoneness ? t(`profile.burgerPreferences.doneness.${profile.favoriteDoneness}`) : null,
+    profile?.favoriteBread ? t(`profile.burgerPreferences.breads.${profile.favoriteBread}`) : null,
+  ].filter((value): value is string => Boolean(value));
   const monthOptions = useMemo<MultiSelectOption<string>[]>(() => {
     const values = new Set<string>();
     entries.forEach((entry) => {
@@ -386,13 +423,27 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
   return (
     <AppShell>
         <PageHeader
-          title="Burger Wrapped"
-          subtitle={`Resumen de @${titleHandle}`}
+          title={isOwnProfile ? t('profile.title') : 'Burger Wrapped'}
+          subtitle={isOwnProfile ? `@${titleHandle}` : `Resumen de @${titleHandle}`}
           logoSrc={headerAvatar ?? undefined}
           logoAlt={headerAvatar ? headerAlt : 'Burger Wrapped'}
           logoVariant={headerAvatar ? 'avatar' : 'square'}
           logoFrameKey={headerAvatarFrame}
-          leading={<BackButton onClick={onBack} ariaLabel="Volver" />}
+          leading={onBack ? <BackButton onClick={onBack} ariaLabel="Volver" /> : undefined}
+          actions={isOwnProfile ? (
+            <div className="bw-profile-header-actions">
+              <button
+                type="button"
+                className="bw-icon-button"
+                onClick={onOpenSettings}
+                aria-label={t('profile.openSettings', { defaultValue: 'Abrir ajustes' })}
+                title={t('profile.settingsTitle', { defaultValue: 'Ajustes' })}
+              >
+                <span aria-hidden="true">⚙</span>
+              </button>
+              <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
+            </div>
+          ) : undefined}
         />
 
         <main className="bw-main">
@@ -402,6 +453,41 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
             </div>
           ) : (
             <>
+              <section className="bw-card bw-user-profile-intro">
+                <div>
+                  <h2 className="bw-user-profile-name">{profile?.displayName ?? `@${titleHandle}`}</h2>
+                  {profile?.displayName ? <p className="bw-user-profile-handle">@{titleHandle}</p> : null}
+                </div>
+                <p className={`bw-user-profile-bio ${profile?.bio ? '' : 'is-empty'}`}>
+                  {profile?.bio || t('profile.noBio', { defaultValue: 'Aún no hay biografía.' })}
+                </p>
+                {isOwnProfile ? (
+                  <div className="bw-user-profile-details">
+                    {session?.user.email ? (
+                      <div>
+                        <span>{t('profile.emailLabel', { defaultValue: 'Correo' })}</span>
+                        <strong>{session.user.email}</strong>
+                      </div>
+                    ) : null}
+                    <div>
+                      <span>{t('profile.visibilityLabel', { defaultValue: 'Visibilidad' })}</span>
+                      <strong>
+                        {profile?.isPrivate
+                          ? t('profile.visibilityPrivate', { defaultValue: 'Perfil privado' })
+                          : t('profile.visibilityPublic', { defaultValue: 'Perfil público' })}
+                      </strong>
+                    </div>
+                  </div>
+                ) : null}
+                {preferenceChips.length > 0 ? (
+                  <div className="bw-user-profile-preference-list">
+                    {preferenceChips.map((preference) => <span key={preference}>{preference}</span>)}
+                  </div>
+                ) : null}
+              </section>
+
+              {!isOwnProfile ? (
+                <>
               <section className="bw-stats-grid">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, idx) => (
@@ -509,6 +595,8 @@ export function UserDashboardPage({ session, userId, isAdminView = false, onBack
                 onOpenEntry={(entryId) => navigate(`/posts/${entryId}`, { state: { returnTo: `/users/${userId}` } })}
               />
             </section>
+                </>
+              ) : null}
             </>
           )}
         </main>

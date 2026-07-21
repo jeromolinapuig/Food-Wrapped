@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { TopMenu } from '../TopMenu/TopMenu';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
+import { BackButton } from '../common/BackButton';
 import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { ModalBase } from '../common/ModalBase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -618,6 +619,14 @@ export function ProfilePage({
     navigate(nextPath);
   };
 
+  const handleBackToProfile = () => {
+    if (hasChanges && !saving) {
+      setPendingNavPath('/profile');
+      return;
+    }
+    navigate('/profile');
+  };
+
   const getStoragePathFromUrl = (url: string | null | undefined) => {
     if (!url) return null;
     const marker = '/storage/v1/object/public/avatars/';
@@ -820,9 +829,10 @@ export function ProfilePage({
   return (
     <AppShell>
         <PageHeader
-          title={t('profile.title')}
-          subtitle={t('profile.subtitle')}
+          title={t('profile.settingsTitle', { defaultValue: 'Ajustes del perfil' })}
+          subtitle={t('profile.settingsSubtitle', { defaultValue: 'Gestiona tu perfil, preferencias y cuenta.' })}
           logoAlt="Burger Wrapped"
+          leading={<BackButton onClick={handleBackToProfile} ariaLabel={t('profile.backToProfile', { defaultValue: 'Volver al perfil' })} />}
           actions={<TopMenu theme={theme} onToggleTheme={onToggleTheme} />}
         />
 
