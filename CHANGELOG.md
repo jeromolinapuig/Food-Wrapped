@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.8.5
+
+- Redesigned the authenticated profile route as a dedicated user profile with identity, biography, burger preferences, email, and visibility details, without activity statistics or posts.
+- Added a separate profile settings route for editing account information, privacy, language, currency, avatar, and burger preferences, including unsaved-change protection when returning to the profile.
+- Changed incomplete-profile reminders to open the new profile settings route directly.
+- Fixed the add-post button in restaurant views so it remains fixed above the bottom navigation on mobile and in the lower-right corner on desktop, matching the dashboard behavior.
+
 ## 1.8.4
 
 - Fixed Web Push permission activation in Safari by starting the push subscription directly from the user's tap instead of requesting notification permission separately.
