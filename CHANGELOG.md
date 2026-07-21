@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.8.6
+
+- Refined the profile into a full-page personal view with a larger identity area, follower and following lists, burger preferences, and direct access to saved posts and burgers to try.
+- Changed the profile settings action to an edit-style control and restored the restaurant add-post button to the centered mobile position while preserving its desktop placement.
+
 ## 1.8.5
 
 - Redesigned the authenticated profile route as a dedicated user profile with identity, biography, burger preferences, email, and visibility details, without activity statistics or posts.

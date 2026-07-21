@@ -6,6 +6,139 @@
   gap: 6px;
 }
 
+.bw-own-profile {
+  min-height: calc(100vh - 190px);
+  padding: 8px 4px 32px;
+}
+
+.bw-own-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 8px 22px;
+}
+
+.bw-own-profile-avatar,
+.bw-own-profile-hero .bw-avatar-wrap {
+  width: 92px;
+  height: 92px;
+}
+
+.bw-own-profile-identity h2,
+.bw-own-profile-identity p {
+  margin: 0;
+}
+
+.bw-own-profile-identity h2 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.bw-own-profile-identity p {
+  margin-top: 5px;
+  color: var(--bw-text-muted);
+}
+
+.bw-own-profile-follows {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: stretch;
+  margin: 0 8px 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+
+.bw-own-profile-follows button {
+  display: grid;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--bw-text);
+  cursor: pointer;
+}
+
+.bw-own-profile-follows strong {
+  font-size: 20px;
+}
+
+.bw-own-profile-follows span {
+  color: var(--bw-text-muted);
+  font-size: 12px;
+}
+
+.bw-own-profile-follow-divider {
+  background: rgba(127, 127, 127, 0.24);
+}
+
+.bw-own-profile-section {
+  padding: 20px 8px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+
+.bw-own-profile-section h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.bw-own-profile-meta {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.bw-own-profile-meta > div {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.35fr) 1fr;
+  gap: 12px;
+}
+
+.bw-own-profile-meta dt {
+  color: var(--bw-text-muted);
+  font-size: 12px;
+}
+
+.bw-own-profile-meta dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bw-own-profile-links {
+  display: grid;
+  padding-top: 8px;
+}
+
+.bw-own-profile-links button {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 8px;
+  border: 0;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+  background: transparent;
+  color: var(--bw-text);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bw-own-profile-link-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bw-accent-soft);
+  color: var(--bw-accent);
+  font-size: 19px;
+}
+
 .bw-user-profile-intro {
   display: grid;
   gap: 10px;

@@ -129,12 +129,13 @@
 
 .bw-restaurant-fab-wrapper {
   position: fixed;
-  right: max(16px, calc((100vw - var(--bw-mobile-shell-max)) / 2 + 16px));
+  left: 50%;
   bottom: 90px;
   z-index: 62;
   display: flex;
   justify-content: flex-end;
   width: auto;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -192,8 +193,10 @@
   }
 
   .bw-restaurant-fab-wrapper {
+    left: auto;
     right: 32px;
     bottom: 32px;
+    transform: none;
   }
 
   .bw-fab {

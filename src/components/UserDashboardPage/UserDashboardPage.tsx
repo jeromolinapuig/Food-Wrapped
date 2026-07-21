@@ -9,6 +9,8 @@ import { AppShell } from '../common/AppShell';
 import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
 import { TopMenu } from '../TopMenu/TopMenu';
+import { Avatar } from '../common/Avatar';
+import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
 import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
@@ -97,7 +99,35 @@ export function UserDashboardPage({
     favoriteBread?: string | null;
   } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
+  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+  const [followListMode, setFollowListMode] = useState<FollowListMode | null>(null);
   const viewerId = session?.user.id ?? null;
+
+  const loadFollowCounts = useCallback(async () => {
+    if (!isOwnProfile) return;
+    const { data, error } = await supabase
+      .from('follows')
+      .select('follower_id, following_id')
+      .or(`following_id.eq.${userId},follower_id.eq.${userId}`);
+
+    if (error) {
+      console.error('Error loading profile follow counts', error);
+      return;
+    }
+
+    const followers = new Set<string>();
+    const following = new Set<string>();
+    (data ?? []).forEach((row) => {
+      const follow = row as { follower_id: string; following_id: string };
+      if (follow.following_id === userId) followers.add(follow.follower_id);
+      if (follow.follower_id === userId) following.add(follow.following_id);
+    });
+    setFollowCounts({ followers: followers.size, following: following.size });
+  }, [isOwnProfile, userId]);
+
+  useEffect(() => {
+    void loadFollowCounts();
+  }, [loadFollowCounts]);
 
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
@@ -425,10 +455,10 @@ export function UserDashboardPage({
         <PageHeader
           title={isOwnProfile ? t('profile.title') : 'Burger Wrapped'}
           subtitle={isOwnProfile ? `@${titleHandle}` : `Resumen de @${titleHandle}`}
-          logoSrc={headerAvatar ?? undefined}
+          logoSrc={isOwnProfile ? undefined : headerAvatar ?? undefined}
           logoAlt={headerAvatar ? headerAlt : 'Burger Wrapped'}
-          logoVariant={headerAvatar ? 'avatar' : 'square'}
-          logoFrameKey={headerAvatarFrame}
+          logoVariant={!isOwnProfile && headerAvatar ? 'avatar' : 'square'}
+          logoFrameKey={isOwnProfile ? null : headerAvatarFrame}
           leading={onBack ? <BackButton onClick={onBack} ariaLabel="Volver" /> : undefined}
           actions={isOwnProfile ? (
             <div className="bw-profile-header-actions">
@@ -439,7 +469,10 @@ export function UserDashboardPage({
                 aria-label={t('profile.openSettings', { defaultValue: 'Abrir ajustes' })}
                 title={t('profile.settingsTitle', { defaultValue: 'Ajustes' })}
               >
-                <span aria-hidden="true">⚙</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+                </svg>
               </button>
               <TopMenu theme={theme} onToggleTheme={onToggleTheme} />
             </div>
@@ -453,6 +486,88 @@ export function UserDashboardPage({
             </div>
           ) : (
             <>
+              {isOwnProfile ? (
+                <section className="bw-own-profile">
+                  <div className="bw-own-profile-hero">
+                    <Avatar
+                      url={headerAvatar}
+                      alt={headerAlt}
+                      initial={titleHandle.charAt(0).toUpperCase()}
+                      frameKey={headerAvatarFrame}
+                      className="bw-own-profile-avatar"
+                    />
+                    <div className="bw-own-profile-identity">
+                      <h2>{profile?.displayName ?? titleHandle}</h2>
+                      <p>@{titleHandle}</p>
+                    </div>
+                  </div>
+
+                  <div className="bw-own-profile-follows" aria-label={t('profile.socialStats', { defaultValue: 'Seguidores y seguidos' })}>
+                    <button type="button" onClick={() => setFollowListMode('followers')}>
+                      <strong>{followCounts.followers}</strong>
+                      <span>{t('common.followers')}</span>
+                    </button>
+                    <span className="bw-own-profile-follow-divider" aria-hidden="true" />
+                    <button type="button" onClick={() => setFollowListMode('following')}>
+                      <strong>{followCounts.following}</strong>
+                      <span>{t('common.following')}</span>
+                    </button>
+                  </div>
+
+                  <div className="bw-own-profile-section">
+                    <h3>{t('profile.aboutTitle', { defaultValue: 'Sobre mí' })}</h3>
+                    <p className={`bw-user-profile-bio ${profile?.bio ? '' : 'is-empty'}`}>
+                      {profile?.bio || t('profile.noBio', { defaultValue: 'Aún no hay biografía.' })}
+                    </p>
+                    <dl className="bw-own-profile-meta">
+                      {session?.user.email ? (
+                        <div>
+                          <dt>{t('profile.emailLabel', { defaultValue: 'Correo' })}</dt>
+                          <dd>{session.user.email}</dd>
+                        </div>
+                      ) : null}
+                      <div>
+                        <dt>{t('profile.visibilityLabel', { defaultValue: 'Visibilidad' })}</dt>
+                        <dd>
+                          {profile?.isPrivate
+                            ? t('profile.visibilityPrivate', { defaultValue: 'Perfil privado' })
+                            : t('profile.visibilityPublic', { defaultValue: 'Perfil público' })}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <div className="bw-own-profile-section">
+                    <h3>{t('profile.burgerPreferences.title')}</h3>
+                    {preferenceChips.length > 0 ? (
+                      <div className="bw-user-profile-preference-list">
+                        {preferenceChips.map((preference) => <span key={preference}>{preference}</span>)}
+                      </div>
+                    ) : (
+                      <p className="bw-user-profile-bio is-empty">
+                        {t('profile.noPreferences', { defaultValue: 'Todavía no has añadido tus preferencias.' })}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bw-own-profile-links">
+                    <button type="button" onClick={() => navigate('/burger-wishlist')}>
+                      <span className="bw-own-profile-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg>
+                      </span>
+                      <span>{t('profile.burgerWishlist')}</span>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                    <button type="button" onClick={() => navigate('/saved')}>
+                      <span className="bw-own-profile-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" /></svg>
+                      </span>
+                      <span>{t('profile.savedPosts')}</span>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                  </div>
+                </section>
+              ) : (
               <section className="bw-card bw-user-profile-intro">
                 <div>
                   <h2 className="bw-user-profile-name">{profile?.displayName ?? `@${titleHandle}`}</h2>
@@ -461,30 +576,13 @@ export function UserDashboardPage({
                 <p className={`bw-user-profile-bio ${profile?.bio ? '' : 'is-empty'}`}>
                   {profile?.bio || t('profile.noBio', { defaultValue: 'Aún no hay biografía.' })}
                 </p>
-                {isOwnProfile ? (
-                  <div className="bw-user-profile-details">
-                    {session?.user.email ? (
-                      <div>
-                        <span>{t('profile.emailLabel', { defaultValue: 'Correo' })}</span>
-                        <strong>{session.user.email}</strong>
-                      </div>
-                    ) : null}
-                    <div>
-                      <span>{t('profile.visibilityLabel', { defaultValue: 'Visibilidad' })}</span>
-                      <strong>
-                        {profile?.isPrivate
-                          ? t('profile.visibilityPrivate', { defaultValue: 'Perfil privado' })
-                          : t('profile.visibilityPublic', { defaultValue: 'Perfil público' })}
-                      </strong>
-                    </div>
-                  </div>
-                ) : null}
                 {preferenceChips.length > 0 ? (
                   <div className="bw-user-profile-preference-list">
                     {preferenceChips.map((preference) => <span key={preference}>{preference}</span>)}
                   </div>
                 ) : null}
               </section>
+              )}
 
               {!isOwnProfile ? (
                 <>
@@ -600,6 +698,26 @@ export function UserDashboardPage({
             </>
           )}
         </main>
+        {isOwnProfile && session ? (
+          <FollowListModal
+            open={Boolean(followListMode)}
+            mode={followListMode}
+            currentUserId={session.user.id}
+            onClose={() => setFollowListMode(null)}
+            onFollowingDelta={(delta) => setFollowCounts((current) => ({
+              ...current,
+              following: Math.max(0, current.following + delta),
+            }))}
+            onListCount={(mode, count) => setFollowCounts((current) => ({
+              ...current,
+              [mode]: count,
+            }))}
+            onViewPosts={(user) => {
+              setFollowListMode(null);
+              navigate(`/users/${user.id}`, { state: { returnTo: '/profile' } });
+            }}
+          />
+        ) : null}
     </AppShell>
   );
 }
