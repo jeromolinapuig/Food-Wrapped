@@ -17,6 +17,14 @@ vi.mock('@mui/icons-material', () => ({
   Star: () => null,
 }));
 
+vi.mock('border-beam', () => ({
+  BorderBeam: ({ children, className }: { children: ReactNode; className?: string }) => (
+    <div className={className} data-beam="test-beam">
+      {children}
+    </div>
+  ),
+}));
+
 type QueryResult = { data?: unknown; error?: unknown };
 
 function createQuery(result: QueryResult) {
@@ -236,6 +244,21 @@ describe('Dashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open-entry' }));
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-42', { state: { returnTo: '/dashboard' } });
+
+    const topBurgersButton = screen.getByRole('button', { name: /Mi top burgers|myTopBurgers\.title/i });
+    expect(topBurgersButton.closest('[data-beam]')).toBeNull();
+    const summaryTitle = screen.getByText(/Resumen 2026|burgerCalendar\.summaryTitle/i);
+    expect(summaryTitle.closest('button')?.closest('[data-beam]'))
+      .toHaveClass('bw-annual-summary-beam');
+    [
+      /Fecha|dashboard\.dateFilter/i,
+      /Precio|dashboard\.priceFilter/i,
+      /Tipo|dashboard\.type/i,
+    ].forEach((filterName) => {
+      expect(screen.getByRole('button', { name: filterName }).closest('[data-beam]')).toBeNull();
+    });
+    fireEvent.click(topBurgersButton);
+    expect(navigateMock).toHaveBeenCalledWith('/my-top-burgers');
   });
 
   it('abre el modal de creación desde el destino de una notificación', async () => {

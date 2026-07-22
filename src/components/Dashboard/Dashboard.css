@@ -363,6 +363,69 @@
   margin-bottom: 16px;
 }
 
+@property --bw-annual-summary-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.bw-annual-summary-beam {
+  --beam-inner-opacity: 1.25;
+  --beam-bloom-opacity: 0;
+  --beam-stroke-opacity: 1.8;
+  width: 100%;
+}
+
+.bw-annual-summary-beam[data-beam][data-active]::after,
+.bw-annual-summary-beam[data-beam][data-fading]::after {
+  background: conic-gradient(
+    from var(--bw-annual-summary-beam-angle),
+    transparent 0deg,
+    transparent 205deg,
+    rgba(101, 220, 255, 0) 218deg,
+    #65dcff 248deg,
+    var(--bw-accent) 282deg,
+    #8a7cff 316deg,
+    rgba(138, 124, 255, 0) 348deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 3px var(--bw-accent));
+  animation: bw-annual-summary-beam-spin 8s linear infinite;
+}
+
+.bw-annual-summary-beam[data-beam][data-active]::before,
+.bw-annual-summary-beam[data-beam][data-fading]::before {
+  padding: 1px;
+  background: conic-gradient(
+    from var(--bw-annual-summary-beam-angle),
+    transparent 0deg,
+    transparent 205deg,
+    rgba(101, 220, 255, 0) 218deg,
+    rgba(101, 220, 255, 0.72) 248deg,
+    rgba(255, 59, 141, 0.68) 282deg,
+    rgba(138, 124, 255, 0.62) 316deg,
+    rgba(138, 124, 255, 0) 348deg,
+    transparent 360deg
+  );
+  box-shadow: none;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: blur(8px);
+  animation: bw-annual-summary-beam-spin 8s linear infinite;
+}
+
+@keyframes bw-annual-summary-beam-spin {
+  to {
+    --bw-annual-summary-beam-angle: 360deg;
+  }
+}
+
 .bw-dashboard-top-link-button {
   width: 100%;
   min-height: 48px;
@@ -389,6 +452,16 @@
   align-items: center;
   justify-content: center;
   color: var(--bw-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-annual-summary-beam,
+  .bw-annual-summary-beam::before,
+  .bw-annual-summary-beam::after,
+  .bw-annual-summary-beam [data-beam-bloom] {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .bw-dashboard-filter-carousel {
@@ -803,6 +876,10 @@
 }
 
 @media (min-width: 900px) {
+  .bw-annual-summary-beam {
+    display: none;
+  }
+
   .bw-annual-summary-toggle {
     display: none;
   }

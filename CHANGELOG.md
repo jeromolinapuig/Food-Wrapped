@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.8.7
+
+- Added a continuously rotating cyan, pink and violet border beam with a progressively fading inner glow to the compact 2026 summary card on mobile, with theme and reduced-motion support.
+
 ## 1.8.6
 
 - Refined the profile into a full-page personal view with a larger identity area, follower and following lists, burger preferences, and direct access to saved posts and burgers to try.

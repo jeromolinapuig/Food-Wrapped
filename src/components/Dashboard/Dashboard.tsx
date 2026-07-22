@@ -772,6 +772,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             averageRating={stats.averageRating}
             totalSpentLabel={totalSpentLabel}
             favoriteRestaurant={stats.favoriteRestaurant}
+            theme={theme}
           >
             <section className="bw-stats-grid">
               {loading ? (
