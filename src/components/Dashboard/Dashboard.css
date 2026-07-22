@@ -359,10 +359,6 @@
   margin-bottom: 16px;
 }
 
-.bw-dashboard-top-link {
-  margin-bottom: 16px;
-}
-
 @property --bw-annual-summary-beam-angle {
   syntax: '<angle>';
   initial-value: 0deg;
@@ -424,34 +420,6 @@
   to {
     --bw-annual-summary-beam-angle: 360deg;
   }
-}
-
-.bw-dashboard-top-link-button {
-  width: 100%;
-  min-height: 48px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 18px;
-  background: var(--bw-surface);
-  color: var(--bw-text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.bw-dashboard-top-link-button:not(:disabled):hover {
-  border-color: var(--bw-accent);
-  background: var(--bw-accent-soft);
-  transform: translateY(-1px);
-}
-
-.bw-dashboard-top-link-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--bw-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -690,7 +658,6 @@
   display: block;
 }
 
-:root[data-theme='dark'] .bw-dashboard-top-link-button,
 :root[data-theme='dark'] .bw-annual-summary-toggle,
 :root[data-theme='dark'] .bw-annual-summary-collapse-button,
 :root[data-theme='dark'] .bw-annual-summary-metric,

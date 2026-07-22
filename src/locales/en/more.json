@@ -1,0 +1,20 @@
+{
+  "title": "More",
+  "lockedSubtitle": "Log in to discover all the BurgerWrapped tools.",
+  "personalSection": "Your BurgerWrapped",
+  "socialSection": "Social",
+  "calendarTitle": "Burger Calendar",
+  "calendarDescription": "See when you have eaten burgers",
+  "topBurgersTitle": "My Top Burgers",
+  "topBurgersDescription": "Your highest-rated burgers",
+  "wishlistTitle": "Burgers to try",
+  "wishlistDescription": "Everything still on your list",
+  "savedTitle": "Saved",
+  "savedDescription": "Posts you want to keep",
+  "groupsTitle": "Groups",
+  "groupsDescription": "Activity and rankings with friends",
+  "rankingTitle": "Ranking",
+  "rankingDescription": "View the global ranking",
+  "newBadge": "New",
+  "pendingInvitations": "{{count}} pending group invitations"
+}

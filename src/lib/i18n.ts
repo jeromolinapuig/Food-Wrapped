@@ -212,6 +212,13 @@ import frFeatureAnnouncement from '../locales/fr/featureAnnouncement.json';
 import itFeatureAnnouncement from '../locales/it/featureAnnouncement.json';
 import deFeatureAnnouncement from '../locales/de/featureAnnouncement.json';
 import jaFeatureAnnouncement from '../locales/ja/featureAnnouncement.json';
+import enMore from '../locales/en/more.json';
+import esMore from '../locales/es/more.json';
+import thMore from '../locales/th/more.json';
+import frMore from '../locales/fr/more.json';
+import itMore from '../locales/it/more.json';
+import deMore from '../locales/de/more.json';
+import jaMore from '../locales/ja/more.json';
 
 const resources = {
   en: {
@@ -241,7 +248,8 @@ const resources = {
     myTopBurgers: enMyTopBurgers,
     burgerWishlist: enBurgerWishlist,
     burgerCalendar: enBurgerCalendar,
-    featureAnnouncement: enFeatureAnnouncement
+    featureAnnouncement: enFeatureAnnouncement,
+    more: enMore
   },
   es: {
     common: esCommon,
@@ -270,7 +278,8 @@ const resources = {
     myTopBurgers: esMyTopBurgers,
     burgerWishlist: esBurgerWishlist,
     burgerCalendar: esBurgerCalendar,
-    featureAnnouncement: esFeatureAnnouncement
+    featureAnnouncement: esFeatureAnnouncement,
+    more: esMore
   },
   th: {
     common: thCommon,
@@ -299,7 +308,8 @@ const resources = {
     myTopBurgers: thMyTopBurgers,
     burgerWishlist: thBurgerWishlist,
     burgerCalendar: thBurgerCalendar,
-    featureAnnouncement: thFeatureAnnouncement
+    featureAnnouncement: thFeatureAnnouncement,
+    more: thMore
   },
   fr: {
     common: frCommon,
@@ -328,7 +338,8 @@ const resources = {
     myTopBurgers: frMyTopBurgers,
     burgerWishlist: frBurgerWishlist,
     burgerCalendar: frBurgerCalendar,
-    featureAnnouncement: frFeatureAnnouncement
+    featureAnnouncement: frFeatureAnnouncement,
+    more: frMore
   },
   it: {
     common: itCommon,
@@ -357,7 +368,8 @@ const resources = {
     myTopBurgers: itMyTopBurgers,
     burgerWishlist: itBurgerWishlist,
     burgerCalendar: itBurgerCalendar,
-    featureAnnouncement: itFeatureAnnouncement
+    featureAnnouncement: itFeatureAnnouncement,
+    more: itMore
   },
   de: {
     common: deCommon,
@@ -386,7 +398,8 @@ const resources = {
     myTopBurgers: deMyTopBurgers,
     burgerWishlist: deBurgerWishlist,
     burgerCalendar: deBurgerCalendar,
-    featureAnnouncement: deFeatureAnnouncement
+    featureAnnouncement: deFeatureAnnouncement,
+    more: deMore
   },
   ja: {
     common: jaCommon,
@@ -415,7 +428,8 @@ const resources = {
     myTopBurgers: jaMyTopBurgers,
     burgerWishlist: jaBurgerWishlist,
     burgerCalendar: jaBurgerCalendar,
-    featureAnnouncement: jaFeatureAnnouncement
+    featureAnnouncement: jaFeatureAnnouncement,
+    more: jaMore
   }
 };
 
@@ -464,7 +478,8 @@ i18n
       'myTopBurgers',
       'burgerWishlist',
       'burgerCalendar',
-      'featureAnnouncement'
+      'featureAnnouncement',
+      'more'
     ],
     interpolation: { escapeValue: false },
     returnNull: false,

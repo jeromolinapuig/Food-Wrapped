@@ -1,0 +1,20 @@
+{
+  "title": "เพิ่มเติม",
+  "lockedSubtitle": "เข้าสู่ระบบเพื่อดูเครื่องมือทั้งหมดของ BurgerWrapped",
+  "personalSection": "BurgerWrapped ของคุณ",
+  "socialSection": "โซเชียล",
+  "calendarTitle": "ปฏิทินเบอร์เกอร์",
+  "calendarDescription": "ดูวันที่คุณกินเบอร์เกอร์",
+  "topBurgersTitle": "เบอร์เกอร์ยอดนิยมของฉัน",
+  "topBurgersDescription": "เบอร์เกอร์ที่คุณให้คะแนนสูงสุด",
+  "wishlistTitle": "เบอร์เกอร์ที่อยากลอง",
+  "wishlistDescription": "รายการทั้งหมดที่คุณยังไม่ได้ลอง",
+  "savedTitle": "บันทึกแล้ว",
+  "savedDescription": "โพสต์ที่คุณต้องการเก็บไว้",
+  "groupsTitle": "กลุ่ม",
+  "groupsDescription": "กิจกรรมและอันดับร่วมกับเพื่อน",
+  "rankingTitle": "อันดับ",
+  "rankingDescription": "ดูอันดับทั่วโลก",
+  "newBadge": "ใหม่",
+  "pendingInvitations": "คำเชิญเข้ากลุ่มที่รอดำเนินการ {{count}} รายการ"
+}

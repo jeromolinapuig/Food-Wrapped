@@ -97,6 +97,7 @@ Definidas en `src/App.tsx`.
 | `/home`            | Alias/navegacion hacia inicio          | Mixto                            |
 | `/feed`            | Feed social                            | Mixto                            |
 | `/search`          | Busqueda de usuarios y restaurantes    | Mixto                            |
+| `/more`            | Hub de herramientas secundarias        | Autenticado                      |
 | `/profile`         | Perfil propio                          | Autenticado                      |
 | `/profile/settings`| Ajustes del perfil y de la cuenta      | Autenticado                      |
 | `/groups`          | Listado y gestion de grupos            | Autenticado                      |

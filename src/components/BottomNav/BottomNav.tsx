@@ -1,4 +1,4 @@
-import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, NotificationsActive, PersonOutline, PlaylistAdd, Search } from '@mui/icons-material';
+import { Close, DynamicFeed, EmojiEvents, Groups, Home, MoreHoriz, NotificationsActive, PersonOutline, Search } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -34,8 +34,6 @@ export function BottomNav({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFrame, setAvatarFrame] = useState<'gold' | 'silver' | 'bronze' | null>(null);
   const [initial, setInitial] = useState<string>('?');
-  const [inviteCount, setInviteCount] = useState(0);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [profileSuggestionDismissedUserId, setProfileSuggestionDismissedUserId] = useState<string | null>(null);
   const isGuest = !session;
@@ -58,6 +56,10 @@ export function BottomNav({
       if (returnTo.startsWith('/search')) return 'search';
       if (returnTo.startsWith('/ranking')) return 'more';
       if (returnTo.startsWith('/burger-wishlist')) return 'more';
+      if (returnTo.startsWith('/burger-calendar')) return 'more';
+      if (returnTo.startsWith('/my-top-burgers')) return 'more';
+      if (returnTo.startsWith('/saved')) return 'more';
+      if (returnTo.startsWith('/more')) return 'more';
       if (returnTo.startsWith('/profile')) return 'profile';
     }
     if (location.pathname === '/' || location.pathname.startsWith('/home')) return 'home';
@@ -66,6 +68,10 @@ export function BottomNav({
     if (location.pathname.startsWith('/groups')) return 'more';
     if (location.pathname.startsWith('/ranking')) return 'more';
     if (location.pathname.startsWith('/burger-wishlist')) return 'more';
+    if (location.pathname.startsWith('/burger-calendar')) return 'more';
+    if (location.pathname.startsWith('/my-top-burgers')) return 'more';
+    if (location.pathname.startsWith('/saved')) return 'more';
+    if (location.pathname.startsWith('/more')) return 'more';
     if (location.pathname.startsWith('/profile')) return 'profile';
     return 'home';
   }, [adminModeEnabled, isAdmin, location.pathname, location.state]);
@@ -143,47 +149,13 @@ export function BottomNav({
     };
   }, [loadProfile, userId]);
 
-  const loadInvites = useCallback(async () => {
-    if (!userId || (adminModeEnabled && isAdmin)) return;
-    const { count, error } = await supabase
-      .from('group_invitations')
-      .select('id', { count: 'exact', head: true })
-      .eq('invitee_id', userId);
-
-    if (error) {
-      setInviteCount(0);
-      return;
-    }
-
-    setInviteCount(count ?? 0);
-  }, [adminModeEnabled, isAdmin, userId]);
-
-  useEffect(() => {
-    startTransition(() => {
-      void loadInvites();
-    });
-
-    const handleInvitesUpdated = () => loadInvites();
-    window.addEventListener('bw-invites-updated', handleInvitesUpdated);
-
-    return () => {
-      window.removeEventListener('bw-invites-updated', handleInvitesUpdated);
-    };
-  }, [loadInvites, location.pathname]);
-
   useRevalidateOnFocus(
     () => {
       loadProfile();
-      loadInvites();
     },
-    [loadInvites, loadProfile],
+    [loadProfile],
     { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
   );
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setMoreOpen(false), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [location.pathname]);
 
   const requestNavigation = (path: string) => {
     if (location.pathname === path) return false;
@@ -197,7 +169,6 @@ export function BottomNav({
 
   const handleClick = (path: string) => {
     if (requestNavigation(path)) return;
-    setMoreOpen(false);
     navigate(path);
   };
 
@@ -212,16 +183,6 @@ export function BottomNav({
     handleDismissProfileSuggestion();
     handleClick('/profile/settings');
   };
-
-  useEffect(() => {
-    if (adminModeEnabled && isAdmin) return;
-    if (!moreOpen) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMoreOpen(false);
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [adminModeEnabled, isAdmin, moreOpen]);
 
   if (adminModeEnabled && isAdmin) {
     return (
@@ -287,7 +248,7 @@ export function BottomNav({
 
   return (
     <nav
-      className={`bw-bottom-nav is-main ${moreOpen ? 'is-more-open' : ''} ${showProfileSuggestion ? 'is-profile-suggestion-open' : ''}`}
+      className={`bw-bottom-nav is-main ${showProfileSuggestion ? 'is-profile-suggestion-open' : ''}`}
       aria-label={t('common.navigation', { defaultValue: 'Navigation' })}
     >
       <button
@@ -317,73 +278,15 @@ export function BottomNav({
         <span className="bw-bottom-nav-icon"><Search /></span>
         <span className="bw-bottom-nav-label">{t('common.search', { defaultValue: 'Search' })}</span>
       </button>
-      <div className={`bw-bottom-nav-more ${activeKey === 'more' ? 'is-active' : ''}`}>
-        <button
-          type="button"
-          className={`bw-bottom-nav-item ${activeKey === 'more' ? 'is-active' : ''}`}
-          onClick={() => setMoreOpen((prev) => !prev)}
-          aria-label={t('common.more', { defaultValue: 'More' })}
-          aria-haspopup="menu"
-          aria-expanded={moreOpen}
-        >
-          <span className="bw-bottom-nav-icon"><MoreHoriz /></span>
-          <span className="bw-bottom-nav-label">{t('common.more', { defaultValue: 'More' })}</span>
-        </button>
-        {moreOpen && (
-          <>
-            <button
-              type="button"
-              className="bw-bottom-nav-menu-backdrop"
-              onClick={() => setMoreOpen(false)}
-              aria-label={t('common.close', { defaultValue: 'Close' })}
-            />
-            <div className="bw-bottom-nav-menu" role="menu">
-              <button
-                type="button"
-                className="bw-bottom-nav-menu-item"
-                role="menuitem"
-                onClick={() => handleClick('/ranking')}
-              >
-                <span className="bw-bottom-nav-menu-icon"><EmojiEvents fontSize="small" /></span>
-                <span className="bw-bottom-nav-menu-label">
-                  {t('common.ranking', { defaultValue: 'Ranking' })}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="bw-bottom-nav-menu-item"
-                role="menuitem"
-                onClick={() => handleClick('/groups')}
-              >
-                <span className="bw-bottom-nav-menu-icon">
-                  <Groups fontSize="small" />
-                  {inviteCount > 0 && <span className="bw-bottom-nav-dot" />}
-                </span>
-                <span className="bw-bottom-nav-menu-label">
-                  {t('common.groups', { defaultValue: 'Groups' })}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="bw-bottom-nav-menu-item"
-                role="menuitem"
-                onClick={() => {
-                  if (isGuest) {
-                    onRequireLogin?.();
-                    return;
-                  }
-                  handleClick('/burger-wishlist');
-                }}
-              >
-                <span className="bw-bottom-nav-menu-icon"><PlaylistAdd fontSize="small" /></span>
-                <span className="bw-bottom-nav-menu-label">
-                  {t('burgerWishlist.pageTitle', { defaultValue: 'Burgers to try' })}
-                </span>
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+      <button
+        type="button"
+        className={`bw-bottom-nav-item ${activeKey === 'more' ? 'is-active' : ''}`}
+        onClick={() => handleClick('/more')}
+        aria-label={t('common.more', { defaultValue: 'More' })}
+      >
+        <span className="bw-bottom-nav-icon"><MoreHoriz /></span>
+        <span className="bw-bottom-nav-label">{t('common.more', { defaultValue: 'More' })}</span>
+      </button>
       <div className="bw-bottom-nav-profile">
         {showProfileSuggestion && (
           <div className="bw-profile-suggestion" role="status">

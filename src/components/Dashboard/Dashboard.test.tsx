@@ -6,12 +6,29 @@ import { supabase } from '../../lib/supabaseClient';
 
 const navigateMock = vi.fn();
 const routerLocation = { pathname: '/dashboard', search: '' };
+const localStorageMock = (() => {
+  const values = new Map<string, string>();
+  return {
+    clear: () => values.clear(),
+    getItem: (key: string) => values.get(key) ?? null,
+    key: (index: number) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key: string) => values.delete(key),
+    setItem: (key: string, value: string) => values.set(key, String(value)),
+    get length() {
+      return values.size;
+    },
+  } satisfies Storage;
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+});
 
 vi.mock('@mui/icons-material', () => ({
   EmojiEvents: () => null,
   Euro: () => null,
   House: () => null,
-  LocalDining: () => null,
   LunchDining: () => null,
   Notifications: () => null,
   Star: () => null,
@@ -245,8 +262,7 @@ describe('Dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open-entry' }));
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-42', { state: { returnTo: '/dashboard' } });
 
-    const topBurgersButton = screen.getByRole('button', { name: /Mi top burgers|myTopBurgers\.title/i });
-    expect(topBurgersButton.closest('[data-beam]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Mi top burgers|myTopBurgers\.title/i })).not.toBeInTheDocument();
     const summaryTitle = screen.getByText(/Resumen 2026|burgerCalendar\.summaryTitle/i);
     expect(summaryTitle.closest('button')?.closest('[data-beam]'))
       .toHaveClass('bw-annual-summary-beam');
@@ -257,8 +273,6 @@ describe('Dashboard', () => {
     ].forEach((filterName) => {
       expect(screen.getByRole('button', { name: filterName }).closest('[data-beam]')).toBeNull();
     });
-    fireEvent.click(topBurgersButton);
-    expect(navigateMock).toHaveBeenCalledWith('/my-top-burgers');
   });
 
   it('abre el modal de creación desde el destino de una notificación', async () => {

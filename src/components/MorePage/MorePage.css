@@ -1,0 +1,183 @@
+.bw-more-page {
+  display: grid;
+  gap: 30px;
+  padding-bottom: 112px;
+}
+
+.bw-more-section {
+  display: grid;
+  gap: 14px;
+}
+
+.bw-more-section h2 {
+  margin: 0;
+  color: var(--bw-text);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.bw-more-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.bw-more-grid.is-personal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bw-more-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  background: var(--bw-card-bg);
+  color: var(--bw-text);
+  box-shadow: 0 10px 26px rgba(27, 22, 50, 0.08);
+  text-decoration: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.bw-more-card.is-compact {
+  min-height: 154px;
+  align-content: start;
+  gap: 13px;
+  padding: 16px;
+}
+
+.bw-more-card.is-wide {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 82px;
+  padding: 14px 16px;
+}
+
+.bw-more-card:hover {
+  border-color: color-mix(in srgb, var(--bw-accent) 45%, transparent);
+  box-shadow: 0 14px 32px rgba(27, 22, 50, 0.14);
+  transform: translateY(-2px);
+}
+
+.bw-more-card:active {
+  transform: scale(0.985);
+}
+
+.bw-more-card:focus-visible {
+  outline: 3px solid var(--bw-accent);
+  outline-offset: 3px;
+}
+
+.bw-more-card-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bw-accent-soft);
+  color: var(--bw-accent);
+}
+
+.bw-more-card-icon svg {
+  font-size: 24px;
+}
+
+.bw-more-card-content {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bw-more-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.bw-more-card-description {
+  color: var(--bw-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.bw-more-card-chevron {
+  color: var(--bw-text-muted);
+  font-size: 20px;
+}
+
+.bw-more-card.is-compact .bw-more-card-chevron {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+}
+
+.bw-more-new-badge,
+.bw-more-invite-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.bw-more-new-badge {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  padding: 0 8px;
+  background: var(--bw-accent);
+  color: #fff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bw-more-invite-badge {
+  min-width: 22px;
+  padding: 0 6px;
+  background: #d92d4f;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .bw-more-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='dark'] .bw-more-card:hover {
+  border-color: color-mix(in srgb, var(--bw-accent) 60%, transparent);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+@media (min-width: 900px) {
+  .bw-more-page {
+    gap: 38px;
+    padding-bottom: 40px;
+  }
+
+  .bw-more-grid.is-personal {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .bw-more-grid.is-social {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bw-more-card.is-compact {
+    min-height: 166px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-more-card {
+    transition: none;
+  }
+
+  .bw-more-card:hover,
+  .bw-more-card:active {
+    transform: none;
+  }
+}

@@ -87,6 +87,25 @@ const setupSupabase = (inviteCount: number) => {
   });
 };
 
+const localStorageMock = (() => {
+  const values = new Map<string, string>();
+  return {
+    clear: () => values.clear(),
+    getItem: (key: string) => values.get(key) ?? null,
+    key: (index: number) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key: string) => values.delete(key),
+    setItem: (key: string, value: string) => values.set(key, String(value)),
+    get length() {
+      return values.size;
+    },
+  } satisfies Storage;
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+});
+
 describe('BottomNav functional flows', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -108,28 +127,32 @@ describe('BottomNav functional flows', () => {
     expect(navigateMock).not.toHaveBeenCalledWith('/profile');
   });
 
-  it('opens More menu and navigates to ranking', async () => {
+  it('navigates to the More page without opening a popup', async () => {
     const user = userEvent.setup();
     const session: MockSession = { user: { id: 'user-1', email: 'user@example.com' } };
 
     render(<BottomNav session={session as never} />);
     await user.click(screen.getByRole('button', { name: 'More' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Ranking' }));
 
-    expect(navigateMock).toHaveBeenCalledWith('/ranking');
+    expect(navigateMock).toHaveBeenCalledWith('/more');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('shows invite dot when there are pending group invitations', async () => {
-    const user = userEvent.setup();
-    const session: MockSession = { user: { id: 'user-1', email: 'user@example.com' } };
-    setupSupabase(3);
+  it.each([
+    '/more',
+    '/ranking',
+    '/groups',
+    '/groups/group-1',
+    '/burger-wishlist',
+    '/my-top-burgers',
+    '/saved',
+    '/burger-calendar',
+  ])('marks More as active on %s', (pathname) => {
+    routerState.pathname = pathname;
 
-    const { container } = render(<BottomNav session={session as never} />);
-    await user.click(screen.getByRole('button', { name: 'More' }));
+    render(<BottomNav session={null} />);
 
-    await waitFor(() => {
-      expect(container.querySelector('.bw-bottom-nav-dot')).toBeInTheDocument();
-    });
+    expect(screen.getByRole('button', { name: 'More' })).toHaveClass('is-active');
   });
 
   it('dismisses the incomplete profile suggestion', async () => {

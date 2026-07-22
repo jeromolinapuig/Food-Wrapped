@@ -25,6 +25,7 @@ import { BurgerCalendarPage } from './components/BurgerCalendarPage/BurgerCalend
 import { PostPage } from './components/PostPage/PostPage';
 import { SearchPage } from './components/SearchPage/SearchPage';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
+import { MorePage } from './components/MorePage/MorePage';
 import { FeatureAnnouncementModal } from './components/FeatureAnnouncementModal/FeatureAnnouncementModal';
 import { PushNotificationPrompt } from './components/PushNotifications/PushNotificationPrompt';
 import { AppShell } from './components/common/AppShell';
@@ -504,6 +505,21 @@ function App() {
                 subtitle={t('locked.profileSubtitle')}
                 onLogin={handleLogin}
                 preview={<ProfilePlaceholder />}
+              />
+            )
+          }
+        />
+        <Route
+          path="/more"
+          element={
+            session ? (
+              <MorePage session={session} />
+            ) : (
+              <LockedPage
+                title={t('more.title')}
+                subtitle={t('more.lockedSubtitle')}
+                onLogin={handleLogin}
+                preview={<GroupsPlaceholder />}
               />
             )
           }

@@ -551,6 +551,13 @@ export function UserDashboardPage({
                   </div>
 
                   <div className="bw-own-profile-links">
+                    <button type="button" onClick={() => navigate('/my-top-burgers')}>
+                      <span className="bw-own-profile-link-icon" aria-hidden="true">
+                        <EmojiEvents fontSize="small" />
+                      </span>
+                      <span>{t('profile.myTopBurgers')}</span>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
                     <button type="button" onClick={() => navigate('/burger-wishlist')}>
                       <span className="bw-own-profile-link-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg>

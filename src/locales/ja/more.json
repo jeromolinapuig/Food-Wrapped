@@ -1,0 +1,20 @@
+{
+  "title": "その他",
+  "lockedSubtitle": "ログインしてBurgerWrappedのすべてのツールを見つけましょう。",
+  "personalSection": "あなたのBurgerWrapped",
+  "socialSection": "ソーシャル",
+  "calendarTitle": "バーガーカレンダー",
+  "calendarDescription": "バーガーを食べた日を確認できます",
+  "topBurgersTitle": "マイトップバーガー",
+  "topBurgersDescription": "評価が高かったバーガー",
+  "wishlistTitle": "食べてみたいバーガー",
+  "wishlistDescription": "まだ食べていないバーガーの一覧",
+  "savedTitle": "保存済み",
+  "savedDescription": "残しておきたい投稿",
+  "groupsTitle": "グループ",
+  "groupsDescription": "友達とのアクティビティとランキング",
+  "rankingTitle": "ランキング",
+  "rankingDescription": "グローバルランキングを確認",
+  "newBadge": "新着",
+  "pendingInvitations": "保留中のグループ招待が{{count}}件あります"
+}

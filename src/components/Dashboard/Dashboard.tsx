@@ -2,7 +2,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ADD_ENTRY_NOTIFICATION_TARGET } from '../../constants/notificationTargets';
 import type { Session } from '@supabase/supabase-js';
-import { EmojiEvents, Euro, House, LocalDining, LunchDining, Notifications, Star } from '@mui/icons-material';
+import { EmojiEvents, Euro, House, LunchDining, Notifications, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { AddEntryModal } from '../AddEntryModal/AddEntryModal';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
@@ -835,19 +835,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             burgerDaysThisMonth={burgerDaysThisMonth}
             onOpen={() => navigate('/burger-calendar')}
           />
-
-          <section className="bw-dashboard-top-link">
-            <button
-              type="button"
-              className="bw-dashboard-top-link-button"
-              onClick={() => navigate('/my-top-burgers')}
-            >
-              <span className="bw-dashboard-top-link-icon">
-                <LocalDining fontSize="small" />
-              </span>
-              <span>{t('myTopBurgers.title', { defaultValue: 'Mi top burgers' })}</span>
-            </button>
-          </section>
 
           <section className="bw-history">
             <div

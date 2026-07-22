@@ -22,6 +22,7 @@ function createQuery(result: QueryResult) {
     error: result.error ?? null,
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
+    or: vi.fn(() => query),
     gte: vi.fn(() => query),
     lt: vi.fn(() => query),
     order: vi.fn(() => query),
@@ -213,5 +214,36 @@ describe('UserDashboardPage', () => {
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-55', {
       state: { returnTo: '/users/u-public' },
     });
+  });
+
+  it('muestra Mis Top Burgers en el perfil propio y navega al acceso', async () => {
+    setTableResponses('follows', [{ data: [], error: null }]);
+    setTableResponses('profiles', [
+      {
+        data: {
+          username: 'burger-fan',
+          display_name: 'Burger Fan',
+          avatar_url: null,
+          is_private: false,
+        },
+        error: null,
+      },
+    ]);
+    setTableResponses('entries', [{ data: [], error: null }]);
+
+    render(
+      <UserDashboardPage
+        session={{ user: { id: 'user-1', email: 'burger@example.com' } } as never}
+        theme="light"
+        onToggleTheme={() => {}}
+        onNavigate={() => {}}
+        userId="user-1"
+        isOwnProfile
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'profile.myTopBurgers' }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/my-top-burgers');
   });
 });

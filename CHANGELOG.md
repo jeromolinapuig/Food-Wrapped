@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.9.0
+
+- Redesigned the More navigation as a dedicated discovery page for BurgerWrapped tools, including personal activity and social sections.
+- Improved feature discoverability with contextual shortcuts and support for highlighting newly added tools, while removing the duplicated My Top Burgers shortcut from Home.
+
 ## 1.8.7
 
 - Added a continuously rotating cyan, pink and violet border beam with a progressively fading inner glow to the compact 2026 summary card on mobile, with theme and reduced-motion support.
