@@ -157,6 +157,25 @@ Llamadas Supabase relevantes:
 - `profiles`: username/display name.
 - `entry_bookmarks`: deteccion de guardados.
 
+### Mas
+
+Archivos:
+
+- `src/components/MorePage/MorePage.tsx`
+- `src/components/MorePage/MorePage.css`
+
+Responsabilidades:
+
+- Agrupar en `/more` las herramientas personales y sociales que no forman parte de la navegacion principal.
+- Mantener el indicador de invitaciones pendientes en el acceso a Grupos.
+- Destacar temporalmente una herramienta mediante la propiedad `badge: 'new'` de su configuracion.
+
+Regla para nuevas herramientas:
+
+- Cuando se anada una nueva funcionalidad a la pagina Mas, su opcion debe marcarse con `badge: 'new'`.
+- En ese mismo cambio se debe retirar el badge de la opcion que estaba marcada anteriormente, de modo que solo haya una funcionalidad con la etiqueta `Nuevo`.
+- El badge es un destacado temporal del frontend y no requiere persistencia en Supabase.
+
 ### Feed
 
 Archivos:
