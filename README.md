@@ -107,6 +107,7 @@ Definidas en `src/App.tsx`.
 | `/posts/:entryId`  | Detalle de post                        | Mixto segun visibilidad          |
 | `/saved`           | Posts guardados                        | Autenticado                      |
 | `/burger-wishlist` | Burgers para probar                    | Autenticado                      |
+| `/burger-calendar` | Calendario personal de hamburguesas    | Autenticado                      |
 | `/restaurants`     | Redireccion legacy a `/search`         | Mixto                            |
 | `/my-top-burgers`  | Ranking personal de hamburguesas       | Autenticado                      |
 | `/login`           | Login/signup/OAuth                     | Publico                          |
@@ -117,6 +118,7 @@ Definidas en `src/App.tsx`.
 | `/admin/feed`      | Moderacion feed                        | Admin                            |
 | `/admin/users`     | Gestion de usuarios                    | Admin                            |
 | `/admin/reports`   | Reportes                               | Admin                            |
+| `/admin/notifications` | Campanas push administrativas      | Admin                            |
 | `*`                | Redireccion a `/`                      | Publico                          |
 
 ## Modulos Principales
