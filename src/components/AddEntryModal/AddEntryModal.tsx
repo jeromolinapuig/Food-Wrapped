@@ -47,6 +47,7 @@ import {
   MIN_DATETIME_STRING,
 } from '../../utils/datetime';
 import { compressImage } from '../../utils/image';
+import { preparePhotoForCrop } from '../../utils/photoFile';
 import { getPhotoTakenDateTime } from '../../utils/photoMetadata';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -789,17 +790,30 @@ export function AddEntryModal({
     }
 
     resetCropState();
-    const photoDateTime =
-      (await getPhotoTakenDateTime(file)) ??
-      formatLocalDateTime(new Date());
-    const src = URL.createObjectURL(file);
-    setPendingPhotoDateTime(photoDateTime);
-    setPhotoCropSrc(src);
-    setPhotoCropFile(file);
-    setPhotoCrop(undefined);
-    setPhotoCropArea(null);
-    setPhotoStageHeight(360);
-    setPhotoNaturalSize(null);
+    setFormError(null);
+    setPhotoCompressing(true);
+    try {
+      const [photoDateTime, preparedFile] = await Promise.all([
+        getPhotoTakenDateTime(file),
+        preparePhotoForCrop(file),
+      ]);
+      const src = URL.createObjectURL(preparedFile);
+      setPendingPhotoDateTime(
+        photoDateTime ?? formatLocalDateTime(new Date()),
+      );
+      setPhotoCropSrc(src);
+      setPhotoCropFile(preparedFile);
+      setPhotoCrop(undefined);
+      setPhotoCropArea(null);
+      setPhotoStageHeight(360);
+      setPhotoNaturalSize(null);
+    } catch (error) {
+      console.error(error);
+      resetCropState();
+      setFormError(t('addEntry.errors.photoProcess'));
+    } finally {
+      setPhotoCompressing(false);
+    }
   };
 
   const handlePhotoInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -839,6 +853,11 @@ export function AddEntryModal({
     setPhotoCropArea(
       convertToPixelCrop(defaultCrop, naturalWidth, naturalHeight),
     );
+  };
+
+  const handleCropImageError = () => {
+    resetCropState();
+    setFormError(t('addEntry.errors.photoProcess'));
   };
 
   const handlePhotoCropConfirm = async () => {
@@ -1447,10 +1466,14 @@ export function AddEntryModal({
                 disabled={isBusy}
                 aria-label={t('addEntry.choosePhoto')}
               >
-              <div className="bw-photo-empty">
-                <PhotoLibraryRounded aria-hidden="true" />
-                <span>{t('addEntry.photoEmpty')}</span>
-              </div>
+                <div className="bw-photo-empty">
+                  <PhotoLibraryRounded aria-hidden="true" />
+                  <span aria-live="polite">
+                    {photoCompressing
+                      ? t('addEntry.processingPhoto')
+                      : t('addEntry.photoEmpty')}
+                  </span>
+                </div>
               </button>
               <input
                 id="bw-photo-card-input"
@@ -2120,6 +2143,7 @@ export function AddEntryModal({
                     src={photoCropSrc}
                     alt={t('addEntry.cropAlt')}
                     onLoad={handleCropImageLoad}
+                    onError={handleCropImageError}
                   />
                 </ReactCrop>
               </div>

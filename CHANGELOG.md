@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed mobile photo cropping by converting HEIC and HEIF files to JPEG on demand before opening the cropper, with a recoverable error when an image cannot be decoded.
+
 ## 1.10.0
 
 - Redesigned the burger entry form as a five-step wizard with adaptive restaurant and homemade flows for creating and editing posts.

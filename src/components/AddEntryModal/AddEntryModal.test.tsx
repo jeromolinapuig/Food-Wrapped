@@ -17,6 +17,7 @@ import { AddEntryModal } from './AddEntryModal';
 const photoMetadataMock = vi.hoisted(() => vi.fn());
 const cropImageMock = vi.hoisted(() => vi.fn());
 const compressImageMock = vi.hoisted(() => vi.fn());
+const preparePhotoForCropMock = vi.hoisted(() => vi.fn());
 
 const supabaseMock = vi.hoisted(() => {
   const state = {
@@ -133,6 +134,10 @@ vi.mock('../../utils/cropImage', () => ({
 
 vi.mock('../../utils/image', () => ({
   compressImage: compressImageMock,
+}));
+
+vi.mock('../../utils/photoFile', () => ({
+  preparePhotoForCrop: preparePhotoForCropMock,
 }));
 
 vi.mock('react-image-crop', () => ({
@@ -363,6 +368,9 @@ beforeEach(() => {
   });
   cropImageMock.mockResolvedValue(processedFile);
   compressImageMock.mockResolvedValue(processedFile);
+  preparePhotoForCropMock.mockImplementation(
+    async (file: File) => file,
+  );
   vi.stubGlobal(
     'URL',
     Object.assign(URL, {
@@ -564,6 +572,34 @@ describe('AddEntryModal wizard', () => {
       '2026-03-04T12:30',
     );
     expect(supabaseMock.state.storageUpload).not.toHaveBeenCalled();
+  });
+
+  it('cierra el recortador y muestra un error si la foto no carga', async () => {
+    renderModal();
+    selectOrigin('homemade');
+    clickContinue();
+    await screen.findByText('addEntry.steps.2.title');
+
+    const galleryLabel = screen
+      .getByText('addEntry.choosePhoto')
+      .closest('label');
+    fireEvent.change(galleryLabel?.querySelector('input') as Element, {
+      target: {
+        files: [
+          new File(['invalid'], 'burger.jpg', { type: 'image/jpeg' }),
+        ],
+      },
+    });
+
+    const cropImage = await screen.findByAltText('addEntry.cropAlt');
+    fireEvent.error(cropImage);
+
+    expect(
+      await screen.findByText('addEntry.errors.photoProcess'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByAltText('addEntry.cropAlt'),
+    ).not.toBeInTheDocument();
   });
 
   it('no sobrescribe una fecha modificada al cambiar la foto', async () => {
