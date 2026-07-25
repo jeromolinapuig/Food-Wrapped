@@ -545,6 +545,7 @@ El cliente referencia estas tablas directamente:
 
 - `burger_wishlist`
 - `burgers`
+- `entry_drafts`
 - `entries`
 - `entry_bookmarks`
 - `entry_comments`
@@ -595,7 +596,7 @@ Seguridad:
 
 Buckets usados:
 
-- `food-photos`: fotos de entradas.
+- `food-photos`: fotos de entradas publicadas y fotos temporales de borradores.
 - `avatars`: avatares de usuario.
 
 Operaciones:
@@ -835,6 +836,7 @@ No son SQL final del proyecto, solo criterios que deberian existir:
 - `entries.update/delete`: solo propietario o admin.
 - `profiles.update`: solo `id = auth.uid()` para campos editables.
 - `entry_likes` y `entry_bookmarks`: `user_id = auth.uid()`.
+- `entry_drafts`: cada usuario solo puede leer, crear, actualizar y eliminar su único borrador.
 - `notifications`: cada usuario solo puede leer, marcar como leidas o borrar las suyas; no puede crear avisos directamente.
 - `notification_preferences`: cada usuario solo puede gestionar sus propias preferencias.
 - `push_subscriptions`: el cliente solo registra y elimina su dispositivo mediante RPC autenticadas.

@@ -74,7 +74,7 @@
     },
     "2": {
       "title": "Aggiungi una foto",
-      "support": "Puoi aggiungerla ora o continuare senza foto."
+      "support": "Aggiungi una foto se vuoi e controlla data e ora."
     },
     "3": {
       "title": "Identifica il tuo burger",
@@ -86,7 +86,7 @@
     },
     "5": {
       "title": "Ultimi dettagli",
-      "support": "Controlla la data e i dati prima di pubblicare."
+      "support": "Controlla il riepilogo prima di pubblicare."
     }
   },
   "exitConfirm": {
@@ -94,6 +94,23 @@
     "message": "Se esci, i progressi andranno persi.",
     "keepEditing": "Continua a modificare",
     "exit": "Esci"
+  },
+  "draft": {
+    "resumeTitle": "Vuoi continuare ad aggiungere il burger?",
+    "resumeMessage": "Abbiamo trovato una bozza salvata. Puoi riprendere da dove avevi lasciato o ricominciare.",
+    "continue": "Continua la bozza",
+    "startNew": "Ricomincia",
+    "exitTitle": "Salvarlo come bozza?",
+    "exitMessage": "Potrai continuare ad aggiungere il burger la prossima volta.",
+    "discard": "Esci senza salvare",
+    "save": "Salva bozza",
+    "saving": "Salvataggio bozza...",
+    "errors": {
+      "load": "Non è stato possibile recuperare la bozza.",
+      "save": "Non è stato possibile salvare la bozza. Riprova.",
+      "discard": "Non è stato possibile eliminare la bozza. Riprova.",
+      "autosave": "Non è stato possibile salvare automaticamente la bozza."
+    }
   },
   "changeTypeConfirm": {
     "title": "Cambiare il tipo di burger?",

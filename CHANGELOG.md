@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+## 1.11.0
+
 - Fixed mobile photo cropping by converting HEIC and HEIF files to JPEG on demand before opening the cropper, with a recoverable error when an image cannot be decoded.
+- Moved the date and time field into the optional photo step, where it is now validated before continuing while remaining visible in the final summary.
+- Added database-backed burger drafts with an explicit save prompt on exit, automatic persistence after the photo step, recovery on the next creation, and cleanup when publishing or discarding.
 
 ## 1.10.0
 

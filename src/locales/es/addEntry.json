@@ -74,7 +74,7 @@
     },
     "2": {
       "title": "Añade una foto",
-      "support": "Puedes añadirla ahora o continuar sin foto."
+      "support": "Añade una foto si quieres y revisa la fecha y hora."
     },
     "3": {
       "title": "Identifica tu burger",
@@ -86,7 +86,7 @@
     },
     "5": {
       "title": "Últimos detalles",
-      "support": "Revisa la fecha y comprueba todo antes de publicar."
+      "support": "Comprueba el resumen antes de publicar."
     }
   },
   "exitConfirm": {
@@ -94,6 +94,23 @@
     "message": "Si sales se perderá el progreso.",
     "keepEditing": "Seguir editando",
     "exit": "Salir"
+  },
+  "draft": {
+    "resumeTitle": "¿Quieres continuar añadiendo la burger?",
+    "resumeMessage": "Hemos encontrado un borrador guardado. Puedes retomarlo donde lo dejaste o empezar de nuevo.",
+    "continue": "Continuar borrador",
+    "startNew": "Empezar de nuevo",
+    "exitTitle": "¿Quieres guardarlo como borrador?",
+    "exitMessage": "Podrás continuar añadiendo la burger la próxima vez.",
+    "discard": "Salir sin guardar",
+    "save": "Guardar borrador",
+    "saving": "Guardando borrador...",
+    "errors": {
+      "load": "No hemos podido recuperar tu borrador.",
+      "save": "No hemos podido guardar el borrador. Inténtalo de nuevo.",
+      "discard": "No hemos podido descartar el borrador. Inténtalo de nuevo.",
+      "autosave": "No hemos podido guardar automáticamente el borrador."
+    }
   },
   "changeTypeConfirm": {
     "title": "¿Cambiar el tipo de burger?",

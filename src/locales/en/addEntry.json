@@ -74,7 +74,7 @@
     },
     "2": {
       "title": "Add a photo",
-      "support": "You can add one now or continue without a photo."
+      "support": "Add a photo if you want and check the date and time."
     },
     "3": {
       "title": "Identify your burger",
@@ -86,7 +86,7 @@
     },
     "5": {
       "title": "Final details",
-      "support": "Check the date and review everything before publishing."
+      "support": "Check the summary before publishing."
     }
   },
   "exitConfirm": {
@@ -94,6 +94,23 @@
     "message": "If you leave, your progress will be lost.",
     "keepEditing": "Keep editing",
     "exit": "Leave"
+  },
+  "draft": {
+    "resumeTitle": "Continue adding your burger?",
+    "resumeMessage": "We found a saved draft. You can pick up where you left off or start over.",
+    "continue": "Continue draft",
+    "startNew": "Start over",
+    "exitTitle": "Save it as a draft?",
+    "exitMessage": "You can continue adding your burger next time.",
+    "discard": "Leave without saving",
+    "save": "Save draft",
+    "saving": "Saving draft...",
+    "errors": {
+      "load": "We could not retrieve your draft.",
+      "save": "We could not save the draft. Please try again.",
+      "discard": "We could not discard the draft. Please try again.",
+      "autosave": "We could not save the draft automatically."
+    }
   },
   "changeTypeConfirm": {
     "title": "Change the burger type?",

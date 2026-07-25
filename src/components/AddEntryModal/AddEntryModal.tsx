@@ -46,6 +46,14 @@ import {
   MIN_DATE,
   MIN_DATETIME_STRING,
 } from '../../utils/datetime';
+import {
+  deleteEntryDraft,
+  deleteEntryDraftPhoto,
+  type EntryDraft,
+  loadEntryDraft,
+  uploadEntryDraftPhoto,
+  upsertEntryDraft,
+} from '../../utils/entryDraft';
 import { compressImage } from '../../utils/image';
 import { preparePhotoForCrop } from '../../utils/photoFile';
 import { getPhotoTakenDateTime } from '../../utils/photoMetadata';
@@ -218,6 +226,9 @@ const getRestaurantSearchTerms = (value: string) => {
 const isObjectUrl = (value: string | null) =>
   Boolean(value?.startsWith('blob:'));
 
+const getFileSignature = (file: File) =>
+  `${file.name}:${file.size}:${file.lastModified}`;
+
 export function AddEntryModal({
   open,
   onClose,
@@ -287,6 +298,10 @@ export function AddEntryModal({
   >({});
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftToResume, setDraftToResume] = useState<EntryDraft | null>(
+    null,
+  );
   const [photoCompressing, setPhotoCompressing] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
@@ -311,6 +326,14 @@ export function AddEntryModal({
   const openerRef = useRef<HTMLElement | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const photoCardInputRef = useRef<HTMLInputElement | null>(null);
+  const draftPhotoUrlRef = useRef<string | null>(null);
+  const draftPhotoPathRef = useRef<string | null>(null);
+  const draftUploadedPhotoSignatureRef = useRef<string | null>(null);
+  const draftSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const draftAutosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const suppressDraftAutosaveRef = useRef(false);
 
   const makeSnapshot = useCallback(
     (overrides?: {
@@ -379,7 +402,7 @@ export function AddEntryModal({
   const hasProgress =
     makeSnapshot() !== initialSnapshotRef.current ||
     (mode === 'create' && hasAdvanced);
-  const isBusy = formLoading || photoCompressing;
+  const isBusy = formLoading || photoCompressing || draftSaving;
 
   useEffect(() => {
     if (!open) return;
@@ -399,6 +422,8 @@ export function AddEntryModal({
     setHasAdvanced(false);
     setIsClosing(false);
     setExitConfirmOpen(false);
+    setDraftSaving(false);
+    setDraftToResume(null);
     setPendingBurgerSource(null);
     setContinueAfterRestaurantReview(false);
     setDatetimeManuallyEdited(false);
@@ -416,6 +441,15 @@ export function AddEntryModal({
     setCropIsPortrait(false);
     setPhotoStageHeight(360);
     setPhotoNaturalSize(null);
+    draftPhotoUrlRef.current = null;
+    draftPhotoPathRef.current = null;
+    draftUploadedPhotoSignatureRef.current = null;
+    draftSaveQueueRef.current = Promise.resolve();
+    suppressDraftAutosaveRef.current = false;
+    if (draftAutosaveTimerRef.current) {
+      clearTimeout(draftAutosaveTimerRef.current);
+      draftAutosaveTimerRef.current = null;
+    }
 
     if (mode === 'edit' && entry) {
       const isHomemade = entry.burgerOrigin === 'homemade';
@@ -520,6 +554,27 @@ export function AddEntryModal({
   ]);
 
   useEffect(() => {
+    if (!open || mode !== 'create') return;
+    let active = true;
+
+    void loadEntryDraft(session.user.id)
+      .then((draft) => {
+        if (!active || !draft) return;
+        draftPhotoUrlRef.current = draft.photo_url;
+        draftPhotoPathRef.current = draft.photo_path;
+        setDraftToResume(draft);
+      })
+      .catch((error) => {
+        console.error('Error loading entry draft', error);
+        if (active) setFormError(t('addEntry.draft.errors.load'));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [mode, open, session.user.id, t]);
+
+  useEffect(() => {
     if (!photoCropSrc) {
       setCropIsPortrait(false);
       setPhotoCrop(undefined);
@@ -537,6 +592,163 @@ export function AddEntryModal({
     [photoCropSrc, photoPreview],
   );
 
+  const resumeEntryDraft = () => {
+    if (!draftToResume) return;
+    const draft = draftToResume;
+    const nextStep = Math.max(
+      1,
+      Math.min(TOTAL_STEPS, draft.current_step),
+    ) as WizardStep;
+    const restaurantOption =
+      draft.restaurant_id && draft.restaurant_name
+        ? { id: draft.restaurant_id, name: draft.restaurant_name }
+        : null;
+    const burgerOption =
+      draft.burger_id && draft.burger_name
+        ? {
+            id: draft.burger_id,
+            name: draft.burger_name,
+            meat_type: draft.meat_type,
+          }
+        : null;
+
+    setCurrentStep(nextStep);
+    setHasAdvanced(true);
+    setDatetimeInput(draft.datetime_input);
+    setDatetimeManuallyEdited(draft.datetime_manually_edited);
+    setBurgerSource(draft.burger_origin);
+    setRestaurantInput(draft.restaurant_name ?? '');
+    setSelectedRestaurant(restaurantOption);
+    setRestaurantApprovedName(draft.restaurant_approved_name);
+    setBurgerInput(draft.burger_name ?? '');
+    setSelectedBurger(burgerOption);
+    setBurgerType(draft.meat_type);
+    setIngredientsInput(draft.homemade_ingredients);
+    setRatingInput(draft.rating_input);
+    setPriceInput(draft.price_input);
+    setPriceCurrency(draft.currency || defaultCurrency);
+    setAdditionalNotes(draft.additional_notes);
+    setPhotoFile(null);
+    setPhotoPreview(draft.photo_url);
+    setStepErrors({});
+    setFormError(null);
+    draftPhotoUrlRef.current = draft.photo_url;
+    draftPhotoPathRef.current = draft.photo_path;
+    draftUploadedPhotoSignatureRef.current = null;
+    suppressDraftAutosaveRef.current = false;
+    setDraftToResume(null);
+  };
+
+  const persistCurrentDraft = useCallback(async () => {
+    const previousPhotoUrl = draftPhotoUrlRef.current;
+    const previousPhotoPath = draftPhotoPathRef.current;
+    let nextPhotoUrl = previousPhotoUrl;
+    let nextPhotoPath = previousPhotoPath;
+    let uploadedPhotoSignature =
+      draftUploadedPhotoSignatureRef.current;
+    let newPhotoPath: string | null = null;
+
+    if (photoFile) {
+      const signature = getFileSignature(photoFile);
+      if (signature !== draftUploadedPhotoSignatureRef.current) {
+        const uploaded = await uploadEntryDraftPhoto(
+          session.user.id,
+          photoFile,
+        );
+        nextPhotoUrl = uploaded.url;
+        nextPhotoPath = uploaded.path;
+        uploadedPhotoSignature = signature;
+        newPhotoPath = uploaded.path;
+      }
+    } else if (!photoPreview) {
+      nextPhotoUrl = null;
+      nextPhotoPath = null;
+      uploadedPhotoSignature = null;
+    } else if (!isObjectUrl(photoPreview)) {
+      nextPhotoUrl = photoPreview;
+    }
+
+    try {
+      const savedDraft = await upsertEntryDraft({
+        user_id: session.user.id,
+        current_step: currentStep,
+        datetime_input: datetimeInput,
+        datetime_manually_edited: datetimeManuallyEdited,
+        burger_origin: burgerSource,
+        restaurant_id: selectedRestaurant?.id ?? null,
+        restaurant_name: restaurantInput.trim() || null,
+        restaurant_approved_name: restaurantApprovedName,
+        burger_id: selectedBurger?.id ?? null,
+        burger_name: burgerInput.trim() || null,
+        meat_type: burgerType,
+        homemade_ingredients: ingredientsInput,
+        rating_input: ratingInput,
+        price_input: priceInput,
+        currency: priceCurrency,
+        additional_notes: additionalNotes,
+        photo_url: nextPhotoUrl,
+        photo_path: nextPhotoPath,
+      });
+
+      draftPhotoUrlRef.current = savedDraft.photo_url;
+      draftPhotoPathRef.current = savedDraft.photo_path;
+      draftUploadedPhotoSignatureRef.current = uploadedPhotoSignature;
+
+      if (
+        previousPhotoPath &&
+        previousPhotoPath !== savedDraft.photo_path
+      ) {
+        void deleteEntryDraftPhoto(previousPhotoPath).catch((error) => {
+          console.error('Error deleting replaced draft photo', error);
+        });
+      }
+    } catch (error) {
+      if (newPhotoPath) {
+        void deleteEntryDraftPhoto(newPhotoPath).catch(() => undefined);
+      }
+      throw error;
+    }
+  }, [
+    additionalNotes,
+    burgerInput,
+    burgerSource,
+    burgerType,
+    currentStep,
+    datetimeInput,
+    datetimeManuallyEdited,
+    ingredientsInput,
+    photoFile,
+    photoPreview,
+    priceCurrency,
+    priceInput,
+    ratingInput,
+    restaurantApprovedName,
+    restaurantInput,
+    selectedBurger?.id,
+    selectedRestaurant?.id,
+    session.user.id,
+  ]);
+
+  const queueCurrentDraftSave = useCallback(() => {
+    const queuedSave = draftSaveQueueRef.current.then(
+      persistCurrentDraft,
+      persistCurrentDraft,
+    );
+    draftSaveQueueRef.current = queuedSave.then(
+      () => undefined,
+      () => undefined,
+    );
+    return queuedSave;
+  }, [persistCurrentDraft]);
+
+  const stopDraftAutosave = useCallback(() => {
+    suppressDraftAutosaveRef.current = true;
+    if (draftAutosaveTimerRef.current) {
+      clearTimeout(draftAutosaveTimerRef.current);
+      draftAutosaveTimerRef.current = null;
+    }
+  }, []);
+
   const forceClose = useCallback(() => {
     if (isObjectUrl(photoPreview)) URL.revokeObjectURL(photoPreview!);
     if (isObjectUrl(photoCropSrc)) URL.revokeObjectURL(photoCropSrc!);
@@ -545,6 +757,147 @@ export function AddEntryModal({
     setIsClosing(true);
     closeTimerRef.current = setTimeout(onClose, 260);
   }, [onClose, photoCropSrc, photoPreview]);
+
+  const clearStoredDraft = useCallback(
+    async (photoPath: string | null) => {
+      await deleteEntryDraft(session.user.id);
+      if (photoPath) await deleteEntryDraftPhoto(photoPath);
+      draftPhotoUrlRef.current = null;
+      draftPhotoPathRef.current = null;
+      draftUploadedPhotoSignatureRef.current = null;
+    },
+    [session.user.id],
+  );
+
+  const saveDraftAndClose = async () => {
+    stopDraftAutosave();
+    setDraftSaving(true);
+    setFormError(null);
+    try {
+      await queueCurrentDraftSave();
+      forceClose();
+    } catch (error) {
+      console.error('Error saving entry draft', error);
+      suppressDraftAutosaveRef.current = false;
+      setFormError(t('addEntry.draft.errors.save'));
+      setExitConfirmOpen(false);
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  const discardDraftAndClose = async () => {
+    stopDraftAutosave();
+    setDraftSaving(true);
+    setFormError(null);
+    try {
+      await draftSaveQueueRef.current;
+      await clearStoredDraft(draftPhotoPathRef.current);
+      forceClose();
+    } catch (error) {
+      console.error('Error discarding entry draft', error);
+      suppressDraftAutosaveRef.current = false;
+      setFormError(t('addEntry.draft.errors.discard'));
+      setExitConfirmOpen(false);
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  const startNewEntry = async () => {
+    if (!draftToResume) return;
+    stopDraftAutosave();
+    setDraftSaving(true);
+    setFormError(null);
+    try {
+      await clearStoredDraft(draftToResume.photo_path);
+      setDraftToResume(null);
+      suppressDraftAutosaveRef.current = false;
+    } catch (error) {
+      console.error('Error discarding stored entry draft', error);
+      suppressDraftAutosaveRef.current = false;
+      setFormError(t('addEntry.draft.errors.discard'));
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      !open ||
+      mode !== 'create' ||
+      currentStep <= 2 ||
+      !hasProgress ||
+      draftToResume ||
+      isBusy ||
+      suppressDraftAutosaveRef.current
+    ) {
+      return;
+    }
+
+    draftAutosaveTimerRef.current = setTimeout(() => {
+      draftAutosaveTimerRef.current = null;
+      void queueCurrentDraftSave().catch((error) => {
+        console.error('Error autosaving entry draft', error);
+        setFormError(t('addEntry.draft.errors.autosave'));
+      });
+    }, 700);
+
+    return () => {
+      if (draftAutosaveTimerRef.current) {
+        clearTimeout(draftAutosaveTimerRef.current);
+        draftAutosaveTimerRef.current = null;
+      }
+    };
+  }, [
+    currentStep,
+    draftToResume,
+    hasProgress,
+    isBusy,
+    mode,
+    open,
+    queueCurrentDraftSave,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      mode !== 'create' ||
+      currentStep <= 2 ||
+      !hasProgress ||
+      draftToResume
+    ) {
+      return;
+    }
+
+    const flushDraft = (event: Event) => {
+      if (
+        suppressDraftAutosaveRef.current ||
+        (document.visibilityState !== 'hidden' &&
+          event?.type === 'visibilitychange')
+      ) {
+        return;
+      }
+      void queueCurrentDraftSave().catch((error) => {
+        console.error('Error flushing entry draft', error);
+      });
+    };
+
+    document.addEventListener('visibilitychange', flushDraft);
+    window.addEventListener('pagehide', flushDraft);
+    return () => {
+      document.removeEventListener('visibilitychange', flushDraft);
+      window.removeEventListener('pagehide', flushDraft);
+    };
+  }, [
+    currentStep,
+    draftToResume,
+    hasProgress,
+    mode,
+    open,
+    queueCurrentDraftSave,
+  ]);
 
   const requestClose = useCallback(() => {
     if (isBusy) return;
@@ -595,6 +948,7 @@ export function AddEntryModal({
         setPendingPhotoDateTime(null);
         return;
       }
+      if (draftToResume) return;
       if (exitConfirmOpen) {
         setExitConfirmOpen(false);
         return;
@@ -608,6 +962,7 @@ export function AddEntryModal({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [
+    draftToResume,
     exitConfirmOpen,
     open,
     pendingBurgerSource,
@@ -621,7 +976,7 @@ export function AddEntryModal({
   }, [currentStep, open, restaurantReview]);
 
   useEffect(() => {
-    if (!exitConfirmOpen && !pendingBurgerSource) return;
+    if (!draftToResume && !exitConfirmOpen && !pendingBurgerSource) return;
     setTimeout(() => {
       document
         .querySelector<HTMLElement>(
@@ -629,7 +984,7 @@ export function AddEntryModal({
         )
         ?.focus();
     });
-  }, [exitConfirmOpen, pendingBurgerSource]);
+  }, [draftToResume, exitConfirmOpen, pendingBurgerSource]);
 
   const fetchRestaurantOptions = async (value: string) => {
     const trimmedValue = value.trim();
@@ -1025,7 +1380,7 @@ export function AddEntryModal({
       }
     }
 
-    if (step === 5) {
+    if (step === 2) {
       const datetime = new Date(datetimeInput);
       if (!datetimeInput || Number.isNaN(datetime.getTime())) {
         errors.datetime = t('addEntry.errors.datetimeRequired');
@@ -1034,6 +1389,9 @@ export function AddEntryModal({
       } else if (datetime > new Date()) {
         errors.datetime = t('addEntry.errors.datetimeFuture');
       }
+    }
+
+    if (step === 5) {
       if (additionalNotes.length > NOTES_LIMIT) {
         errors.additionalNotes = t('addEntry.errors.notesLength', {
           count: NOTES_LIMIT,
@@ -1249,10 +1607,33 @@ export function AddEntryModal({
         }
       }
 
+      if (mode === 'create') {
+        await draftSaveQueueRef.current;
+        const draftPhotoPath = draftPhotoPathRef.current;
+        const finalEntryUsesDraftPhoto =
+          Boolean(draftPhotoPath) &&
+          Boolean(photoUrl) &&
+          photoUrl === draftPhotoUrlRef.current;
+        try {
+          await deleteEntryDraft(session.user.id);
+          if (draftPhotoPath && !finalEntryUsesDraftPhoto) {
+            await deleteEntryDraftPhoto(draftPhotoPath);
+          }
+          draftPhotoUrlRef.current = null;
+          draftPhotoPathRef.current = null;
+          draftUploadedPhotoSignatureRef.current = null;
+        } catch (error) {
+          console.error('Error clearing published entry draft', error);
+        }
+      }
+
       await onSaved();
       forceClose();
     } catch (error: unknown) {
       console.error(error);
+      if (mode === 'create') {
+        suppressDraftAutosaveRef.current = false;
+      }
       setFormError(
         error instanceof Error
           ? error.message
@@ -1288,6 +1669,7 @@ export function AddEntryModal({
       );
       return;
     }
+    if (mode === 'create') stopDraftAutosave();
     await saveEntry(validation.data);
   };
 
@@ -1519,6 +1901,32 @@ export function AddEntryModal({
               </Button>
             </div>
           ) : null}
+          <div className="bw-field">
+            <TextField
+              id="bw-datetime"
+              label={t('addEntry.datetime')}
+              type="datetime-local"
+              value={datetimeInput}
+              onChange={(event) => {
+                setDatetimeInput(event.target.value);
+                setDatetimeManuallyEdited(true);
+                setStepErrors((current) => ({
+                  ...current,
+                  datetime: undefined,
+                }));
+              }}
+              fullWidth
+              inputProps={{
+                min: MIN_DATETIME_STRING,
+                max: maxDateTime,
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={Boolean(stepErrors.datetime)}
+              helperText={
+                stepErrors.datetime ?? t('addEntry.datetimeHelp')
+              }
+            />
+          </div>
         </div>
       );
     }
@@ -1724,29 +2132,6 @@ export function AddEntryModal({
 
     return (
       <>
-        <div className="bw-field">
-          <TextField
-            id="bw-datetime"
-            label={t('addEntry.datetime')}
-            type="datetime-local"
-            value={datetimeInput}
-            onChange={(event) => {
-              setDatetimeInput(event.target.value);
-              setDatetimeManuallyEdited(true);
-              setStepErrors((current) => ({
-                ...current,
-                datetime: undefined,
-              }));
-            }}
-            fullWidth
-            inputProps={{ min: MIN_DATETIME_STRING, max: maxDateTime }}
-            InputLabelProps={{ shrink: true }}
-            error={Boolean(stepErrors.datetime)}
-            helperText={
-              stepErrors.datetime ?? t('addEntry.datetimeHelp')
-            }
-          />
-        </div>
         <div className="bw-field">
           <TextField
             id="bw-notes"
@@ -2035,31 +2420,95 @@ export function AddEntryModal({
       </div>
 
       <ConfirmDialog
-        open={exitConfirmOpen}
-        onClose={() => setExitConfirmOpen(false)}
-        title={t('addEntry.exitConfirm.title', {
-          defaultValue: '¿Salir sin guardar?',
-        })}
-        message={t('addEntry.exitConfirm.message', {
-          defaultValue: 'Si sales se perderá el progreso.',
-        })}
+        open={Boolean(draftToResume)}
+        onClose={() => undefined}
+        title={t('addEntry.draft.resumeTitle')}
+        message={t('addEntry.draft.resumeMessage')}
         actions={
           <>
             <button
-              className="bw-btn bw-btn-primary"
-              type="button"
-              onClick={() => setExitConfirmOpen(false)}
-            >
-              {t('addEntry.exitConfirm.keepEditing')}
-            </button>
-            <button
               className="bw-btn bw-btn-ghost"
               type="button"
-              onClick={forceClose}
+              onClick={() => void startNewEntry()}
+              disabled={draftSaving}
             >
-              {t('addEntry.exitConfirm.exit')}
+              {t('addEntry.draft.startNew')}
+            </button>
+            <button
+              className="bw-btn bw-btn-primary"
+              type="button"
+              onClick={resumeEntryDraft}
+              disabled={draftSaving}
+            >
+              {t('addEntry.draft.continue')}
             </button>
           </>
+        }
+      />
+
+      <ConfirmDialog
+        open={exitConfirmOpen}
+        onClose={() => {
+          if (!draftSaving) setExitConfirmOpen(false);
+        }}
+        title={t(
+          mode === 'create'
+            ? 'addEntry.draft.exitTitle'
+            : 'addEntry.exitConfirm.title',
+        )}
+        message={t(
+          mode === 'create'
+            ? 'addEntry.draft.exitMessage'
+            : 'addEntry.exitConfirm.message',
+        )}
+        actions={
+          mode === 'create' ? (
+            <>
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => setExitConfirmOpen(false)}
+                disabled={draftSaving}
+              >
+                {t('addEntry.exitConfirm.keepEditing')}
+              </button>
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={() => void discardDraftAndClose()}
+                disabled={draftSaving}
+              >
+                {t('addEntry.draft.discard')}
+              </button>
+              <button
+                className="bw-btn bw-btn-primary"
+                type="button"
+                onClick={() => void saveDraftAndClose()}
+                disabled={draftSaving}
+              >
+                {draftSaving
+                  ? t('addEntry.draft.saving')
+                  : t('addEntry.draft.save')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="bw-btn bw-btn-primary"
+                type="button"
+                onClick={() => setExitConfirmOpen(false)}
+              >
+                {t('addEntry.exitConfirm.keepEditing')}
+              </button>
+              <button
+                className="bw-btn bw-btn-ghost"
+                type="button"
+                onClick={forceClose}
+              >
+                {t('addEntry.exitConfirm.exit')}
+              </button>
+            </>
+          )
         }
       />
 

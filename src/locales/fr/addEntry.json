@@ -74,7 +74,7 @@
     },
     "2": {
       "title": "Ajoute une photo",
-      "support": "Tu peux l'ajouter maintenant ou continuer sans photo."
+      "support": "Ajoute une photo si tu le souhaites et vérifie la date et l'heure."
     },
     "3": {
       "title": "Identifie ton burger",
@@ -86,7 +86,7 @@
     },
     "5": {
       "title": "Derniers détails",
-      "support": "Vérifie la date et les informations avant de publier."
+      "support": "Vérifie le récapitulatif avant de publier."
     }
   },
   "exitConfirm": {
@@ -94,6 +94,23 @@
     "message": "Si tu quittes, ta progression sera perdue.",
     "keepEditing": "Continuer à modifier",
     "exit": "Quitter"
+  },
+  "draft": {
+    "resumeTitle": "Continuer à ajouter ton burger ?",
+    "resumeMessage": "Nous avons trouvé un brouillon enregistré. Tu peux reprendre où tu en étais ou recommencer.",
+    "continue": "Continuer le brouillon",
+    "startNew": "Recommencer",
+    "exitTitle": "L'enregistrer comme brouillon ?",
+    "exitMessage": "Tu pourras continuer à ajouter ton burger la prochaine fois.",
+    "discard": "Quitter sans enregistrer",
+    "save": "Enregistrer le brouillon",
+    "saving": "Enregistrement du brouillon...",
+    "errors": {
+      "load": "Impossible de récupérer ton brouillon.",
+      "save": "Impossible d'enregistrer le brouillon. Réessaie.",
+      "discard": "Impossible de supprimer le brouillon. Réessaie.",
+      "autosave": "Impossible d'enregistrer automatiquement le brouillon."
+    }
   },
   "changeTypeConfirm": {
     "title": "Changer le type de burger ?",

@@ -18,6 +18,13 @@ const photoMetadataMock = vi.hoisted(() => vi.fn());
 const cropImageMock = vi.hoisted(() => vi.fn());
 const compressImageMock = vi.hoisted(() => vi.fn());
 const preparePhotoForCropMock = vi.hoisted(() => vi.fn());
+const entryDraftMock = vi.hoisted(() => ({
+  load: vi.fn(),
+  upsert: vi.fn(),
+  deleteDraft: vi.fn(),
+  uploadPhoto: vi.fn(),
+  deletePhoto: vi.fn(),
+}));
 
 const supabaseMock = vi.hoisted(() => {
   const state = {
@@ -138,6 +145,14 @@ vi.mock('../../utils/image', () => ({
 
 vi.mock('../../utils/photoFile', () => ({
   preparePhotoForCrop: preparePhotoForCropMock,
+}));
+
+vi.mock('../../utils/entryDraft', () => ({
+  loadEntryDraft: entryDraftMock.load,
+  upsertEntryDraft: entryDraftMock.upsert,
+  deleteEntryDraft: entryDraftMock.deleteDraft,
+  uploadEntryDraftPhoto: entryDraftMock.uploadPhoto,
+  deleteEntryDraftPhoto: entryDraftMock.deletePhoto,
 }));
 
 vi.mock('react-image-crop', () => ({
@@ -299,6 +314,30 @@ const restaurantEntry = {
   photoUrl: 'https://example.com/original.jpg',
 };
 
+const savedDraft = {
+  id: 'draft-1',
+  user_id: 'u1',
+  current_step: 3,
+  datetime_input: '2026-07-20T13:45',
+  datetime_manually_edited: true,
+  burger_origin: 'homemade' as const,
+  restaurant_id: null,
+  restaurant_name: null,
+  restaurant_approved_name: null,
+  burger_id: null,
+  burger_name: null,
+  meat_type: 'beef' as const,
+  homemade_ingredients: 'Cheddar y cebolla',
+  rating_input: '',
+  price_input: '',
+  currency: 'EUR',
+  additional_notes: '',
+  photo_url: 'https://example.com/draft-burger.jpg',
+  photo_path: 'u1/drafts/burger.jpg',
+  created_at: '2026-07-20T12:00:00.000Z',
+  updated_at: '2026-07-20T13:00:00.000Z',
+};
+
 const renderModal = (
   props: Partial<Parameters<typeof AddEntryModal>[0]> = {},
 ) => render(<AddEntryModal {...defaultProps} {...props} />);
@@ -362,6 +401,19 @@ function fillRatingAndPrice() {
 
 beforeEach(() => {
   supabaseMock.state.restaurantRows = [];
+  entryDraftMock.load.mockReset().mockResolvedValue(null);
+  entryDraftMock.upsert.mockReset().mockImplementation(async (input) => ({
+    id: 'draft-1',
+    ...input,
+    created_at: '2026-07-25T10:00:00.000Z',
+    updated_at: '2026-07-25T10:00:00.000Z',
+  }));
+  entryDraftMock.deleteDraft.mockReset().mockResolvedValue(undefined);
+  entryDraftMock.uploadPhoto.mockReset().mockResolvedValue({
+    path: 'u1/drafts/burger.jpg',
+    url: 'https://example.com/draft-burger.jpg',
+  });
+  entryDraftMock.deletePhoto.mockReset().mockResolvedValue(undefined);
   photoMetadataMock.mockResolvedValue(null);
   const processedFile = new File(['processed'], 'burger.jpg', {
     type: 'image/jpeg',
@@ -487,6 +539,7 @@ describe('AddEntryModal wizard', () => {
     );
     const payload = supabaseMock.state.entriesInsert.mock.calls.at(-1)?.[0];
     expect(payload).not.toHaveProperty('visibility');
+    expect(entryDraftMock.deleteDraft).toHaveBeenCalledWith('u1');
     expect(onSaved).toHaveBeenCalledOnce();
   });
 
@@ -552,6 +605,9 @@ describe('AddEntryModal wizard', () => {
     fireEvent.load(cropImage);
     fireEvent.click(screen.getByRole('button', { name: 'addEntry.crop' }));
     await waitFor(() => expect(compressImageMock).toHaveBeenCalled());
+    expect(document.getElementById('bw-datetime')).toHaveValue(
+      '2026-03-04T12:30',
+    );
 
     clickContinue();
     await screen.findByText('addEntry.homemadeIdentityTitle');
@@ -568,9 +624,7 @@ describe('AddEntryModal wizard', () => {
     });
     clickContinue();
     await screen.findByText('addEntry.steps.5.title');
-    expect(document.getElementById('bw-datetime')).toHaveValue(
-      '2026-03-04T12:30',
-    );
+    expect(document.getElementById('bw-datetime')).not.toBeInTheDocument();
     expect(supabaseMock.state.storageUpload).not.toHaveBeenCalled();
   });
 
@@ -607,20 +661,10 @@ describe('AddEntryModal wizard', () => {
     renderModal({ mode: 'edit', entry: restaurantEntry });
     clickContinue();
     await screen.findByText('addEntry.steps.2.title');
-    clickContinue();
-    await screen.findByText('addEntry.restaurantIdentityTitle');
-    clickContinue();
-    await screen.findByText('addEntry.steps.4.title');
-    clickContinue();
-    await screen.findByText('addEntry.steps.5.title');
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2026-04-02T18:45' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'addEntry.back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'addEntry.back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'addEntry.back' }));
-    await screen.findByText('addEntry.steps.2.title');
     const changePhotoLabel = screen
       .getByText('addEntry.changePhoto')
       .closest('label');
@@ -638,12 +682,6 @@ describe('AddEntryModal wizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'addEntry.crop' }));
     await waitFor(() => expect(compressImageMock).toHaveBeenCalled());
 
-    clickContinue();
-    await screen.findByText('addEntry.restaurantIdentityTitle');
-    clickContinue();
-    await screen.findByText('addEntry.steps.4.title');
-    clickContinue();
-    await screen.findByText('addEntry.steps.5.title');
     expect(document.getElementById('bw-datetime')).toHaveValue(
       '2026-04-02T18:45',
     );
@@ -653,29 +691,20 @@ describe('AddEntryModal wizard', () => {
     renderModal({ mode: 'edit', entry: restaurantEntry });
     clickContinue();
     await screen.findByText('addEntry.steps.2.title');
-    clickContinue();
-    await screen.findByText('addEntry.restaurantIdentityTitle');
-    clickContinue();
-    await screen.findByText('addEntry.steps.4.title');
-    clickContinue();
-    await screen.findByText('addEntry.steps.5.title');
 
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2027-01-01T12:00' },
     });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'addEntry.saveChanges' }),
-    );
+    clickContinue();
     expect(
       await screen.findByText('addEntry.errors.datetimeFuture'),
     ).toBeInTheDocument();
+    expect(screen.getByText('addEntry.steps.2.title')).toBeInTheDocument();
 
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2025-12-31T23:59' },
     });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'addEntry.saveChanges' }),
-    );
+    clickContinue();
     expect(
       await screen.findByText('addEntry.errors.datetimeMinimum'),
     ).toBeInTheDocument();
@@ -787,7 +816,7 @@ describe('AddEntryModal wizard', () => {
     vi.useRealTimers();
   });
 
-  it('protege el progreso al cerrar, conserva datos y permite salir', async () => {
+  it('permite guardar como borrador al salir de una creación', async () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     renderModal({ onClose });
@@ -796,10 +825,7 @@ describe('AddEntryModal wizard', () => {
       screen.getByRole('button', { name: 'common.close' }),
     );
 
-    expect(screen.getByText('¿Salir sin guardar?')).toBeInTheDocument();
-    expect(
-      screen.getByText('Si sales se perderá el progreso.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('addEntry.draft.exitTitle')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', {
         name: 'addEntry.exitConfirm.keepEditing',
@@ -810,14 +836,81 @@ describe('AddEntryModal wizard', () => {
     ).toHaveAttribute('aria-checked', 'true');
 
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.getByText('¿Salir sin guardar?')).toBeInTheDocument();
+    expect(screen.getByText('addEntry.draft.exitTitle')).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole('button', { name: 'addEntry.exitConfirm.exit' }),
+      screen.getByRole('button', { name: 'addEntry.draft.save' }),
+    );
+    await act(async () => Promise.resolve());
+    expect(entryDraftMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'u1',
+        current_step: 1,
+        burger_origin: 'homemade',
+      }),
     );
     act(() => vi.advanceTimersByTime(300));
     expect(onClose).toHaveBeenCalledOnce();
     expect(supabaseMock.state.storageUpload).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it('guarda automáticamente al haber superado el paso de la foto', async () => {
+    renderModal();
+    selectOrigin('homemade');
+    clickContinue();
+    await screen.findByText('addEntry.steps.2.title');
+    clickContinue();
+    await screen.findByText('addEntry.homemadeIdentityTitle');
+
+    await waitFor(
+      () =>
+        expect(entryDraftMock.upsert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            user_id: 'u1',
+            current_step: 3,
+            burger_origin: 'homemade',
+          }),
+        ),
+      { timeout: 1500 },
+    );
+  });
+
+  it('ofrece continuar el borrador y recupera todos sus datos', async () => {
+    entryDraftMock.load.mockResolvedValue(savedDraft);
+    renderModal();
+
+    expect(
+      await screen.findByText('addEntry.draft.resumeTitle'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'addEntry.draft.continue' }),
+    );
+
+    expect(
+      screen.getByText('addEntry.homemadeIdentityTitle'),
+    ).toBeInTheDocument();
+    expect(document.getElementById('bw-ingredients')).toHaveValue(
+      'Cheddar y cebolla',
+    );
+    expect(entryDraftMock.deleteDraft).not.toHaveBeenCalled();
+  });
+
+  it('descarta el borrador si decide empezar de nuevo', async () => {
+    entryDraftMock.load.mockResolvedValue(savedDraft);
+    renderModal();
+    await screen.findByText('addEntry.draft.resumeTitle');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'addEntry.draft.startNew' }),
+    );
+
+    await waitFor(() =>
+      expect(entryDraftMock.deleteDraft).toHaveBeenCalledWith('u1'),
+    );
+    expect(entryDraftMock.deletePhoto).toHaveBeenCalledWith(
+      'u1/drafts/burger.jpg',
+    );
+    expect(screen.getByText('addEntry.steps.1.title')).toBeInTheDocument();
   });
 
   it('en edición no avisa sin cambios y sí después de modificar', () => {
@@ -850,7 +943,9 @@ describe('AddEntryModal wizard', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'common.close' }),
     );
-    expect(screen.getByText('¿Salir sin guardar?')).toBeInTheDocument();
+    expect(
+      screen.getByText('addEntry.exitConfirm.title'),
+    ).toBeInTheDocument();
     expect(secondClose).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
