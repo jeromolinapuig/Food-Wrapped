@@ -43,5 +43,81 @@
   "save": "Guardar",
   "cancel": "Cancelar",
   "crop": "Recortar",
-  "cropAlt": "Foto a recortar"
+  "cropAlt": "Foto a recortar",
+  "homemadeDescription": "Preparada en casa",
+  "restaurantDescription": "Pedida en un restaurante o local",
+  "restaurantIdentityTitle": "¿Dónde y qué burger comiste?",
+  "homemadeIdentityTitle": "¿Qué llevaba?",
+  "photoEmpty": "Tu foto puede ser la protagonista, pero es opcional.",
+  "takePhoto": "Hacer una foto",
+  "choosePhoto": "Elegir de la galería",
+  "processingPhoto": "Procesando foto...",
+  "restaurantPriceLabel": "Precio por persona",
+  "homemadePriceLabel": "Coste aproximado por persona",
+  "ratingValue": "{{value}} de 5",
+  "ratingEmpty": "Selecciona una puntuación",
+  "datetimeHelp": "Usamos esta fecha para tu calendario y Wrapped.",
+  "summaryLabel": "Tu burger",
+  "priceSummary": "Precio",
+  "dateSummary": "Fecha",
+  "progress": "Paso {{current}} de {{total}}",
+  "progressLabel": "Progreso del formulario",
+  "continue": "Continuar",
+  "continueWithoutPhoto": "Continuar sin foto",
+  "back": "Atrás",
+  "publish": "Publicar burger",
+  "saveChanges": "Guardar cambios",
+  "steps": {
+    "1": {
+      "title": "¿Qué tipo de burger es?",
+      "support": "Elige la opción que mejor encaje."
+    },
+    "2": {
+      "title": "Añade una foto",
+      "support": "Puedes añadirla ahora o continuar sin foto."
+    },
+    "3": {
+      "title": "Identifica tu burger",
+      "support": "Cuéntanos dónde la comiste o qué llevaba."
+    },
+    "4": {
+      "title": "¿Qué tal estaba?",
+      "support": "Añade tu nota y el precio por persona."
+    },
+    "5": {
+      "title": "Últimos detalles",
+      "support": "Revisa la fecha y comprueba todo antes de publicar."
+    }
+  },
+  "exitConfirm": {
+    "title": "¿Salir sin guardar?",
+    "message": "Si sales se perderá el progreso.",
+    "keepEditing": "Seguir editando",
+    "exit": "Salir"
+  },
+  "changeTypeConfirm": {
+    "title": "¿Cambiar el tipo de burger?",
+    "message": "Se eliminarán los datos que no correspondan al nuevo tipo.",
+    "confirm": "Cambiar tipo"
+  },
+  "errors": {
+    "originRequired": "Selecciona si es casera o de restaurante.",
+    "ingredientsRequired": "Escribe los ingredientes.",
+    "ingredientsLength": "Usa un máximo de {{count}} caracteres.",
+    "restaurantRequired": "Escribe o selecciona un restaurante.",
+    "burgerRequired": "Escribe el nombre de la burger.",
+    "ratingRequired": "Selecciona una puntuación entre 0,5 y 5.",
+    "priceRequired": "Indica un precio igual o mayor que cero.",
+    "currencyRequired": "Selecciona una moneda.",
+    "datetimeRequired": "Selecciona una fecha y hora válidas.",
+    "datetimeMinimum": "La fecha mínima es el 1 de enero de 2026.",
+    "datetimeFuture": "No puedes registrar fechas futuras.",
+    "notesLength": "Usa un máximo de {{count}} caracteres.",
+    "restaurantCreate": "No hemos podido crear el restaurante.",
+    "restaurantSelection": "Selecciona o crea un restaurante antes de guardar.",
+    "burgerCreate": "No hemos podido crear la burger.",
+    "photoProcess": "No hemos podido procesar la foto. Prueba con otra imagen.",
+    "save": "No hemos podido guardar la burger. Inténtalo de nuevo.",
+    "reviewFields": "Revisa los datos antes de publicar."
+  }
 }

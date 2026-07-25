@@ -43,5 +43,81 @@
   "save": "Save",
   "cancel": "Cancel",
   "crop": "Crop",
-  "cropAlt": "Photo to crop"
+  "cropAlt": "Photo to crop",
+  "homemadeDescription": "Made at home",
+  "restaurantDescription": "Ordered at a restaurant or venue",
+  "restaurantIdentityTitle": "Where and what burger did you eat?",
+  "homemadeIdentityTitle": "What was in it?",
+  "photoEmpty": "Your photo can take centre stage, but it is optional.",
+  "takePhoto": "Take a photo",
+  "choosePhoto": "Choose from gallery",
+  "processingPhoto": "Processing photo...",
+  "restaurantPriceLabel": "Price per person",
+  "homemadePriceLabel": "Estimated cost per person",
+  "ratingValue": "{{value}} out of 5",
+  "ratingEmpty": "Choose a rating",
+  "datetimeHelp": "We use this date for your calendar and Wrapped.",
+  "summaryLabel": "Your burger",
+  "priceSummary": "Price",
+  "dateSummary": "Date",
+  "progress": "Step {{current}} of {{total}}",
+  "progressLabel": "Form progress",
+  "continue": "Continue",
+  "continueWithoutPhoto": "Continue without a photo",
+  "back": "Back",
+  "publish": "Publish burger",
+  "saveChanges": "Save changes",
+  "steps": {
+    "1": {
+      "title": "What type of burger is it?",
+      "support": "Choose the option that fits best."
+    },
+    "2": {
+      "title": "Add a photo",
+      "support": "You can add one now or continue without a photo."
+    },
+    "3": {
+      "title": "Identify your burger",
+      "support": "Tell us where you ate it or what was in it."
+    },
+    "4": {
+      "title": "How was it?",
+      "support": "Add your rating and the price per person."
+    },
+    "5": {
+      "title": "Final details",
+      "support": "Check the date and review everything before publishing."
+    }
+  },
+  "exitConfirm": {
+    "title": "Leave without saving?",
+    "message": "If you leave, your progress will be lost.",
+    "keepEditing": "Keep editing",
+    "exit": "Leave"
+  },
+  "changeTypeConfirm": {
+    "title": "Change the burger type?",
+    "message": "Details that do not match the new type will be removed.",
+    "confirm": "Change type"
+  },
+  "errors": {
+    "originRequired": "Choose whether it is homemade or from a restaurant.",
+    "ingredientsRequired": "Enter the ingredients.",
+    "ingredientsLength": "Use no more than {{count}} characters.",
+    "restaurantRequired": "Enter or choose a restaurant.",
+    "burgerRequired": "Enter the burger name.",
+    "ratingRequired": "Choose a rating between 0.5 and 5.",
+    "priceRequired": "Enter a price of zero or more.",
+    "currencyRequired": "Choose a currency.",
+    "datetimeRequired": "Choose a valid date and time.",
+    "datetimeMinimum": "The earliest date is 1 January 2026.",
+    "datetimeFuture": "You cannot add a future date.",
+    "notesLength": "Use no more than {{count}} characters.",
+    "restaurantCreate": "We could not create the restaurant.",
+    "restaurantSelection": "Choose or create a restaurant before saving.",
+    "burgerCreate": "We could not create the burger.",
+    "photoProcess": "We could not process the photo. Try another image.",
+    "save": "We could not save the burger. Please try again.",
+    "reviewFields": "Check the details before publishing."
+  }
 }
