@@ -2,11 +2,13 @@
 
 Estas normas se aplican a cualquier persona o agente que analice, modifique o amplíe este repositorio. Su objetivo es mantener un proceso de desarrollo coherente, cambios fáciles de revisar y una documentación fiable de la evolución del producto.
 
-## 1. Consultar la documentación antes de desarrollar
+## 1. Leer y cumplir toda la documentación del repositorio
 
-Antes de empezar cualquier funcionalidad, corrección o modificación, se deben localizar y leer los archivos Markdown (`.md`) relevantes que existan en el repositorio. Esto incluye este archivo, el `README.md`, el `CHANGELOG.md` y cualquier guía más específica situada en el área de trabajo afectada.
+Antes de empezar cualquier análisis, diseño, funcionalidad, corrección o modificación, se deben localizar, leer íntegramente y seguir las instrucciones de todos los archivos Markdown (`.md`) que existan en el repositorio. Esta obligación no se limita a la documentación que inicialmente parezca relevante ni puede darse por cumplida leyendo solo este archivo, el `README.md` o el `CHANGELOG.md`.
 
-Las instrucciones más específicas para un directorio, módulo o flujo tienen prioridad dentro de su ámbito. El trabajo debe respetar las decisiones de arquitectura, convenciones, limitaciones y procesos ya documentados. Si dos documentos parecen contradecirse, se debe resolver la contradicción antes de implementar un cambio que pueda apartarse de la intención del proyecto.
+Se deben consultar también todos los `README.md` ubicados en subdirectorios y todas las guías, especificaciones y documentos de arquitectura, producto, experiencia o diseño incluidos en carpetas como `docs`. En particular, los documentos de `docs/ai-design-system` forman parte de las instrucciones obligatorias del proyecto y deben leerse en el orden indicado por su archivo `00-START-HERE.md`.
+
+No se debe asumir que un documento principal resume o sustituye a los demás. El trabajo debe respetar todas las decisiones de arquitectura, diseño, convenciones, limitaciones y procesos documentados. Las instrucciones más específicas para un directorio, módulo o flujo tienen prioridad dentro de su ámbito. Si dos documentos parecen contradecirse, se debe resolver la contradicción antes de implementar un cambio que pueda apartarse de la intención del proyecto.
 
 ## 2. Mantener actualizado el changelog
 

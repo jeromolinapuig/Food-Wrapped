@@ -38,7 +38,7 @@ export const addEntrySchema = z
     additionalNotes: z
       .string()
       .trim()
-      .max(500, 'Maximo 500 caracteres.')
+      .max(250, 'Maximo 250 caracteres.')
       .optional()
       .or(z.literal('')),
   })
@@ -47,18 +47,20 @@ export const addEntrySchema = z
     const now = new Date();
 
     if (Number.isNaN(dt.getTime())) {
-      ctx.addIssue({ code: 'custom', message: 'Fecha invalida.' });
+      ctx.addIssue({ code: 'custom', message: 'Fecha invalida.', path: ['datetime'] });
     } else {
       if (dt < MIN_DATE) {
         ctx.addIssue({
           code: 'custom',
           message: 'La fecha minima es el 1 de enero de 2026.',
+          path: ['datetime'],
         });
       }
       if (dt > now) {
         ctx.addIssue({
           code: 'custom',
           message: 'No puedes registrar fechas futuras.',
+          path: ['datetime'],
         });
       }
     }
@@ -67,6 +69,7 @@ export const addEntrySchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Escribe o selecciona un restaurante.',
+        path: ['restaurant'],
       });
     }
 
@@ -74,6 +77,7 @@ export const addEntrySchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Escribe el nombre de la hamburguesa.',
+        path: ['burger'],
       });
     }
 
@@ -81,6 +85,7 @@ export const addEntrySchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Selecciona si es casera o de restaurante.',
+        path: ['burgerOrigin'],
       });
     }
 
@@ -88,6 +93,7 @@ export const addEntrySchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Escribe los ingredientes.',
+        path: ['ingredients'],
       });
     }
   });

@@ -43,5 +43,98 @@
   "save": "Speichern",
   "cancel": "Abbrechen",
   "crop": "Zuschneiden",
-  "cropAlt": "Foto zum Zuschneiden"
+  "cropAlt": "Foto zum Zuschneiden",
+  "homemadeDescription": "Zu Hause zubereitet",
+  "restaurantDescription": "In einem Restaurant oder Lokal bestellt",
+  "restaurantIdentityTitle": "Wo und welchen Burger hast du gegessen?",
+  "homemadeIdentityTitle": "Was war darauf?",
+  "photoEmpty": "Dein Foto kann im Mittelpunkt stehen, ist aber optional.",
+  "takePhoto": "Foto aufnehmen",
+  "choosePhoto": "Aus Galerie wählen",
+  "processingPhoto": "Foto wird verarbeitet...",
+  "restaurantPriceLabel": "Preis pro Person",
+  "homemadePriceLabel": "Ungefähre Kosten pro Person",
+  "ratingValue": "{{value}} von 5",
+  "ratingEmpty": "Bewertung auswählen",
+  "datetimeHelp": "Dieses Datum verwenden wir für deinen Kalender und Wrapped.",
+  "summaryLabel": "Dein Burger",
+  "priceSummary": "Preis",
+  "dateSummary": "Datum",
+  "progress": "Schritt {{current}} von {{total}}",
+  "progressLabel": "Formularfortschritt",
+  "continue": "Weiter",
+  "continueWithoutPhoto": "Ohne Foto fortfahren",
+  "back": "Zurück",
+  "publish": "Burger veröffentlichen",
+  "saveChanges": "Änderungen speichern",
+  "steps": {
+    "1": {
+      "title": "Was für ein Burger ist es?",
+      "support": "Wähle die passende Option."
+    },
+    "2": {
+      "title": "Foto hinzufügen",
+      "support": "Füge optional ein Foto hinzu und prüfe Datum und Uhrzeit."
+    },
+    "3": {
+      "title": "Burger beschreiben",
+      "support": "Sag uns, wo du ihn gegessen hast oder was darin war."
+    },
+    "4": {
+      "title": "Wie war er?",
+      "support": "Füge deine Bewertung und den Preis pro Person hinzu."
+    },
+    "5": {
+      "title": "Letzte Details",
+      "support": "Prüfe die Zusammenfassung vor der Veröffentlichung."
+    }
+  },
+  "exitConfirm": {
+    "title": "Ohne Speichern verlassen?",
+    "message": "Wenn du gehst, geht dein Fortschritt verloren.",
+    "keepEditing": "Weiter bearbeiten",
+    "exit": "Verlassen"
+  },
+  "draft": {
+    "resumeTitle": "Möchtest du deinen Burger weiter hinzufügen?",
+    "resumeMessage": "Wir haben einen gespeicherten Entwurf gefunden. Du kannst dort weitermachen, wo du aufgehört hast, oder neu beginnen.",
+    "continue": "Entwurf fortsetzen",
+    "startNew": "Neu beginnen",
+    "exitTitle": "Als Entwurf speichern?",
+    "exitMessage": "Du kannst deinen Burger beim nächsten Mal weiter hinzufügen.",
+    "discard": "Ohne Speichern verlassen",
+    "save": "Entwurf speichern",
+    "saving": "Entwurf wird gespeichert...",
+    "errors": {
+      "load": "Dein Entwurf konnte nicht geladen werden.",
+      "save": "Der Entwurf konnte nicht gespeichert werden. Versuche es erneut.",
+      "discard": "Der Entwurf konnte nicht verworfen werden. Versuche es erneut.",
+      "autosave": "Der Entwurf konnte nicht automatisch gespeichert werden."
+    }
+  },
+  "changeTypeConfirm": {
+    "title": "Burger-Typ ändern?",
+    "message": "Angaben, die nicht zum neuen Typ passen, werden entfernt.",
+    "confirm": "Typ ändern"
+  },
+  "errors": {
+    "originRequired": "Wähle hausgemacht oder Restaurant.",
+    "ingredientsRequired": "Gib die Zutaten ein.",
+    "ingredientsLength": "Verwende höchstens {{count}} Zeichen.",
+    "restaurantRequired": "Gib ein Restaurant ein oder wähle eines aus.",
+    "burgerRequired": "Gib den Namen des Burgers ein.",
+    "ratingRequired": "Wähle eine Bewertung zwischen 0,5 und 5.",
+    "priceRequired": "Gib einen Preis von mindestens null ein.",
+    "currencyRequired": "Wähle eine Währung.",
+    "datetimeRequired": "Wähle ein gültiges Datum und eine Uhrzeit.",
+    "datetimeMinimum": "Das früheste Datum ist der 1. Januar 2026.",
+    "datetimeFuture": "Du kannst kein zukünftiges Datum eintragen.",
+    "notesLength": "Verwende höchstens {{count}} Zeichen.",
+    "restaurantCreate": "Das Restaurant konnte nicht erstellt werden.",
+    "restaurantSelection": "Wähle oder erstelle vor dem Speichern ein Restaurant.",
+    "burgerCreate": "Der Burger konnte nicht erstellt werden.",
+    "photoProcess": "Das Foto konnte nicht verarbeitet werden. Probiere ein anderes Bild.",
+    "save": "Der Burger konnte nicht gespeichert werden. Versuche es erneut.",
+    "reviewFields": "Prüfe die Angaben vor der Veröffentlichung."
+  }
 }

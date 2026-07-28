@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 1.11.0
+
+- Fixed mobile photo cropping by converting HEIC and HEIF files to JPEG on demand before opening the cropper, with a recoverable error when an image cannot be decoded.
+- Moved the date and time field into the optional photo step, where it is now validated before continuing while remaining visible in the final summary.
+- Added database-backed burger drafts with an explicit save prompt on exit, automatic persistence after the photo step, recovery on the next creation, and cleanup when publishing or discarding.
+
+## 1.10.0
+
+- Redesigned the burger entry form as a five-step wizard with adaptive restaurant and homemade flows for creating and editing posts.
+- Improved optional photo handling with a fully clickable upload area, camera and gallery actions, plus automatic dates from image metadata, falling back to the current date.
+- Added unsaved-progress protection when closing the burger wizard and confirmation before discarding incompatible data after changing the burger type.
+- Fixed the transition to the final review step so the post waits for an explicit publish action instead of submitting automatically.
+- Refined the mobile wizard layout with precisely centered rating stars, unobstructed floating input labels, and complete scrolling through the final review above the fixed action bar.
+
 ## 1.9.1
 
 - Fixed the profile followers and following lists so opening them loads the users once instead of showing zero while reloading indefinitely.

@@ -43,5 +43,98 @@
   "save": "保存",
   "cancel": "キャンセル",
   "crop": "切り抜き",
-  "cropAlt": "切り抜く写真"
+  "cropAlt": "切り抜く写真",
+  "homemadeDescription": "自宅で作ったバーガー",
+  "restaurantDescription": "レストランやお店で注文したバーガー",
+  "restaurantIdentityTitle": "どこで、どのバーガーを食べましたか？",
+  "homemadeIdentityTitle": "どんな材料を使いましたか？",
+  "photoEmpty": "写真を主役にできますが、追加は任意です。",
+  "takePhoto": "写真を撮る",
+  "choosePhoto": "ギャラリーから選ぶ",
+  "processingPhoto": "写真を処理中...",
+  "restaurantPriceLabel": "1人あたりの価格",
+  "homemadePriceLabel": "1人あたりのおおよその費用",
+  "ratingValue": "5点中{{value}}",
+  "ratingEmpty": "評価を選択",
+  "datetimeHelp": "この日付はカレンダーとWrappedに使用されます。",
+  "summaryLabel": "あなたのバーガー",
+  "priceSummary": "価格",
+  "dateSummary": "日付",
+  "progress": "{{total}}ステップ中{{current}}",
+  "progressLabel": "フォームの進捗",
+  "continue": "続ける",
+  "continueWithoutPhoto": "写真なしで続ける",
+  "back": "戻る",
+  "publish": "バーガーを投稿",
+  "saveChanges": "変更を保存",
+  "steps": {
+    "1": {
+      "title": "どんなバーガーですか？",
+      "support": "最も合うものを選んでください。"
+    },
+    "2": {
+      "title": "写真を追加",
+      "support": "必要に応じて写真を追加し、日時を確認してください。"
+    },
+    "3": {
+      "title": "バーガーの情報",
+      "support": "食べた場所、または使った材料を教えてください。"
+    },
+    "4": {
+      "title": "味はどうでしたか？",
+      "support": "評価と1人あたりの価格を追加してください。"
+    },
+    "5": {
+      "title": "最後の詳細",
+      "support": "公開前に内容を確認してください。"
+    }
+  },
+  "exitConfirm": {
+    "title": "保存せずに終了しますか？",
+    "message": "終了すると入力内容は失われます。",
+    "keepEditing": "編集を続ける",
+    "exit": "終了"
+  },
+  "draft": {
+    "resumeTitle": "バーガーの追加を続けますか？",
+    "resumeMessage": "保存済みの下書きが見つかりました。続きから再開するか、最初から始められます。",
+    "continue": "下書きを続ける",
+    "startNew": "最初から始める",
+    "exitTitle": "下書きとして保存しますか？",
+    "exitMessage": "次回、バーガーの追加を続けられます。",
+    "discard": "保存せずに終了",
+    "save": "下書きを保存",
+    "saving": "下書きを保存中...",
+    "errors": {
+      "load": "下書きを読み込めませんでした。",
+      "save": "下書きを保存できませんでした。もう一度お試しください。",
+      "discard": "下書きを破棄できませんでした。もう一度お試しください。",
+      "autosave": "下書きを自動保存できませんでした。"
+    }
+  },
+  "changeTypeConfirm": {
+    "title": "バーガーの種類を変更しますか？",
+    "message": "新しい種類に合わない情報は削除されます。",
+    "confirm": "種類を変更"
+  },
+  "errors": {
+    "originRequired": "手作りかレストランかを選んでください。",
+    "ingredientsRequired": "材料を入力してください。",
+    "ingredientsLength": "{{count}}文字以内で入力してください。",
+    "restaurantRequired": "レストランを入力または選択してください。",
+    "burgerRequired": "バーガー名を入力してください。",
+    "ratingRequired": "0.5から5までの評価を選んでください。",
+    "priceRequired": "0以上の価格を入力してください。",
+    "currencyRequired": "通貨を選んでください。",
+    "datetimeRequired": "有効な日時を選んでください。",
+    "datetimeMinimum": "最も古い日付は2026年1月1日です。",
+    "datetimeFuture": "未来の日付は登録できません。",
+    "notesLength": "{{count}}文字以内で入力してください。",
+    "restaurantCreate": "レストランを作成できませんでした。",
+    "restaurantSelection": "保存前にレストランを選択または作成してください。",
+    "burgerCreate": "バーガーを作成できませんでした。",
+    "photoProcess": "写真を処理できませんでした。別の画像をお試しください。",
+    "save": "バーガーを保存できませんでした。もう一度お試しください。",
+    "reviewFields": "投稿前に内容を確認してください。"
+  }
 }
