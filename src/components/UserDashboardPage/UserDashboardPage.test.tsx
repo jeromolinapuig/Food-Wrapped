@@ -7,8 +7,12 @@ import { supabase } from '../../lib/supabaseClient';
 const navigateMock = vi.fn();
 
 vi.mock('@mui/icons-material', () => ({
+  CheckCircleOutline: () => null,
+  Clear: () => null,
+  Close: () => null,
   EmojiEvents: () => null,
   Euro: () => null,
+  GroupAdd: () => null,
   House: () => null,
   LunchDining: () => null,
   Star: () => null,
@@ -22,6 +26,7 @@ function createQuery(result: QueryResult) {
     error: result.error ?? null,
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
+    in: vi.fn(() => query),
     or: vi.fn(() => query),
     gte: vi.fn(() => query),
     lt: vi.fn(() => query),
@@ -45,6 +50,11 @@ vi.mock('react-router-dom', () => ({
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
     from: vi.fn(),
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn(() => ({ id: 'c1' })),
+    })),
+    removeChannel: vi.fn(),
   },
 }));
 
@@ -245,5 +255,56 @@ describe('UserDashboardPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'profile.myTopBurgers' }));
 
     expect(navigateMock).toHaveBeenCalledWith('/my-top-burgers');
+  });
+
+  it('abre la lista de seguidores del perfil propio sin relanzar la carga en bucle', async () => {
+    setTableResponses('follows', [
+      { data: [{ id: 1, follower_id: 'friend-1', following_id: 'user-1' }], error: null },
+      { data: [{ id: 1, follower_id: 'friend-1', following_id: 'user-1' }], error: null },
+      { data: [], error: null },
+    ]);
+    setTableResponses('profiles', [
+      {
+        data: {
+          username: 'burger-fan',
+          display_name: 'Burger Fan',
+          avatar_url: null,
+          is_private: false,
+        },
+        error: null,
+      },
+      {
+        data: [{
+          id: 'friend-1',
+          username: 'alice',
+          display_name: 'Alice',
+          avatar_url: null,
+          equipped_frame: null,
+          bio: 'fan',
+        }],
+        error: null,
+      },
+    ]);
+
+    render(
+      <UserDashboardPage
+        session={{ user: { id: 'user-1', email: 'burger@example.com' } } as never}
+        theme="light"
+        onToggleTheme={() => {}}
+        onNavigate={() => {}}
+        userId="user-1"
+        isOwnProfile
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /common.followers/i }));
+
+    expect(await screen.findByText('@alice')).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
+    expect(fromMock.mock.calls.filter(([table]) => table === 'profiles')).toHaveLength(2);
+    expect(screen.queryByText('followList.loading')).not.toBeInTheDocument();
+    expect(screen.getByText('@alice')).toBeInTheDocument();
   });
 });

@@ -126,7 +126,9 @@ export function UserDashboardPage({
   }, [isOwnProfile, userId]);
 
   useEffect(() => {
-    void loadFollowCounts();
+    startTransition(() => {
+      void loadFollowCounts();
+    });
   }, [loadFollowCounts]);
 
   const loadProfile = useCallback(async () => {
@@ -449,6 +451,28 @@ export function UserDashboardPage({
   const handleFilterOpenChange = useCallback((open: boolean) => {
     setOpenFilterCount((prev) => Math.max(0, prev + (open ? 1 : -1)));
   }, []);
+  const handleFollowListClose = useCallback(() => {
+    setFollowListMode(null);
+  }, []);
+  const handleFollowingDelta = useCallback((delta: number) => {
+    setFollowCounts((current) => ({
+      ...current,
+      following: Math.max(0, current.following + delta),
+    }));
+  }, []);
+  const handleFollowListCount = useCallback((mode: FollowListMode, count: number) => {
+    setFollowCounts((current) => {
+      if (current[mode] === count) return current;
+      return {
+        ...current,
+        [mode]: count,
+      };
+    });
+  }, []);
+  const handleViewFollowPosts = useCallback((user: { id: string; username: string | null; displayName: string | null }) => {
+    setFollowListMode(null);
+    navigate(`/users/${user.id}`, { state: { returnTo: '/profile' } });
+  }, [navigate]);
 
   return (
     <AppShell>
@@ -710,19 +734,10 @@ export function UserDashboardPage({
             open={Boolean(followListMode)}
             mode={followListMode}
             currentUserId={session.user.id}
-            onClose={() => setFollowListMode(null)}
-            onFollowingDelta={(delta) => setFollowCounts((current) => ({
-              ...current,
-              following: Math.max(0, current.following + delta),
-            }))}
-            onListCount={(mode, count) => setFollowCounts((current) => ({
-              ...current,
-              [mode]: count,
-            }))}
-            onViewPosts={(user) => {
-              setFollowListMode(null);
-              navigate(`/users/${user.id}`, { state: { returnTo: '/profile' } });
-            }}
+            onClose={handleFollowListClose}
+            onFollowingDelta={handleFollowingDelta}
+            onListCount={handleFollowListCount}
+            onViewPosts={handleViewFollowPosts}
           />
         ) : null}
     </AppShell>

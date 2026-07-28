@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.9.1
+
+- Fixed the profile followers and following lists so opening them loads the users once instead of showing zero while reloading indefinitely.
+
 ## 1.9.0
 
 - Redesigned the More navigation as a dedicated discovery page for BurgerWrapped tools, including personal activity and social sections.
