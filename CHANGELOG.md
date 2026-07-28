@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Changed the own profile followers and following modals to use lists preloaded when entering the profile, avoiding a fresh fetch on each tap.
+- Fixed the profile followers and following lists so they ignore stale reloads and no longer fall back to zero when follow relationships are already loaded.
+
 ## 1.11.0
 
 - Fixed mobile photo cropping by converting HEIC and HEIF files to JPEG on demand before opening the cropper, with a recoverable error when an image cannot be decoded.

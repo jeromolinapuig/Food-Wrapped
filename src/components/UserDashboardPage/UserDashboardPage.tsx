@@ -10,7 +10,12 @@ import { BackButton } from '../common/BackButton';
 import { PageHeader } from '../common/PageHeader';
 import { TopMenu } from '../TopMenu/TopMenu';
 import { Avatar } from '../common/Avatar';
-import { FollowListModal, type FollowListMode } from '../FollowListModal/FollowListModal';
+import { FollowListModal } from '../FollowListModal/FollowListModal';
+import {
+  loadFollowListItems,
+  type FollowListItem,
+  type FollowListMode,
+} from '../FollowListModal/followListData';
 import { StatCard } from '../StatCard/StatCard';
 import { useRevalidateOnFocus } from '../../utils/useRevalidateOnFocus';
 import { getCurrentMonthValue } from '../../utils/datetime';
@@ -100,36 +105,70 @@ export function UserDashboardPage({
   } | null>(null);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+  const [followLists, setFollowLists] = useState<Record<FollowListMode, FollowListItem[]>>({
+    followers: [],
+    following: [],
+  });
+  const [followListsLoading, setFollowListsLoading] = useState(false);
   const [followListMode, setFollowListMode] = useState<FollowListMode | null>(null);
   const viewerId = session?.user.id ?? null;
 
-  const loadFollowCounts = useCallback(async () => {
+  const loadProfileFollowLists = useCallback(async () => {
     if (!isOwnProfile) return;
-    const { data, error } = await supabase
-      .from('follows')
-      .select('follower_id, following_id')
-      .or(`following_id.eq.${userId},follower_id.eq.${userId}`);
+    setFollowListsLoading(true);
+    const [followersResult, followingResult] = await Promise.all([
+      loadFollowListItems(userId, 'followers'),
+      loadFollowListItems(userId, 'following'),
+    ]);
 
-    if (error) {
-      console.error('Error loading profile follow counts', error);
-      return;
+    if (followersResult.error) {
+      console.error('Error loading profile followers list', followersResult.error);
+    }
+    if (followingResult.error) {
+      console.error('Error loading profile following list', followingResult.error);
     }
 
-    const followers = new Set<string>();
-    const following = new Set<string>();
-    (data ?? []).forEach((row) => {
-      const follow = row as { follower_id: string; following_id: string };
-      if (follow.following_id === userId) followers.add(follow.follower_id);
-      if (follow.follower_id === userId) following.add(follow.following_id);
+    setFollowLists({
+      followers: followersResult.items,
+      following: followingResult.items,
     });
-    setFollowCounts({ followers: followers.size, following: following.size });
+    setFollowCounts({
+      followers: followersResult.count,
+      following: followingResult.count,
+    });
+    setFollowListsLoading(false);
   }, [isOwnProfile, userId]);
 
   useEffect(() => {
     startTransition(() => {
-      void loadFollowCounts();
+      void loadProfileFollowLists();
     });
-  }, [loadFollowCounts]);
+  }, [loadProfileFollowLists]);
+
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const channel = supabase
+      .channel(`own-profile-follow-lists-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${userId}` },
+        () => {
+          void loadProfileFollowLists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${userId}` },
+        () => {
+          void loadProfileFollowLists();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOwnProfile, loadProfileFollowLists, userId]);
 
   const loadProfile = useCallback(async () => {
     const { data, error } = await supabase
@@ -737,6 +776,9 @@ export function UserDashboardPage({
             onClose={handleFollowListClose}
             onFollowingDelta={handleFollowingDelta}
             onListCount={handleFollowListCount}
+            preloadedItems={followListMode ? followLists[followListMode] : []}
+            preloadedLoading={followListsLoading}
+            onRequestRefresh={loadProfileFollowLists}
             onViewPosts={handleViewFollowPosts}
           />
         ) : null}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
@@ -6,24 +6,10 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ModalBase } from '../common/ModalBase';
 import { UserCard } from '../common/UserCard';
 import { useTranslation } from 'react-i18next';
+import { loadFollowListItems, type FollowListItem, type FollowListMode } from './followListData';
 import '../../styles/shared.css';
 import './FollowListModal.css';
 import '../UserProfileModal/UserProfileModal.css';
-
-export type FollowListMode = 'followers' | 'following';
-
-type FollowListItem = {
-  id: string;
-  username: string | null;
-  displayName: string | null;
-  avatarUrl: string | null;
-  avatarFrame: 'gold' | 'silver' | 'bronze' | null;
-  bio: string | null;
-  isOutgoing: boolean;
-  isIncoming: boolean;
-  outgoingFollowId: number | null;
-  incomingFollowId: number | null;
-};
 
 type FollowListModalProps = {
   open: boolean;
@@ -32,6 +18,9 @@ type FollowListModalProps = {
   onClose: () => void;
   onFollowingDelta: (delta: number) => void;
   onListCount?: (mode: FollowListMode, count: number) => void;
+  preloadedItems?: FollowListItem[];
+  preloadedLoading?: boolean;
+  onRequestRefresh?: () => void;
   onViewPosts?: (user: { id: string; username: string | null; displayName: string | null }) => void;
 };
 
@@ -42,6 +31,9 @@ export function FollowListModal({
   onClose,
   onFollowingDelta,
   onListCount,
+  preloadedItems,
+  preloadedLoading = false,
+  onRequestRefresh,
   onViewPosts,
 }: Readonly<FollowListModalProps>) {
   const { t } = useTranslation();
@@ -51,7 +43,11 @@ export function FollowListModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowListItem | null>(null);
+  const [optimisticItems, setOptimisticItems] = useState<FollowListItem[] | null>(null);
+  const [optimisticListKey, setOptimisticListKey] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const activeLoadIdRef = useRef(0);
+  const listKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -59,92 +55,35 @@ export function FollowListModal({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !mode) return;
+    if (!open || !mode || preloadedItems !== undefined) return;
     let cancelled = false;
 
     const load = async () => {
+      const loadId = activeLoadIdRef.current + 1;
+      activeLoadIdRef.current = loadId;
+      const listKey = `${currentUserId}-${mode}`;
+      const isSameList = listKeyRef.current === listKey;
+      listKeyRef.current = listKey;
+      const isStale = () => cancelled || activeLoadIdRef.current !== loadId;
+
       setLoading(true);
       setError(null);
-      setItems([]);
-
-      const { data: baseData, error: baseError } = await supabase
-        .from('follows')
-        .select('id, follower_id, following_id')
-        .eq(mode === 'followers' ? 'following_id' : 'follower_id', currentUserId);
-
-      if (cancelled) return;
-
-      if (baseError) {
-        setError(baseError.message);
-        setLoading(false);
-        return;
-      }
-
-      const rows = (baseData ?? []) as { id: number; follower_id: string; following_id: string }[];
-      const userIds = Array.from(new Set(rows.map((r) => (mode === 'followers' ? r.follower_id : r.following_id))));
-
-      const incomingBaseMap = mode === 'followers' ? Object.fromEntries(rows.map((r) => [r.follower_id, r.id])) : {};
-      const outgoingBaseMap = mode === 'following' ? Object.fromEntries(rows.map((r) => [r.following_id, r.id])) : {};
-
-      if (!userIds.length) {
+      if (!isSameList) {
         setItems([]);
-        onListCount?.(mode, 0);
+      }
+
+      const { items: nextItems, count, error: loadError } = await loadFollowListItems(currentUserId, mode);
+
+      if (isStale()) return;
+
+      if (loadError) {
+        setError(loadError.message);
         setLoading(false);
         return;
       }
 
-      const [{ data: profilesData, error: profilesError }, extraFollows] = await Promise.all([
-        supabase.from('profiles').select('id, username, display_name, avatar_url, equipped_frame, bio').in('id', userIds),
-        mode === 'followers'
-          ? supabase
-              .from('follows')
-              .select('id, follower_id, following_id')
-              .eq('follower_id', currentUserId)
-              .in('following_id', userIds)
-          : supabase
-              .from('follows')
-              .select('id, follower_id, following_id')
-              .eq('following_id', currentUserId)
-              .in('follower_id', userIds),
-      ]);
-
-      if (cancelled) return;
-
-      if (profilesError) {
-        setError(profilesError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (extraFollows?.error) {
-        console.error('Error cargando seguimientos', extraFollows.error);
-      }
-
-      const extraRows = (extraFollows?.data ?? []) as { id: number; follower_id: string; following_id: string }[];
-      const outgoingExtraMap = mode === 'followers' ? Object.fromEntries(extraRows.map((r) => [r.following_id, r.id])) : {};
-      const incomingExtraMap = mode === 'following' ? Object.fromEntries(extraRows.map((r) => [r.follower_id, r.id])) : {};
-
-      const mapped: FollowListItem[] = (profilesData ?? []).map((p) => {
-        const id = (p as { id: string }).id;
-        const outgoingFollowId = mode === 'following' ? outgoingBaseMap[id] ?? null : outgoingExtraMap[id] ?? null;
-        const incomingFollowId = mode === 'followers' ? incomingBaseMap[id] ?? null : incomingExtraMap[id] ?? null;
-
-        return {
-          id,
-          username: (p as { username: string | null }).username,
-          displayName: (p as { display_name: string | null }).display_name,
-          avatarUrl: (p as { avatar_url: string | null }).avatar_url,
-          avatarFrame: ((p as { equipped_frame?: 'gold' | 'silver' | 'bronze' | null }).equipped_frame ?? null),
-          bio: (p as { bio: string | null }).bio,
-          isOutgoing: Boolean(outgoingFollowId),
-          isIncoming: Boolean(incomingFollowId),
-          outgoingFollowId,
-          incomingFollowId,
-        };
-      });
-
-      setItems(mapped);
-      onListCount?.(mode, mapped.length);
+      setItems(nextItems);
+      onListCount?.(mode, count);
       setLoading(false);
     };
 
@@ -153,10 +92,10 @@ export function FollowListModal({
     return () => {
       cancelled = true;
     };
-  }, [open, mode, currentUserId, onListCount, refreshKey]);
+  }, [open, mode, currentUserId, onListCount, preloadedItems, refreshKey]);
 
   useEffect(() => {
-    if (!open || !mode) return;
+    if (!open || !mode || preloadedItems !== undefined) return;
     const filter = mode === 'followers'
       ? `following_id=eq.${currentUserId}`
       : `follower_id=eq.${currentUserId}`;
@@ -174,23 +113,35 @@ export function FollowListModal({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId, mode, open]);
+  }, [currentUserId, mode, onRequestRefresh, open, preloadedItems]);
 
   if (!open || !mode) return null;
 
+  const listKey = `${currentUserId}-${mode}`;
+  const baseItems = preloadedItems ?? items;
+  const modalItems = optimisticItems && optimisticListKey === listKey ? optimisticItems : baseItems;
+  const modalLoading = preloadedItems !== undefined ? preloadedLoading && !optimisticItems : loading;
   const term = searchTerm.trim().toLowerCase();
   const filteredItems = term
-    ? items.filter((item) => {
+    ? modalItems.filter((item) => {
         const u = (item.username ?? '').toLowerCase();
         const d = (item.displayName ?? '').toLowerCase();
         return u.includes(term) || d.includes(term);
       })
-    : items;
+    : modalItems;
 
   const title = mode === 'followers' ? t('followList.followers') : t('followList.following');
+  const updateVisibleItems = (updater: (current: FollowListItem[]) => FollowListItem[]) => {
+    if (preloadedItems !== undefined) {
+      setOptimisticListKey(listKey);
+      setOptimisticItems((current) => updater(current ?? preloadedItems));
+      return;
+    }
+    setItems(updater);
+  };
 
   const handleToggleFollow = async (userId: string) => {
-    const item = items.find((i) => i.id === userId);
+    const item = modalItems.find((i) => i.id === userId);
     if (!item || actioningId) return;
 
     if (item.isOutgoing) {
@@ -212,12 +163,13 @@ export function FollowListModal({
       return;
     }
 
-    setItems((prev) =>
+    updateVisibleItems((prev) =>
       prev.map((row) =>
         row.id === userId ? { ...row, isOutgoing: true, outgoingFollowId: (data as { id: number }).id } : row
       )
     );
     onFollowingDelta(1);
+    onRequestRefresh?.();
     setActioningId(null);
   };
 
@@ -235,13 +187,14 @@ export function FollowListModal({
       setConfirmUnfollow(null);
       return;
     }
-    setItems((prev) => {
+    updateVisibleItems((prev) => {
       const updated = prev.map((row) =>
         row.id === userId ? { ...row, isOutgoing: false, outgoingFollowId: null } : row
       );
       return mode === 'following' ? updated.filter((row) => row.id !== userId) : updated;
     });
     onFollowingDelta(-1);
+    onRequestRefresh?.();
     setActioningId(null);
     setConfirmUnfollow(null);
   };
@@ -251,7 +204,7 @@ export function FollowListModal({
       <ModalBase onClose={onClose} modalClassName="bw-modal bw-user-profile-modal">
         <div className="bw-modal-header" style={{ justifyContent: 'space-between' }}>
           <div className="bw-modal-title" style={{ margin: 0 }}>
-            {title} ({items.length})
+            {title} ({modalItems.length})
           </div>
           <button type="button" className="bw-icon-button" onClick={onClose} aria-label={t('common.close')}>
             <Close fontSize="small" />
@@ -293,9 +246,9 @@ export function FollowListModal({
           </div>
         </div>
 
-        {loading && <p style={{ fontSize: 13 }}>{t('followList.loading')}</p>}
+        {modalLoading && <p style={{ fontSize: 13 }}>{t('followList.loading')}</p>}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
-        {!loading && !filteredItems.length && (
+        {!modalLoading && !filteredItems.length && (
           <p style={{ fontSize: 13, opacity: 0.8 }}>
             {mode === 'followers'
               ? term
@@ -307,7 +260,7 @@ export function FollowListModal({
           </p>
         )}
 
-        {!loading && (
+        {!modalLoading && (
           <div className="bw-follow-list">
             {filteredItems.map((item) => {
               const isMutual = item.isIncoming && item.isOutgoing;

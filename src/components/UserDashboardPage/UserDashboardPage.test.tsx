@@ -257,10 +257,10 @@ describe('UserDashboardPage', () => {
     expect(navigateMock).toHaveBeenCalledWith('/my-top-burgers');
   });
 
-  it('abre la lista de seguidores del perfil propio sin relanzar la carga en bucle', async () => {
+  it('abre la lista de seguidores del perfil propio usando la lista precargada', async () => {
     setTableResponses('follows', [
       { data: [{ id: 1, follower_id: 'friend-1', following_id: 'user-1' }], error: null },
-      { data: [{ id: 1, follower_id: 'friend-1', following_id: 'user-1' }], error: null },
+      { data: [], error: null },
       { data: [], error: null },
     ]);
     setTableResponses('profiles', [
@@ -297,13 +297,19 @@ describe('UserDashboardPage', () => {
       />
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: /common.followers/i }));
+    await waitFor(() => {
+      expect(screen.getByText('1')).toBeInTheDocument();
+    });
+    const followersButton = screen.getByText('common.followers').closest('button');
+    expect(followersButton).not.toBeNull();
+    const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
+    const callsBeforeOpen = fromMock.mock.calls.length;
 
+    fireEvent.click(followersButton as HTMLElement);
     expect(await screen.findByText('@alice')).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
-    expect(fromMock.mock.calls.filter(([table]) => table === 'profiles')).toHaveLength(2);
+    expect(fromMock.mock.calls).toHaveLength(callsBeforeOpen);
     expect(screen.queryByText('followList.loading')).not.toBeInTheDocument();
     expect(screen.getByText('@alice')).toBeInTheDocument();
   });

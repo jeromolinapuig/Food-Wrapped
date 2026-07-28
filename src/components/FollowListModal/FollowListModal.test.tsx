@@ -82,4 +82,31 @@ describe('FollowListModal', () => {
       expect(onFollowingDelta).toHaveBeenCalledWith(-1);
     });
   });
+
+  it('mantiene el contador si la relacion existe aunque el perfil llegue vacio', async () => {
+    const onListCount = vi.fn();
+    setTableResponses('follows', [
+      { data: [{ id: 20, follower_id: 'u3', following_id: 'me' }], error: null },
+      { data: [], error: null },
+    ]);
+    setTableResponses('profiles', [
+      { data: [], error: null },
+    ]);
+
+    render(
+      <FollowListModal
+        open
+        mode="followers"
+        currentUserId="me"
+        onClose={() => {}}
+        onFollowingDelta={() => {}}
+        onListCount={onListCount}
+      />
+    );
+
+    expect(await screen.findByText('followList.followers (1)')).toBeInTheDocument();
+    expect(screen.getByText('@usuario')).toBeInTheDocument();
+    expect(onListCount).toHaveBeenCalledWith('followers', 1);
+    expect(screen.queryByText('followList.noFollowers')).not.toBeInTheDocument();
+  });
 });
