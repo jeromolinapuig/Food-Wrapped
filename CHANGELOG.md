@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.11.2
+
+- Fixed saving an edited post so the editor closes directly without briefly reopening the add-post flow.
+
 ## 1.11.1
 
 - Restored post editing as a single-form modal while keeping the five-step creation flow unchanged.

@@ -693,7 +693,6 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const handleEntrySaved = async () => {
     await loadEntries();
     setRefreshFeedKey((prev) => prev + 1);
-    setEditingEntry(null);
   };
 
   const handleEditEntry = (entry: EditEntry) => {

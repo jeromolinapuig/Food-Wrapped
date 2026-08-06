@@ -121,18 +121,67 @@ vi.mock('../StatCard/StatCard', () => ({
 }));
 
 vi.mock('../AddEntryModal/AddEntryModal', () => ({
-  AddEntryModal: ({ open }: { open: boolean }) => <div>{open ? 'add-modal-open' : 'add-modal-closed'}</div>,
+  AddEntryModal: ({
+    open,
+    mode,
+    onSaved,
+    onClose,
+  }: {
+    open: boolean;
+    mode: 'create' | 'edit';
+    onSaved: () => Promise<void> | void;
+    onClose: () => void;
+  }) => (
+    <div data-testid="entry-modal" data-mode={mode}>
+      {open ? 'add-modal-open' : 'add-modal-closed'}
+      {open ? (
+        <>
+          <button type="button" onClick={() => void onSaved()}>
+            save-entry
+          </button>
+          <button type="button" onClick={onClose}>
+            close-entry
+          </button>
+        </>
+      ) : null}
+    </div>
+  ),
 }));
 
 vi.mock('../FeedTabs/FeedTabs', () => ({
   FeedTabs: (props: {
     onOpenEntry?: (entryId: string) => void;
+    refreshKey?: number;
+    onEditEntry?: (entry: {
+      id: string;
+      datetime: string;
+      rating: number;
+      price: number;
+      isBurger: boolean;
+    }) => void;
   }) => {
     return (
       <div>
+        <span data-testid="feed-refresh">{props.refreshKey ?? 0}</span>
         {props.onOpenEntry ? (
           <button type="button" onClick={() => props.onOpenEntry?.('entry-42')}>
             open-entry
+          </button>
+        ) : null}
+        {props.onEditEntry ? (
+          <button
+            type="button"
+            onClick={() =>
+              props.onEditEntry?.({
+                id: 'entry-42',
+                datetime: '2026-02-10T10:00:00.000Z',
+                rating: 4,
+                price: 10,
+                isBurger: true,
+              })
+            }
+          >
+            edit-entry
           </button>
         ) : null}
       </div>
@@ -273,6 +322,46 @@ describe('Dashboard', () => {
     ].forEach((filterName) => {
       expect(screen.getByRole('button', { name: filterName }).closest('[data-beam]')).toBeNull();
     });
+  });
+
+  it('mantiene el modo edición hasta que termina de cerrar tras guardar', async () => {
+    setTableResponses('entries', [
+      { data: [], error: null },
+      { data: [], error: null },
+      { data: [], error: null },
+    ]);
+    setTableResponses('entry_bookmarks', [{ data: [], error: null }]);
+    setTableResponses('profiles', [
+      { data: { username: 'canon-user', display_name: null }, error: null },
+    ]);
+    setTableResponses('follows', [{ data: [], error: null }]);
+    setTableResponses('group_invitations', [{ data: [], error: null }]);
+
+    render(
+      <Dashboard
+        session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never}
+        theme="light"
+      />
+    );
+
+    await screen.findByText('add-modal-closed');
+    fireEvent.click(screen.getByRole('button', { name: 'edit-entry' }));
+    expect(screen.getByTestId('entry-modal')).toHaveAttribute(
+      'data-mode',
+      'edit',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'save-entry' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-refresh')).toHaveTextContent('1'),
+    );
+    expect(screen.getByTestId('entry-modal')).toHaveAttribute(
+      'data-mode',
+      'edit',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'close-entry' }));
+    expect(screen.getByText('add-modal-closed')).toBeInTheDocument();
   });
 
   it('abre el modal de creación desde el destino de una notificación', async () => {
