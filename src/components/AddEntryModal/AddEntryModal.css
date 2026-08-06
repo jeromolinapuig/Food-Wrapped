@@ -403,6 +403,15 @@
   flex: 1;
 }
 
+.bw-entry-edit .bw-photo-actions {
+  display: flex;
+}
+
+.bw-entry-edit-notes-count {
+  margin-top: 4px;
+  text-align: right;
+}
+
 /* Five-step entry wizard */
 
 .bw-entry-wizard {

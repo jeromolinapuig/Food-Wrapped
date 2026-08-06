@@ -656,19 +656,20 @@ describe('AddEntryModal wizard', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('no sobrescribe una fecha modificada al cambiar la foto', async () => {
+  it('actualiza una fecha modificada al añadir una foto con EXIF en creación', async () => {
     photoMetadataMock.mockResolvedValue('2026-03-04T12:30');
-    renderModal({ mode: 'edit', entry: restaurantEntry });
+    renderModal();
+    selectOrigin('homemade');
     clickContinue();
     await screen.findByText('addEntry.steps.2.title');
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2026-04-02T18:45' },
     });
 
-    const changePhotoLabel = screen
-      .getByText('addEntry.changePhoto')
+    const galleryLabel = screen
+      .getByText('addEntry.choosePhoto')
       .closest('label');
-    fireEvent.change(changePhotoLabel?.querySelector('input') as Element, {
+    fireEvent.change(galleryLabel?.querySelector('input') as Element, {
       target: {
         files: [
           new File(['new-photo'], 'new.jpg', { type: 'image/jpeg' }),
@@ -683,30 +684,28 @@ describe('AddEntryModal wizard', () => {
     await waitFor(() => expect(compressImageMock).toHaveBeenCalled());
 
     expect(document.getElementById('bw-datetime')).toHaveValue(
-      '2026-04-02T18:45',
+      '2026-03-04T12:30',
     );
   });
 
   it('rechaza fechas futuras y anteriores al mínimo', async () => {
     renderModal({ mode: 'edit', entry: restaurantEntry });
-    clickContinue();
-    await screen.findByText('addEntry.steps.2.title');
 
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2027-01-01T12:00' },
     });
-    clickContinue();
+    fireEvent.click(screen.getByRole('button', { name: 'addEntry.save' }));
     expect(
-      await screen.findByText('addEntry.errors.datetimeFuture'),
+      await screen.findByText('No puedes registrar fechas futuras.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('addEntry.steps.2.title')).toBeInTheDocument();
+    expect(screen.getByText('addEntry.titleEdit')).toBeInTheDocument();
 
     fireEvent.change(document.getElementById('bw-datetime')!, {
       target: { value: '2025-12-31T23:59' },
     });
-    clickContinue();
+    fireEvent.click(screen.getByRole('button', { name: 'addEntry.save' }));
     expect(
-      await screen.findByText('addEntry.errors.datetimeMinimum'),
+      await screen.findByText('La fecha minima es el 1 de enero de 2026.'),
     ).toBeInTheDocument();
     expect(supabaseMock.state.entriesUpdate).not.toHaveBeenCalled();
   });
@@ -718,19 +717,11 @@ describe('AddEntryModal wizard', () => {
       entry: restaurantEntry,
       onSaved,
     });
-    clickContinue();
-    await screen.findByText('addEntry.steps.2.title');
-    clickContinue();
-    await screen.findByText('addEntry.restaurantIdentityTitle');
-    clickContinue();
-    await screen.findByText('addEntry.steps.4.title');
-    clickContinue();
-    await screen.findByText('addEntry.steps.5.title');
     fireEvent.change(document.getElementById('bw-notes')!, {
       target: { value: 'Muy buena' },
     });
     fireEvent.click(
-      screen.getByRole('button', { name: 'addEntry.saveChanges' }),
+      screen.getByRole('button', { name: 'addEntry.save' }),
     );
 
     await waitFor(() =>
@@ -935,11 +926,6 @@ describe('AddEntryModal wizard', () => {
       onClose: secondClose,
     });
     selectOrigin('homemade');
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'addEntry.changeTypeConfirm.confirm',
-      }),
-    );
     fireEvent.click(
       screen.getByRole('button', { name: 'common.close' }),
     );

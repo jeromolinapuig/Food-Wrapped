@@ -19,13 +19,11 @@ const getUint32 = (view: DataView, offset: number, byteOrder: ByteOrder) =>
   view.getUint32(offset, byteOrder === 'little');
 
 export async function getPhotoTakenDateTime(file: File): Promise<string | null> {
-  if (!file.type.includes('jpeg') && !/\.(jpe?g)$/i.test(file.name)) {
-    return null;
-  }
-
   try {
     const buffer = await file.arrayBuffer();
-    const exifDate = readExifDateTime(new DataView(buffer));
+    const view = new DataView(buffer);
+    const exifDate =
+      readExifDateTime(view) ?? readEmbeddedTiffDateTime(view);
     if (!exifDate) return null;
 
     const parsed = parseExifDateTime(exifDate);
@@ -52,10 +50,38 @@ function readExifDateTime(view: DataView): string | null {
     if (segmentLength < 2 || segmentEnd > view.byteLength) return null;
 
     if (marker === APP1_MARKER && readAscii(view, segmentStart, EXIF_HEADER.length) === EXIF_HEADER) {
-      return readTiffDateTime(view, segmentStart + EXIF_HEADER.length, segmentEnd);
+      const dateTime = readTiffDateTime(
+        view,
+        segmentStart + EXIF_HEADER.length,
+        segmentEnd,
+      );
+      if (dateTime) return dateTime;
     }
 
     offset = segmentEnd;
+  }
+
+  return null;
+}
+
+function readEmbeddedTiffDateTime(view: DataView): string | null {
+  for (let offset = 0; offset + 8 <= view.byteLength; offset += 1) {
+    const isLittleEndianTiff =
+      view.getUint8(offset) === 0x49 &&
+      view.getUint8(offset + 1) === 0x49 &&
+      view.getUint16(offset + 2, true) === TIFF_MAGIC;
+    const isBigEndianTiff =
+      view.getUint8(offset) === 0x4d &&
+      view.getUint8(offset + 1) === 0x4d &&
+      view.getUint16(offset + 2, false) === TIFF_MAGIC;
+
+    if (!isLittleEndianTiff && !isBigEndianTiff) continue;
+    const dateTime = readTiffDateTime(
+      view,
+      offset,
+      view.byteLength,
+    );
+    if (dateTime) return dateTime;
   }
 
   return null;

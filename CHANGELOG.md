@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.11.1
+
+- Restored post editing as a single-form modal while keeping the five-step creation flow unchanged.
+- Fixed new-post photo selection so the date and time are always refreshed from available image metadata, including embedded EXIF/TIFF data in HEIC photos, even if the field was edited beforehand.
 - Changed the own profile followers and following modals to use lists preloaded when entering the profile, avoiding a fresh fetch on each tap.
 - Fixed the profile followers and following lists so they ignore stale reloads and no longer fall back to zero when follow relationships are already loaded.
 

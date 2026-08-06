@@ -18,7 +18,24 @@ describe('photo metadata utils', () => {
     await expect(getPhotoTakenDateTime(file)).resolves.toBeNull();
   });
 
-  it('returns null for non-jpeg files', async () => {
+  it('reads embedded TIFF metadata from a HEIC photo', async () => {
+    const file = new File(
+      [
+        new Uint8Array([
+          ...asciiBytes('\0\0\0\u0018ftypheic'),
+          ...buildExifPayload('2026:05:06 19:45:00'),
+        ]),
+      ],
+      'burger.heic',
+      { type: 'image/heic' },
+    );
+
+    await expect(getPhotoTakenDateTime(file)).resolves.toBe(
+      '2026-05-06T19:45',
+    );
+  });
+
+  it('returns null for files without supported metadata', async () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'burger.png', {
       type: 'image/png',
     });

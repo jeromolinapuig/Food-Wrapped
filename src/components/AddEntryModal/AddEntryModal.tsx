@@ -917,7 +917,7 @@ export function AddEntryModal({
             '.bw-confirm-backdrop .bw-confirm-modal',
           ) ??
           document.querySelector<HTMLElement>('.bw-cropper') ??
-          document.querySelector<HTMLElement>('.bw-entry-wizard');
+          document.querySelector<HTMLElement>('.bw-entry-modal');
         const focusable = Array.from(
           container?.querySelectorAll<HTMLElement>(
             'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -1234,7 +1234,10 @@ export function AddEntryModal({
       if (isObjectUrl(photoPreview)) URL.revokeObjectURL(photoPreview!);
       setPhotoFile(compressed);
       setPhotoPreview(URL.createObjectURL(compressed));
-      if (!datetimeManuallyEdited && pendingPhotoDateTime) {
+      if (
+        pendingPhotoDateTime &&
+        (mode === 'create' || !datetimeManuallyEdited)
+      ) {
         setDatetimeInput(pendingPhotoDateTime);
       }
       resetCropState();
@@ -1464,7 +1467,11 @@ export function AddEntryModal({
       additionalNotes,
     });
 
-  async function saveEntry(parsed: AddEntrySchema) {
+  async function saveEntry(
+    parsed: AddEntrySchema,
+    restaurantOverride?: RestaurantOption,
+    approvedRestaurantNameOverride?: string,
+  ) {
     const entryId = mode === 'edit' && entry ? entry.id : null;
     const price = Number(parsed.price.replace(',', '.'));
     const rating = Number(parsed.rating);
@@ -1485,18 +1492,21 @@ export function AddEntryModal({
       entry?.restaurantName &&
       normalizeName(entry.restaurantName.trim()) === normalizedRestaurant;
     let restaurantId =
+      restaurantOverride?.id ??
       selectedRestaurant?.id ??
       (editingSameRestaurant ? entry?.restaurantId ?? null : null);
+    const approvedRestaurantName =
+      approvedRestaurantNameOverride ?? restaurantApprovedName;
 
     setFormLoading(true);
     try {
       if (
         burgerSource === 'restaurant' &&
         !restaurantId &&
-        restaurantApprovedName &&
-        normalizeName(restaurantApprovedName) === normalizedRestaurant
+        approvedRestaurantName &&
+        normalizeName(approvedRestaurantName) === normalizedRestaurant
       ) {
-        const restaurant = await ensureRestaurant(restaurantApprovedName);
+        const restaurant = await ensureRestaurant(approvedRestaurantName);
         restaurantId = restaurant.id;
         setSelectedRestaurant(restaurant);
         setRestaurantInput(restaurant.name);
@@ -1673,6 +1683,98 @@ export function AddEntryModal({
     await saveEntry(validation.data);
   };
 
+  const getValidationMessage = (validation: ReturnType<typeof validateEntryForm>) =>
+    validation.success
+      ? null
+      : validation.error.issues[0]?.message ??
+        t('addEntry.errors.reviewFields');
+
+  const handleEditSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (mode !== 'edit' || formLoading) return;
+
+    setFormError(null);
+    const validation = validateEntryForm();
+    if (!validation.success) {
+      setFormError(getValidationMessage(validation));
+      return;
+    }
+
+    if (burgerSource === 'restaurant' && !selectedRestaurant) {
+      const normalizedRestaurant = normalizeName(restaurantInput);
+      const editingSameRestaurant =
+        entry?.restaurantName &&
+        normalizeName(entry.restaurantName) === normalizedRestaurant;
+      const approvedRestaurant =
+        restaurantApprovedName &&
+        normalizeName(restaurantApprovedName) === normalizedRestaurant;
+
+      if (!editingSameRestaurant && !approvedRestaurant) {
+        const suggestions = await fetchRestaurantOptions(restaurantInput);
+        const exactRestaurant = suggestions.find(
+          (option) => normalizeName(option.name) === normalizedRestaurant,
+        );
+
+        if (exactRestaurant) {
+          selectRestaurant(exactRestaurant, true);
+          await saveEntry(validation.data, exactRestaurant);
+        } else {
+          await openRestaurantReview(restaurantInput.trim(), true);
+        }
+        return;
+      }
+    }
+
+    await saveEntry(validation.data);
+  };
+
+  const handleEditRestaurantSelection = async (
+    restaurant: RestaurantOption,
+  ) => {
+    const shouldSave = continueAfterRestaurantReview;
+    selectRestaurant(restaurant, true);
+    setContinueAfterRestaurantReview(false);
+    if (!shouldSave) return;
+
+    const validation = validateEntryForm();
+    if (!validation.success) {
+      setFormError(getValidationMessage(validation));
+      return;
+    }
+    await saveEntry(validation.data, restaurant);
+  };
+
+  const handleEditRestaurantConfirmation = async () => {
+    if (!restaurantReview || formLoading) return;
+
+    const approvedName = restaurantReview.name.trim();
+    const shouldSave = continueAfterRestaurantReview;
+    setFormError(null);
+    setFormLoading(true);
+    try {
+      const restaurant = await ensureRestaurant(approvedName);
+      selectRestaurant(restaurant, true);
+      setContinueAfterRestaurantReview(false);
+
+      if (!shouldSave) return;
+      const validation = validateEntryForm();
+      if (!validation.success) {
+        setFormError(getValidationMessage(validation));
+        return;
+      }
+      await saveEntry(validation.data, restaurant);
+    } catch (error: unknown) {
+      console.error(error);
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : t('addEntry.errors.restaurantCreate'),
+      );
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'es';
   const formattedRating = ratingInput
     ? new Intl.NumberFormat(locale, {
@@ -1752,6 +1854,266 @@ export function AddEntryModal({
         ))}
       </div>
     </div>
+  );
+
+  const isEditSubmitDisabled =
+    isBusy ||
+    !datetimeInput ||
+    !burgerSource ||
+    !priceInput.trim() ||
+    !ratingInput.trim() ||
+    (burgerSource === 'homemade' && !ingredientsInput.trim()) ||
+    (burgerSource === 'restaurant' &&
+      (!restaurantInput.trim() || !burgerInput.trim()));
+
+  const renderEditFields = () => (
+    <>
+      <div className="bw-field">
+        <span className="bw-label">{t('addEntry.photoLabel')}</span>
+        <div className="bw-photo-card">
+          {photoPreview ? (
+            <>
+              <img
+                src={photoPreview}
+                alt={t('addEntry.photoAlt')}
+                className="bw-photo-preview"
+              />
+              <div className="bw-photo-actions">
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => void handlePhotoChange(null)}
+                  disabled={isBusy}
+                >
+                  {t('addEntry.removePhoto')}
+                </Button>
+                <Button
+                  variant="contained"
+                  component="label"
+                  size="small"
+                  disabled={isBusy}
+                >
+                  {t('addEntry.changePhoto')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handlePhotoInputChange}
+                  />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Button
+              variant="outlined"
+              component="label"
+              size="small"
+              disabled={isBusy}
+            >
+              {t('addEntry.addPhoto')}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handlePhotoInputChange}
+              />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="bw-field">
+        <TextField
+          id="bw-datetime"
+          label={t('addEntry.datetime')}
+          type="datetime-local"
+          value={datetimeInput}
+          onChange={(event) => {
+            setDatetimeInput(event.target.value);
+            setDatetimeManuallyEdited(true);
+          }}
+          fullWidth
+          inputProps={{ min: MIN_DATETIME_STRING, max: maxDateTime }}
+          InputLabelProps={{ shrink: true }}
+        />
+      </div>
+
+      <div className="bw-burger-type-block">
+        {renderMeatType()}
+        <div className="bw-field">
+          <span className="bw-label">{t('addEntry.origin')}</span>
+          <div className="bw-meat-grid bw-source-grid" role="radiogroup">
+            {(
+              [
+                ['homemade', 'homemade.png'],
+                ['restaurant', 'dollar.png'],
+              ] as const
+            ).map(([value, image]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={burgerSource === value}
+                className={`bw-meat-card ${burgerSource === value ? 'is-active' : ''}`}
+                onClick={() => applyBurgerSource(value)}
+              >
+                <img src={`/${image}`} alt="" className="bw-meat-icon-img" />
+                <span className="bw-meat-label">
+                  {t(`addEntry.${value}`)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {burgerSource === 'homemade' ? (
+        <div className="bw-field">
+          <TextField
+            id="bw-ingredients"
+            label={t('addEntry.ingredientsLabel')}
+            value={ingredientsInput}
+            onChange={(event) => setIngredientsInput(event.target.value)}
+            placeholder={t('addEntry.ingredientsPlaceholder')}
+            fullWidth
+            multiline
+            minRows={2}
+            inputProps={{ maxLength: INGREDIENTS_LIMIT }}
+          />
+        </div>
+      ) : null}
+
+      {burgerSource === 'restaurant' ? (
+        <>
+          <div className="bw-field">
+            <TextField
+              id="bw-restaurant"
+              label={t('addEntry.restaurantLabel')}
+              value={restaurantInput}
+              onChange={(event) => void handleRestaurantChange(event.target.value)}
+              placeholder={t('addEntry.restaurantPlaceholder')}
+              autoComplete="off"
+              fullWidth
+            />
+            {restaurantSuggestions.length > 0 || showAddRestaurantOption ? (
+              <ul className="bw-suggestions">
+                {restaurantSuggestions.map((restaurant) => (
+                  <li key={restaurant.id}>
+                    <button
+                      type="button"
+                      onClick={() => selectRestaurant(restaurant)}
+                    >
+                      {restaurant.name}
+                    </button>
+                  </li>
+                ))}
+                {showAddRestaurantOption ? (
+                  <li className="bw-suggestions-add">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void openRestaurantReview(trimmedRestaurantInput)
+                      }
+                    >
+                      {t('addEntry.addRestaurantOption', {
+                        name: trimmedRestaurantInput,
+                      })}
+                    </button>
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+          </div>
+
+          <div className="bw-field">
+            <TextField
+              id="bw-burger-name"
+              label={t('addEntry.burgerLabel')}
+              value={burgerInput}
+              onChange={(event) => void handleBurgerChange(event.target.value)}
+              placeholder={t('addEntry.burgerPlaceholder')}
+              autoComplete="off"
+              fullWidth
+            />
+            {selectedRestaurant && burgerSuggestions.length > 0 ? (
+              <ul className="bw-suggestions">
+                {burgerSuggestions.map((burger) => (
+                  <li key={burger.id}>
+                    <button type="button" onClick={() => selectBurger(burger)}>
+                      {burger.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {!selectedRestaurant ? (
+              <p className="bw-helper">{t('addEntry.nameHelp')}</p>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      <div className="bw-field">
+        <span className="bw-label">{t('addEntry.score')}</span>
+        <RatingPicker
+          value={ratingInput ? Number(ratingInput) : null}
+          onChange={(value) => setRatingInput(String(value))}
+          color={colors.accent}
+          emptyColor={colors.textMuted}
+          label={t('addEntry.score')}
+        />
+      </div>
+
+      <div className="bw-price-grid">
+        <TextField
+          id="bw-price"
+          label={t('addEntry.priceLabel', { currency: priceCurrency })}
+          type="number"
+          inputProps={{ step: 0.01, min: 0, inputMode: 'decimal' }}
+          value={priceInput}
+          onChange={(event) => setPriceInput(event.target.value)}
+          fullWidth
+        />
+        <TextField
+          id="bw-price-currency"
+          select
+          label={t('addEntry.priceCurrency')}
+          value={priceCurrency}
+          onChange={(event) => setPriceCurrency(event.target.value)}
+          fullWidth
+          SelectProps={{ MenuProps: { disablePortal: true } }}
+        >
+          {currencyOptions.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </div>
+
+      <div className="bw-field">
+        <TextField
+          id="bw-notes"
+          label={t('addEntry.notesLabel')}
+          value={additionalNotes}
+          onChange={(event) => setAdditionalNotes(event.target.value)}
+          placeholder={t('addEntry.notesPlaceholder')}
+          fullWidth
+          multiline
+          minRows={3}
+          inputProps={{ maxLength: NOTES_LIMIT }}
+        />
+        <div className="bw-helper bw-entry-edit-notes-count">
+          {additionalNotes.length}/{NOTES_LIMIT}
+        </div>
+      </div>
+
+      {formError ? (
+        <p className="bw-field-error" role="alert">
+          {formError}
+        </p>
+      ) : null}
+    </>
   );
 
   const renderStep = () => {
@@ -2201,14 +2563,16 @@ export function AddEntryModal({
         }}
       >
         <div
-          className={`bw-modal bw-entry-wizard ${restaurantReview ? 'bw-modal-restaurant-review' : ''} ${isClosing ? 'is-closing' : 'is-open'}`}
+          className={`bw-modal bw-entry-modal ${mode === 'edit' ? 'bw-entry-edit' : 'bw-entry-wizard'} ${restaurantReview ? 'bw-modal-restaurant-review' : ''} ${isClosing ? 'is-closing' : 'is-open'}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="bw-entry-wizard-title"
         >
-          <div className="bw-modal-header bw-wizard-header">
-            <div className="bw-wizard-heading">
-              {!restaurantReview ? (
+          <div
+            className={`bw-modal-header ${mode === 'create' ? 'bw-wizard-header' : ''}`}
+          >
+            <div className={mode === 'create' ? 'bw-wizard-heading' : undefined}>
+              {mode === 'create' && !restaurantReview ? (
                 <span className="bw-wizard-progress-copy" aria-live="polite">
                   {t('addEntry.progress', {
                     current: currentStep,
@@ -2224,26 +2588,42 @@ export function AddEntryModal({
               >
                 {restaurantReview
                   ? t('addEntry.reviewRestaurantTitle')
-                  : stepTitle}
+                  : mode === 'edit'
+                    ? t('addEntry.titleEdit')
+                    : stepTitle}
               </h2>
               <p className="bw-modal-subtitle">
                 {restaurantReview
                   ? t('addEntry.reviewRestaurantSubtitle')
-                  : stepSupport}
+                  : mode === 'edit'
+                    ? t('addEntry.subtitle')
+                    : stepSupport}
               </p>
             </div>
-            <button
-              type="button"
-              className="bw-icon-button bw-wizard-close"
-              onClick={requestClose}
-              disabled={isBusy}
-              aria-label={t('common.close')}
-            >
-              <CloseRounded aria-hidden="true" />
-            </button>
+            {mode === 'edit' ? (
+              <Button
+                type="button"
+                variant="outlined"
+                size="small"
+                onClick={requestClose}
+                disabled={isBusy}
+              >
+                {t('common.close')}
+              </Button>
+            ) : (
+              <button
+                type="button"
+                className="bw-icon-button bw-wizard-close"
+                onClick={requestClose}
+                disabled={isBusy}
+                aria-label={t('common.close')}
+              >
+                <CloseRounded aria-hidden="true" />
+              </button>
+            )}
           </div>
 
-          {!restaurantReview ? (
+          {mode === 'create' && !restaurantReview ? (
             <div
               className="bw-wizard-progress-track"
               role="progressbar"
@@ -2264,11 +2644,17 @@ export function AddEntryModal({
                 <button
                   type="button"
                   className="bw-restaurant-review-summary bw-restaurant-review-best-match"
-                  onClick={() =>
-                    continueAfterRestaurantSelection(
-                      closestRestaurantMatch,
-                    )
-                  }
+                  onClick={() => {
+                    if (mode === 'edit') {
+                      void handleEditRestaurantSelection(
+                        closestRestaurantMatch,
+                      );
+                    } else {
+                      continueAfterRestaurantSelection(
+                        closestRestaurantMatch,
+                      );
+                    }
+                  }}
                   disabled={formLoading}
                 >
                   <span className="bw-restaurant-review-kicker">
@@ -2312,9 +2698,13 @@ export function AddEntryModal({
                         key={restaurant.id}
                         type="button"
                         className="bw-restaurant-review-option"
-                        onClick={() =>
-                          continueAfterRestaurantSelection(restaurant)
-                        }
+                        onClick={() => {
+                          if (mode === 'edit') {
+                            void handleEditRestaurantSelection(restaurant);
+                          } else {
+                            continueAfterRestaurantSelection(restaurant);
+                          }
+                        }}
                       >
                         {restaurant.name}
                       </button>
@@ -2345,7 +2735,13 @@ export function AddEntryModal({
                 <Button
                   type="button"
                   variant="contained"
-                  onClick={confirmNewRestaurant}
+                  onClick={() => {
+                    if (mode === 'edit') {
+                      void handleEditRestaurantConfirmation();
+                    } else {
+                      confirmNewRestaurant();
+                    }
+                  }}
                   disabled={formLoading}
                 >
                   {formLoading
@@ -2354,6 +2750,33 @@ export function AddEntryModal({
                 </Button>
               </div>
             </div>
+          ) : mode === 'edit' ? (
+            <form
+              className="bw-modal-form"
+              onSubmit={handleEditSubmit}
+              noValidate
+            >
+              <div className="bw-modal-fields">{renderEditFields()}</div>
+              <div className="bw-modal-actions">
+                <Button
+                  type="button"
+                  variant="outlined"
+                  onClick={requestClose}
+                  disabled={isBusy}
+                >
+                  {t('addEntry.cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isEditSubmitDisabled}
+                >
+                  {formLoading
+                    ? t('addEntry.saving')
+                    : t('addEntry.save')}
+                </Button>
+              </div>
+            </form>
           ) : (
             <form
               className="bw-modal-form"
@@ -2406,11 +2829,7 @@ export function AddEntryModal({
                   >
                     {formLoading
                       ? t('addEntry.saving')
-                      : t(
-                          mode === 'edit'
-                            ? 'addEntry.saveChanges'
-                            : 'addEntry.publish',
-                        )}
+                      : t('addEntry.publish')}
                   </Button>
                 )}
               </div>
