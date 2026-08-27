@@ -772,7 +772,7 @@ function BurgerCalendarRoute({ session }: { session: NonNullable<Session> }) {
   return (
     <BurgerCalendarPage
       session={session}
-      onBack={() => navigate('/')}
+      onBack={() => navigate('/more')}
     />
   );
 }

@@ -1,6 +1,8 @@
 {
   "homemade": "Casera",
   "restaurant": "Restaurante",
+  "viewProfile": "Ver el perfil de {{name}}",
+  "viewRestaurant": "Ver el restaurante {{name}}",
   "noRating": "Sin nota",
   "lockAction": "Inicia sesión para usar esta acción",
   "unsave": "Quitar guardado",

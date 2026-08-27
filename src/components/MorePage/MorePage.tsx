@@ -54,7 +54,6 @@ const PERSONAL_ITEMS: MoreItem[] = [
     descriptionKey: 'more.wishlistDescription',
     path: '/burger-wishlist',
     icon: <PlaylistAddOutlined />,
-    badge: 'new',
   },
   {
     key: 'saved',
@@ -67,19 +66,19 @@ const PERSONAL_ITEMS: MoreItem[] = [
 
 const SOCIAL_ITEMS: MoreItem[] = [
   {
+    key: 'ranking',
+    titleKey: 'more.rankingTitle',
+    descriptionKey: 'more.rankingDescription',
+    path: '/ranking',
+    icon: <EmojiEventsOutlined />,
+  },
+  {
     key: 'groups',
     titleKey: 'more.groupsTitle',
     descriptionKey: 'more.groupsDescription',
     path: '/groups',
     icon: <GroupsOutlined />,
     invitationIndicator: true,
-  },
-  {
-    key: 'ranking',
-    titleKey: 'more.rankingTitle',
-    descriptionKey: 'more.rankingDescription',
-    path: '/ranking',
-    icon: <EmojiEventsOutlined />,
   },
 ];
 

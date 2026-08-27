@@ -1,6 +1,8 @@
 {
   "homemade": "Hausgemacht",
   "restaurant": "Restaurant",
+  "viewProfile": "Profil von {{name}} ansehen",
+  "viewRestaurant": "Restaurant {{name}} ansehen",
   "noRating": "Keine Bewertung",
   "lockAction": "Melde dich an, um dies zu nutzen",
   "unsave": "Speicherung entfernen",

@@ -1,3 +1,4 @@
+import { DeleteOutline } from '@mui/icons-material';
 import { UserAvatar } from '../common/UserAvatar';
 import { useTranslation } from 'react-i18next';
 import type { CommentMode, EntryComment } from './types';
@@ -87,18 +88,20 @@ export function EntryComments({
                   </>
                 );
 
-                return canDelete ? (
-                  <button
-                    type="button"
-                    key={comment.id}
-                    className="bw-comment-item is-deletable"
-                    onClick={() => onRequestDelete(comment)}
-                  >
-                    {content}
-                  </button>
-                ) : (
+                return (
                   <div className="bw-comment-item" key={comment.id}>
                     {content}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        className="bw-comment-delete-button"
+                        onClick={() => onRequestDelete(comment)}
+                        aria-label={t('comments.delete')}
+                        title={t('comments.delete')}
+                      >
+                        <DeleteOutline fontSize="small" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -148,18 +151,20 @@ export function EntryComments({
                 </>
               );
 
-              return canDelete ? (
-                <button
-                  type="button"
-                  key={comment.id}
-                  className="bw-comment-item is-deletable"
-                  onClick={() => onRequestDelete(comment)}
-                >
-                  {content}
-                </button>
-              ) : (
+              return (
                 <div className="bw-comment-item" key={comment.id}>
                   {content}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="bw-comment-delete-button"
+                      onClick={() => onRequestDelete(comment)}
+                      aria-label={t('comments.delete')}
+                      title={t('comments.delete')}
+                    >
+                      <DeleteOutline fontSize="small" />
+                    </button>
+                  )}
                 </div>
               );
             })}

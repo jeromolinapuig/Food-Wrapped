@@ -1,6 +1,8 @@
 {
   "homemade": "手作り",
   "restaurant": "レストラン",
+  "viewProfile": "{{name}}のプロフィールを見る",
+  "viewRestaurant": "レストラン「{{name}}」を見る",
   "noRating": "評価なし",
   "lockAction": "この操作にはログインが必要です",
   "moreOptions": "その他のオプション",

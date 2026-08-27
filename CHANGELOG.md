@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+## 1.11.3
+
 - Added a consistent theme-aware scrollbar across the page canvas, modals, menus and other scrollable app surfaces.
+- Made post-card interactions visually explicit with a restaurant affordance, a photo expansion control, clearer focus states and dedicated comment deletion buttons.
+- Changed the Burger Calendar back action to return to the More tools page.
+- Removed the temporary New badge from the Burgers to try card on the More page.
+- Reordered the More page Social section to show Ranking before Groups.
 
 ## 1.11.2
 

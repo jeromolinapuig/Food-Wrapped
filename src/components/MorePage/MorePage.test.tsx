@@ -79,6 +79,10 @@ describe('MorePage', () => {
     ].forEach((name) => {
       expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
     });
+
+    const links = screen.getAllByRole('link');
+    expect(links[4]).toHaveTextContent('more.rankingTitle');
+    expect(links[5]).toHaveTextContent('more.groupsTitle');
   });
 
   it.each([
@@ -103,12 +107,9 @@ describe('MorePage', () => {
     expect(await screen.findByLabelText('more.pendingInvitations')).toHaveTextContent('3');
   });
 
-  it('renders the New badge only on Burgers to try', () => {
+  it('does not render a New badge on the tools', () => {
     renderMore();
 
-    const newBadge = screen.getByText('more.newBadge');
-    expect(newBadge).toBeInTheDocument();
-    expect(newBadge.closest('a')).toHaveTextContent('more.wishlistTitle');
-    expect(screen.getByRole('link', { name: /more.calendarTitle/ })).not.toHaveTextContent('more.newBadge');
+    expect(screen.queryByText('more.newBadge')).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,8 @@
 {
   "homemade": "Maison",
   "restaurant": "Restaurant",
+  "viewProfile": "Voir le profil de {{name}}",
+  "viewRestaurant": "Voir le restaurant {{name}}",
   "noRating": "Pas de note",
   "lockAction": "Connecte-toi pour utiliser cette action",
   "unsave": "Retirer des favoris",

@@ -1,6 +1,8 @@
 {
   "homemade": "Homemade",
   "restaurant": "Restaurant",
+  "viewProfile": "View {{name}}'s profile",
+  "viewRestaurant": "View restaurant {{name}}",
   "noRating": "No rating",
   "lockAction": "Log in to use this action",
   "moreOptions": "More options",

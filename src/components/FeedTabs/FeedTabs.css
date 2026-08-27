@@ -172,6 +172,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .bw-feed-user.as-button {
@@ -180,6 +181,11 @@
   padding: 0;
   text-align: left;
   cursor: pointer;
+  min-width: 0;
+}
+
+.bw-feed-user.as-button > div {
+  min-width: 0;
 }
 
 .bw-feed-user.as-button:focus-visible {
@@ -191,6 +197,14 @@
 .bw-feed-user-name {
   font-weight: 700;
   color: var(--bw-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bw-feed-interactive-chevron {
+  flex-shrink: 0;
+  color: var(--bw-accent);
 }
 
 .bw-feed-user-handle {
@@ -244,15 +258,43 @@
 }
 
 .bw-feed-restaurant-link {
-  border: none;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  max-width: 100%;
+  border: 1px solid rgba(255, 59, 141, 0.36);
+  border-radius: 999px;
+  padding: 6px 9px;
   margin: 0;
-  background: transparent;
+  background: var(--bw-accent-soft);
   color: var(--bw-text);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
   text-align: left;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+.bw-feed-restaurant-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bw-feed-restaurant-icon {
+  flex-shrink: 0;
+  color: var(--bw-accent);
+}
+
+.bw-feed-restaurant-link:not(:disabled):hover {
+  border-color: var(--bw-accent);
+  background: rgba(255, 59, 141, 0.18);
+}
+
+.bw-feed-restaurant-link:active {
+  transform: translateY(1px);
 }
 
 .bw-feed-restaurant-link:focus-visible {
@@ -324,6 +366,7 @@
 }
 
 .bw-feed-photo {
+  position: relative;
   width: 100%;
   border-radius: 24px;
   overflow: hidden;
@@ -333,6 +376,42 @@
   background: transparent;
   cursor: pointer;
   display: block;
+}
+
+.bw-feed-photo-affordance {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="dark"] .bw-feed-photo-affordance {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(5, 5, 9, 0.78);
+  color: #f5f5ff;
+}
+
+.bw-feed-photo:not(:disabled):hover {
+  border-color: var(--bw-accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.bw-feed-photo:focus-visible,
+.bw-feed-action:focus-visible,
+.bw-feed-burger-action:focus-visible {
+  outline: 2px solid var(--bw-accent);
+  outline-offset: 2px;
 }
 
 .bw-feed-photo img {
@@ -534,14 +613,6 @@
   appearance: none;
 }
 
-.bw-comment-item.is-deletable {
-  cursor: pointer;
-}
-
-.bw-comment-item.is-deletable:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-}
-
 .bw-comment-avatar {
   width: 32px;
   height: 32px;
@@ -594,6 +665,31 @@
   line-height: 1.35;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.bw-comment-delete-button {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  background: var(--bw-surface);
+  color: #d7264d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bw-comment-delete-button:not(:disabled):hover {
+  background: rgba(215, 38, 77, 0.12);
+  transform: translateY(-1px);
+}
+
+.bw-comment-delete-button:focus-visible {
+  outline: 2px solid #d7264d;
+  outline-offset: 2px;
 }
 
 .bw-comment-link {

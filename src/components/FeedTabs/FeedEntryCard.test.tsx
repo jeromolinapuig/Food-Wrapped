@@ -13,18 +13,22 @@ vi.mock('@mui/icons-material', () => ({
   Bookmark: () => null,
   ChatBubbleOutline: () => null,
   CheckCircleOutline: () => null,
+  ChevronRight: () => null,
   Delete: () => null,
+  DeleteOutline: () => null,
   Edit: () => null,
   Favorite: () => null,
   FavoriteBorder: () => null,
   Image: () => null,
   Link: () => null,
   MoreVert: () => null,
+  OpenInFull: () => null,
   PlaylistAdd: () => null,
   Share: () => null,
   Star: () => null,
   StarBorder: () => null,
   StarHalf: () => null,
+  StorefrontOutlined: () => null,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -80,6 +84,7 @@ const baseEntry: FeedEntry = {
 
 describe('FeedEntryCard', () => {
   beforeEach(() => {
+    navigateMock.mockClear();
     downloadMock.mockClear();
     clipboardWriteTextMock.mockClear();
     nativeShareMock.mockClear();
@@ -91,6 +96,48 @@ describe('FeedEntryCard', () => {
       configurable: true,
       value: nativeShareMock,
     });
+  });
+
+  it('mantiene accesibles las acciones de perfil, restaurante y foto', () => {
+    const onOpenProfile = vi.fn();
+    const onPreviewPhoto = vi.fn();
+    render(
+      <FeedEntryCard
+        entry={baseEntry}
+        viewerId="u2"
+        isUserFeed={false}
+        isReadOnly={false}
+        showOwnerActions={false}
+        reactions={{ likeCount: 0, liked: false, saved: false }}
+        isLikePending={false}
+        isSavePending={false}
+        onToggleLike={() => {}}
+        onToggleSave={() => {}}
+        onOpenProfile={onOpenProfile}
+        onPreviewPhoto={onPreviewPhoto}
+        commentMode="preview"
+        comments={[]}
+        commentCount={0}
+        commentLoading={false}
+        commentError={null}
+        commentDraft=""
+        commentSubmitting={false}
+        maxCommentLength={250}
+        onCommentDraftChange={() => {}}
+        onSubmitComment={() => {}}
+        onRequestDeleteComment={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'feed.viewProfile' }));
+    fireEvent.click(screen.getByRole('button', { name: 'feed.viewRestaurant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.viewPhoto' }));
+
+    expect(onOpenProfile).toHaveBeenCalledWith('u1');
+    expect(navigateMock).toHaveBeenCalledWith('/search', expect.objectContaining({
+      state: expect.objectContaining({ selectedRestaurantId: 'r1' }),
+    }));
+    expect(onPreviewPhoto).toHaveBeenCalledWith('https://example.com/p.jpg');
   });
 
   it('lanza acciones de like, comentarios y owner actions', () => {
@@ -130,8 +177,8 @@ describe('FeedEntryCard', () => {
 
     fireEvent.click(screen.getByTitle('feed.like'));
     fireEvent.click(screen.getByRole('button', { name: 'comments.viewComments' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Editar entrada' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar entrada' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.delete' }));
     expect(onToggleLike).toHaveBeenCalledWith('e1');
     expect(onOpenEntry).toHaveBeenCalledWith('e1');
     expect(onEditEntry).toHaveBeenCalledWith(baseEntry);

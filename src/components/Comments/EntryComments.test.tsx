@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EntryComments } from './EntryComments';
 
+vi.mock('@mui/icons-material', () => ({
+  DeleteOutline: () => null,
+}));
+
 vi.mock('../common/Avatar', () => ({
   Avatar: () => <span>avatar</span>,
 }));
@@ -96,7 +100,7 @@ describe('EntryComments functional flows', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /Great burger/i }));
+    await user.click(screen.getByRole('button', { name: 'comments.delete' }));
     expect(onRequestDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }));
   });
 });

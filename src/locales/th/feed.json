@@ -1,6 +1,8 @@
 {
   "homemade": "ทำที่บ้าน",
   "restaurant": "ร้านอาหาร",
+  "viewProfile": "ดูโปรไฟล์ของ {{name}}",
+  "viewRestaurant": "ดูร้านอาหาร {{name}}",
   "noRating": "ยังไม่มีคะแนน",
   "lockAction": "เข้าสู่ระบบเพื่อใช้การทำงานนี้",
   "unsave": "ยกเลิกบันทึกโพสต์",

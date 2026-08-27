@@ -2,6 +2,7 @@ import {
   Bookmark,
   ChatBubbleOutline,
   CheckCircleOutline,
+  ChevronRight,
   Delete,
   Edit,
   Favorite,
@@ -9,11 +10,13 @@ import {
   Image,
   Link,
   MoreVert,
+  OpenInFull,
   PlaylistAdd,
   Share,
   Star,
   StarBorder,
   StarHalf,
+  StorefrontOutlined,
 } from '@mui/icons-material';
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { useState, type MouseEvent } from 'react';
@@ -234,6 +237,7 @@ export function FeedEntryCard({
               type="button"
               className="bw-feed-user as-button"
               onClick={() => onOpenProfile?.(entry.userId)}
+              aria-label={t('feed.viewProfile', { name })}
             >
               <UserAvatar
                 avatarUrl={entry.avatarUrl}
@@ -325,8 +329,11 @@ export function FeedEntryCard({
                   type="button"
                   className="bw-feed-restaurant-link"
                   onClick={handleOpenRestaurant}
+                  aria-label={t('feed.viewRestaurant', { name: restaurantLabel })}
                 >
-                  {restaurantLabel}
+                  <StorefrontOutlined className="bw-feed-restaurant-icon" fontSize="small" />
+                  <span>{restaurantLabel}</span>
+                  <ChevronRight className="bw-feed-interactive-chevron" fontSize="small" />
                 </button>
               ) : (
                 restaurantLabel
@@ -342,12 +349,16 @@ export function FeedEntryCard({
               type="button"
               className="bw-feed-photo"
               onClick={() => entry.photoUrl && onPreviewPhoto(entry.photoUrl)}
+              aria-label={t('common.viewPhoto')}
             >
               <img
                 src={entry.photoUrl}
                 alt={entry.burgerName ?? entry.restaurantName ?? t('common.viewPhoto')}
                 loading="lazy"
               />
+              <span className="bw-feed-photo-affordance" aria-hidden="true">
+                <OpenInFull fontSize="small" />
+              </span>
             </button>
           )}
 
@@ -507,15 +518,19 @@ export function FeedEntryCard({
                 {canEdit && !adminMode && (
                   <div className="bw-history-actions">
                     <button
+                      type="button"
                       className="bw-icon-button"
-                      title="Editar entrada"
+                      title={t('common.edit')}
+                      aria-label={t('common.edit')}
                       onClick={() => onEditEntry?.(entry)}
                     >
                       <Edit fontSize="small" />
                     </button>
                     <button
+                      type="button"
                       className="bw-icon-button bw-icon-danger"
-                      title="Eliminar entrada"
+                      title={t('common.delete')}
+                      aria-label={t('common.delete')}
                       onClick={() => onDeleteEntry?.(entry)}
                     >
                       <Delete fontSize="small" />

@@ -1,6 +1,8 @@
 {
   "homemade": "Fatta in casa",
   "restaurant": "Ristorante",
+  "viewProfile": "Vedi il profilo di {{name}}",
+  "viewRestaurant": "Vedi il ristorante {{name}}",
   "noRating": "Senza voto",
   "lockAction": "Accedi per usare questa azione",
   "unsave": "Rimuovi salvataggio",
