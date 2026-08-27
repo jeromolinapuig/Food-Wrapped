@@ -509,11 +509,6 @@
   overflow-y: auto;
   gap: 24px;
   padding: 4px 0 72px;
-  scrollbar-width: none;
-}
-
-.bw-modal-fields::-webkit-scrollbar {
-  display: none;
 }
 
 .bw-modal-actions {

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added a consistent theme-aware scrollbar across the page canvas, modals, menus and other scrollable app surfaces.
+
 ## 1.11.2
 
 - Fixed saving an edited post so the editor closes directly without briefly reopening the add-post flow.

@@ -535,37 +535,12 @@
   min-width: 210px;
   max-width: min(280px, calc(100vw - 32px));
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
   padding: 6px;
   border-radius: 18px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: var(--bw-surface);
   color: var(--bw-text);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
-}
-
-.bw-dashboard-multiselect-menu::-webkit-scrollbar {
-  width: 8px;
-}
-
-.bw-dashboard-multiselect-menu::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 10px 0;
-}
-
-.bw-dashboard-multiselect-menu::-webkit-scrollbar-thumb {
-  min-height: 44px;
-  border-radius: 999px;
-  background: rgba(122, 126, 146, 0.46);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.bw-dashboard-multiselect-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(122, 126, 146, 0.68);
-  border: 2px solid transparent;
-  background-clip: padding-box;
 }
 
 .bw-dashboard-multiselect-option {
@@ -700,20 +675,7 @@
 }
 
 :root[data-theme='dark'] .bw-dashboard-multiselect-menu {
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.42);
-}
-
-:root[data-theme='dark'] .bw-dashboard-multiselect-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-:root[data-theme='dark'] .bw-dashboard-multiselect-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.34);
-  border: 2px solid transparent;
-  background-clip: padding-box;
 }
 
 
