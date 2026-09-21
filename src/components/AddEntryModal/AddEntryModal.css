@@ -256,7 +256,19 @@
 .bw-restaurant-review {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.bw-restaurant-review-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   gap: 14px;
+  padding: 2px 2px 12px;
 }
 
 .bw-restaurant-review-summary {
@@ -392,11 +404,16 @@
 }
 
 .bw-restaurant-review .bw-modal-actions {
+  flex: 0 0 auto;
   width: 100%;
-  margin: 2px 0 0;
-  padding: 0;
-  border-top: 0;
+  margin: 0;
+  padding: 12px 0 max(4px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   position: static;
+}
+
+:root[data-theme="dark"] .bw-restaurant-review .bw-modal-actions {
+  border-top-color: rgba(255, 255, 255, 0.14);
 }
 
 .bw-restaurant-review .bw-modal-actions button:last-child {

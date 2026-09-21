@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.11.4
+
+- Fixed the new restaurant review modal so long suggestion lists scroll while its actions remain visible.
+
 ## 1.11.3
 
 - Added a consistent theme-aware scrollbar across the page canvas, modals, menus and other scrollable app surfaces.

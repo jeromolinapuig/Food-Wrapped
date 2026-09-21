@@ -2640,88 +2640,90 @@ export function AddEntryModal({
 
           {restaurantReview ? (
             <div className="bw-restaurant-review">
-              {closestRestaurantMatch ? (
-                <button
-                  type="button"
-                  className="bw-restaurant-review-summary bw-restaurant-review-best-match"
-                  onClick={() => {
-                    if (mode === 'edit') {
-                      void handleEditRestaurantSelection(
-                        closestRestaurantMatch,
-                      );
-                    } else {
-                      continueAfterRestaurantSelection(
-                        closestRestaurantMatch,
-                      );
-                    }
-                  }}
-                  disabled={formLoading}
-                >
-                  <span className="bw-restaurant-review-kicker">
-                    {t('addEntry.reviewRestaurantClosest')}
-                  </span>
-                  <strong className="bw-restaurant-review-name">
-                    {closestRestaurantMatch.name}
-                  </strong>
-                  <p>{t('addEntry.reviewRestaurantExisting')}</p>
-                </button>
-              ) : (
-                <div className="bw-restaurant-review-summary">
-                  <span className="bw-restaurant-review-kicker">
-                    {t('addEntry.reviewRestaurantRequested')}
-                  </span>
-                  <strong className="bw-restaurant-review-name">
-                    {restaurantReview.name}
-                  </strong>
-                  <p>{t('addEntry.reviewRestaurantPendingCreate')}</p>
-                </div>
-              )}
-
-              {closestRestaurantMatch ? (
-                <div className="bw-restaurant-review-requested">
-                  <span>{t('addEntry.reviewRestaurantRequested')}</span>
-                  <strong>{restaurantReview.name}</strong>
-                  <small>
-                    {t('addEntry.reviewRestaurantPendingCreate')}
-                  </small>
-                </div>
-              ) : null}
-
-              {remainingRestaurantMatches.length > 0 ? (
-                <div className="bw-field">
-                  <span className="bw-label">
-                    {t('addEntry.reviewRestaurantMatches')}
-                  </span>
-                  <div className="bw-restaurant-review-list">
-                    {remainingRestaurantMatches.map((restaurant) => (
-                      <button
-                        key={restaurant.id}
-                        type="button"
-                        className="bw-restaurant-review-option"
-                        onClick={() => {
-                          if (mode === 'edit') {
-                            void handleEditRestaurantSelection(restaurant);
-                          } else {
-                            continueAfterRestaurantSelection(restaurant);
-                          }
-                        }}
-                      >
-                        {restaurant.name}
-                      </button>
-                    ))}
+              <div className="bw-restaurant-review-content">
+                {closestRestaurantMatch ? (
+                  <button
+                    type="button"
+                    className="bw-restaurant-review-summary bw-restaurant-review-best-match"
+                    onClick={() => {
+                      if (mode === 'edit') {
+                        void handleEditRestaurantSelection(
+                          closestRestaurantMatch,
+                        );
+                      } else {
+                        continueAfterRestaurantSelection(
+                          closestRestaurantMatch,
+                        );
+                      }
+                    }}
+                    disabled={formLoading}
+                  >
+                    <span className="bw-restaurant-review-kicker">
+                      {t('addEntry.reviewRestaurantClosest')}
+                    </span>
+                    <strong className="bw-restaurant-review-name">
+                      {closestRestaurantMatch.name}
+                    </strong>
+                    <p>{t('addEntry.reviewRestaurantExisting')}</p>
+                  </button>
+                ) : (
+                  <div className="bw-restaurant-review-summary">
+                    <span className="bw-restaurant-review-kicker">
+                      {t('addEntry.reviewRestaurantRequested')}
+                    </span>
+                    <strong className="bw-restaurant-review-name">
+                      {restaurantReview.name}
+                    </strong>
+                    <p>{t('addEntry.reviewRestaurantPendingCreate')}</p>
                   </div>
-                </div>
-              ) : !closestRestaurantMatch ? (
-                <p className="bw-helper">
-                  {t('addEntry.reviewRestaurantNoMatches')}
-                </p>
-              ) : null}
+                )}
 
-              {formError ? (
-                <p className="bw-field-error" role="alert">
-                  {formError}
-                </p>
-              ) : null}
+                {closestRestaurantMatch ? (
+                  <div className="bw-restaurant-review-requested">
+                    <span>{t('addEntry.reviewRestaurantRequested')}</span>
+                    <strong>{restaurantReview.name}</strong>
+                    <small>
+                      {t('addEntry.reviewRestaurantPendingCreate')}
+                    </small>
+                  </div>
+                ) : null}
+
+                {remainingRestaurantMatches.length > 0 ? (
+                  <div className="bw-field">
+                    <span className="bw-label">
+                      {t('addEntry.reviewRestaurantMatches')}
+                    </span>
+                    <div className="bw-restaurant-review-list">
+                      {remainingRestaurantMatches.map((restaurant) => (
+                        <button
+                          key={restaurant.id}
+                          type="button"
+                          className="bw-restaurant-review-option"
+                          onClick={() => {
+                            if (mode === 'edit') {
+                              void handleEditRestaurantSelection(restaurant);
+                            } else {
+                              continueAfterRestaurantSelection(restaurant);
+                            }
+                          }}
+                        >
+                          {restaurant.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : !closestRestaurantMatch ? (
+                  <p className="bw-helper">
+                    {t('addEntry.reviewRestaurantNoMatches')}
+                  </p>
+                ) : null}
+
+                {formError ? (
+                  <p className="bw-field-error" role="alert">
+                    {formError}
+                  </p>
+                ) : null}
+              </div>
 
               <div className="bw-modal-actions">
                 <Button

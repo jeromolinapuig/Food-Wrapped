@@ -770,6 +770,38 @@ describe('AddEntryModal wizard', () => {
     );
   });
 
+  it('mantiene las acciones fuera del contenido desplazable de la revisión', async () => {
+    supabaseMock.state.restaurantRows = Array.from({ length: 8 }, (_, index) => ({
+      id: `restaurant-${index}`,
+      name: `Restaurante sugerido ${index + 1}`,
+    }));
+    renderModal();
+    await goToRestaurantIdentity();
+    fireEvent.change(screen.getByLabelText('addEntry.restaurantLabel'), {
+      target: { value: 'Nuevo Local' },
+    });
+    fireEvent.change(document.getElementById('bw-burger-name')!, {
+      target: { value: 'Classic' },
+    });
+    clickContinue();
+
+    await screen.findByText('addEntry.reviewRestaurantTitle');
+    const review = document.querySelector('.bw-restaurant-review');
+    const scrollableContent = review?.querySelector(
+      '.bw-restaurant-review-content',
+    );
+    const actions = review?.querySelector('.bw-modal-actions');
+    const createButton = screen.getByRole('button', {
+      name: 'addEntry.reviewRestaurantCreate',
+    });
+
+    expect(scrollableContent).toContainElement(
+      screen.getByRole('button', { name: 'Restaurante sugerido 8' }),
+    );
+    expect(scrollableContent).not.toContainElement(createButton);
+    expect(actions).toContainElement(createButton);
+  });
+
   it('pide confirmación al cambiar de tipo con datos incompatibles', async () => {
     renderModal();
     await goToRestaurantIdentity();
