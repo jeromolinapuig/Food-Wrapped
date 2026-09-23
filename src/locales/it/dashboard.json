@@ -1,5 +1,6 @@
 {
-  "subtitle": "Il tuo 2026 in burger - {{user}}",
+  "subtitle": "Il tuo {{year}} in burger - {{user}}",
+  "userSummary": "Riepilogo di @{{user}}",
   "installText": "Aggiungila alla schermata home per aprirla in un attimo.",
   "later": "Più tardi",
   "addEntry": "Aggiungi voce",
@@ -15,5 +16,23 @@
   "vegan": "Vegano",
   "profileReminderTitle": "Completa il profilo",
   "profileReminderText": "Aggiungi foto, bio e preferenze burger per farti conoscere meglio dagli altri utenti.",
-  "profileReminderAction": "Modifica profilo"
+  "profileReminderAction": "Modifica profilo",
+  "yearNavigation": "Navigazione per anno",
+  "previousYear": "Anno precedente",
+  "nextYear": "Anno successivo",
+  "emptyYear": "Non hai ancora registrato burger nel {{year}}.",
+  "openNotifications": "Apri notifiche",
+  "deleteTitle": "Elimina voce",
+  "deleteMessage": "Vuoi davvero eliminare la voce del {{date}} presso {{restaurant}}?",
+  "unknownRestaurant": "ristorante sconosciuto",
+  "processing": "Elaborazione...",
+  "deleteError": "Impossibile eliminare la voce.",
+  "invitesError": "Impossibile caricare gli inviti.",
+  "filters": "Filtri",
+  "dateFilter": "Data",
+  "priceFilter": "Prezzo",
+  "other": "Altro",
+  "free": "Gratis",
+  "priceRange": "Da {{min}} a {{max}} {{symbol}}",
+  "priceAbove": "Oltre {{amount}} {{symbol}}"
 }

@@ -1831,9 +1831,9 @@ export function AddEntryModal({
       <div className="bw-meat-grid">
         {(
           [
-            ['beef', 'meat.png'],
-            ['chicken', 'chicken-leg.png'],
-            ['vegan', 'plant.png'],
+            ['beef', 'meat.webp'],
+            ['chicken', 'chicken-leg.webp'],
+            ['vegan', 'plant.webp'],
             ['other', 'question-mark.png'],
           ] as const
         ).map(([value, image]) => (

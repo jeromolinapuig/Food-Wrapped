@@ -232,7 +232,7 @@ export function UserProfileModal({
       ? {
           key: 'type',
           label: t(`profile.burgerPreferences.types.${favoriteBurgerType}`),
-          icon: '/meat.png',
+          icon: '/meat.webp',
           alt: t('profile.burgerPreferences.typeLabel'),
         }
       : null,

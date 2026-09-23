@@ -1,5 +1,6 @@
 {
-  "subtitle": "Your 2026 in burgers - {{user}}",
+  "subtitle": "Your {{year}} in burgers - {{user}}",
+  "userSummary": "@{{user}}’s summary",
   "installText": "Add it to your home screen to open it quickly.",
   "later": "Later",
   "addEntry": "Add entry",
@@ -15,5 +16,23 @@
   "vegan": "Vegan",
   "profileReminderTitle": "Complete your profile",
   "profileReminderText": "Add a photo, bio, and burger preferences so other users can get to know you better.",
-  "profileReminderAction": "Edit profile"
+  "profileReminderAction": "Edit profile",
+  "yearNavigation": "Year navigation",
+  "previousYear": "Previous year",
+  "nextYear": "Next year",
+  "emptyYear": "You have not logged any burgers in {{year}} yet.",
+  "openNotifications": "Open notifications",
+  "deleteTitle": "Delete entry",
+  "deleteMessage": "Are you sure you want to delete the entry from {{date}} at {{restaurant}}?",
+  "unknownRestaurant": "unknown restaurant",
+  "processing": "Processing...",
+  "deleteError": "Could not delete the entry.",
+  "invitesError": "Could not load invitations.",
+  "filters": "Filters",
+  "dateFilter": "Date",
+  "priceFilter": "Price",
+  "other": "Other",
+  "free": "Free",
+  "priceRange": "{{min}} to {{max}} {{symbol}}",
+  "priceAbove": "Over {{amount}} {{symbol}}"
 }

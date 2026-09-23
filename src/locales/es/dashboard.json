@@ -1,5 +1,6 @@
 {
-  "subtitle": "Tu año 2026 en hamburguesas - {{user}}",
+  "subtitle": "Tu año {{year}} en hamburguesas - {{user}}",
+  "userSummary": "Resumen de @{{user}}",
   "installText": "Añádela a tu pantalla de inicio para abrirla rápido.",
   "later": "Más tarde",
   "addEntry": "Añadir entrada",
@@ -15,5 +16,23 @@
   "vegan": "Vegana",
   "profileReminderTitle": "Completa tu perfil",
   "profileReminderText": "Añade foto, bio y preferencias burger para que otros usuarios te conozcan mejor.",
-  "profileReminderAction": "Editar perfil"
+  "profileReminderAction": "Editar perfil",
+  "yearNavigation": "Navegación por años",
+  "previousYear": "Año anterior",
+  "nextYear": "Año siguiente",
+  "emptyYear": "Aún no has registrado burgers en {{year}}.",
+  "openNotifications": "Abrir notificaciones",
+  "deleteTitle": "Eliminar entrada",
+  "deleteMessage": "¿Seguro que deseas eliminar la entrada del {{date}} en {{restaurant}}?",
+  "unknownRestaurant": "restaurante desconocido",
+  "processing": "Procesando...",
+  "deleteError": "No se pudo eliminar la entrada.",
+  "invitesError": "No se pudieron cargar las invitaciones.",
+  "filters": "Filtros",
+  "dateFilter": "Fecha",
+  "priceFilter": "Precio",
+  "other": "Otro",
+  "free": "Gratis",
+  "priceRange": "{{min}} a {{max}} {{symbol}}",
+  "priceAbove": "Más de {{amount}} {{symbol}}"
 }

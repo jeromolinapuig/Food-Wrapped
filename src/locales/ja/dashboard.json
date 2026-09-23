@@ -1,5 +1,6 @@
 {
-  "subtitle": "{{user}}の2026年バーガー記録",
+  "subtitle": "{{year}}年のバーガー記録 - {{user}}",
+  "userSummary": "@{{user}}のまとめ",
   "installText": "ホーム画面に追加すると素早く開けます。",
   "later": "後で",
   "addEntry": "投稿を追加",
@@ -15,5 +16,23 @@
   "vegan": "ヴィーガン",
   "profileReminderTitle": "プロフィールを完成させましょう",
   "profileReminderText": "写真、自己紹介、バーガーの好みを追加すると、他のユーザーがあなたを知りやすくなります。",
-  "profileReminderAction": "プロフィールを編集"
+  "profileReminderAction": "プロフィールを編集",
+  "yearNavigation": "年を選択",
+  "previousYear": "前年",
+  "nextYear": "翌年",
+  "emptyYear": "{{year}}年のバーガー記録はまだありません。",
+  "openNotifications": "通知を開く",
+  "deleteTitle": "投稿を削除",
+  "deleteMessage": "{{date}}の{{restaurant}}での投稿を削除しますか？",
+  "unknownRestaurant": "不明なレストラン",
+  "processing": "処理中...",
+  "deleteError": "投稿を削除できませんでした。",
+  "invitesError": "招待を読み込めませんでした。",
+  "filters": "フィルター",
+  "dateFilter": "日付",
+  "priceFilter": "価格",
+  "other": "その他",
+  "free": "無料",
+  "priceRange": "{{min}}～{{max}} {{symbol}}",
+  "priceAbove": "{{amount}} {{symbol}}超"
 }

@@ -100,9 +100,9 @@ export const getCurrencySymbol = (currency: string) => {
 };
 
 export const burgerTypeFilterOptions: { value: MeatType | 'all'; icon?: string; labelKey?: string; label?: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'beef', icon: '/meat.png', labelKey: 'dashboard.beef' },
-  { value: 'chicken', icon: '/chicken-leg.png', labelKey: 'dashboard.chicken' },
-  { value: 'vegan', icon: '/plant.png', labelKey: 'dashboard.vegan' },
-  { value: 'other', labelKey: 'dashboard.other', label: 'Otro' },
+  { value: 'all', labelKey: 'feedTabs.all' },
+  { value: 'beef', icon: '/meat.webp', labelKey: 'dashboard.beef' },
+  { value: 'chicken', icon: '/chicken-leg.webp', labelKey: 'dashboard.chicken' },
+  { value: 'vegan', icon: '/plant.webp', labelKey: 'dashboard.vegan' },
+  { value: 'other', labelKey: 'dashboard.other' },
 ];

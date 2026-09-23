@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.12.0
+
+- Made the annual Dashboard summary use the current year, show year navigation only when the user has entries from earlier years (starting in 2026), and keep each year's cache and loading states separate.
+- Made interactive statistic cards work with mouse and keyboard while keeping noninteractive cards out of the tab order and preserving spacing in profile grids.
+- Translated Dashboard controls, invitation errors, the entry deletion dialog and related public profile labels across all seven supported languages.
+- Optimized the three burger type icons for their display size, reducing their combined weight from 4,680,221 to 17,464 bytes.
+
 ## 1.11.4
 
 - Fixed the new restaurant review modal so long suggestion lists scroll while its actions remain visible.

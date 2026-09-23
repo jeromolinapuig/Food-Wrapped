@@ -1,5 +1,6 @@
 {
-  "subtitle": "Ton année 2026 en burgers - {{user}}",
+  "subtitle": "Votre année {{year}} en burgers - {{user}}",
+  "userSummary": "Résumé de @{{user}}",
   "installText": "Ajoute-la à ton écran d'accueil pour l'ouvrir vite.",
   "later": "Plus tard",
   "addEntry": "Ajouter une entrée",
@@ -15,5 +16,23 @@
   "vegan": "Vegan",
   "profileReminderTitle": "Complète ton profil",
   "profileReminderText": "Ajoute une photo, une bio et tes préférences burger pour que les autres te connaissent mieux.",
-  "profileReminderAction": "Modifier le profil"
+  "profileReminderAction": "Modifier le profil",
+  "yearNavigation": "Navigation par année",
+  "previousYear": "Année précédente",
+  "nextYear": "Année suivante",
+  "emptyYear": "Vous n’avez pas encore enregistré de burgers en {{year}}.",
+  "openNotifications": "Ouvrir les notifications",
+  "deleteTitle": "Supprimer l’entrée",
+  "deleteMessage": "Voulez-vous vraiment supprimer l’entrée du {{date}} chez {{restaurant}} ?",
+  "unknownRestaurant": "restaurant inconnu",
+  "processing": "Traitement...",
+  "deleteError": "Impossible de supprimer l’entrée.",
+  "invitesError": "Impossible de charger les invitations.",
+  "filters": "Filtres",
+  "dateFilter": "Date",
+  "priceFilter": "Prix",
+  "other": "Autre",
+  "free": "Gratuit",
+  "priceRange": "{{min}} à {{max}} {{symbol}}",
+  "priceAbove": "Plus de {{amount}} {{symbol}}"
 }

@@ -446,7 +446,7 @@ export function UserDashboardPage({
     const locale = typeof navigator !== 'undefined' ? navigator.language : undefined;
     const currentYear = new Date().getFullYear();
     return [
-      { value: 'all', label: t('common.all', { defaultValue: 'Todos' }) },
+      { value: 'all', label: t('feedTabs.all') },
       ...Array.from(values)
         .sort((a, b) => b.localeCompare(a))
         .map((value) => {
@@ -465,11 +465,15 @@ export function UserDashboardPage({
     const symbol = getCurrencySymbol(viewerCurrency);
     return getPriceFiltersForCurrency(viewerCurrency).map((filter) => ({
       value: filter.value,
-      label: filter.value === 'all' || filter.value === 'free'
-        ? filter.label
-        : `${filter.label} ${symbol}`,
+      label: filter.value === 'all'
+        ? t('feedTabs.all')
+        : filter.value === 'free'
+          ? t('dashboard.free')
+          : filter.label.startsWith('Más de ')
+            ? t('dashboard.priceAbove', { amount: filter.label.slice(7), symbol })
+            : t('dashboard.priceRange', { min: filter.label.split(' a ')[0], max: filter.label.split(' a ')[1], symbol }),
     }));
-  }, [viewerCurrency]);
+  }, [t, viewerCurrency]);
   const priceFilterRanges = useMemo<Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>>(() => {
     const ranges = {} as Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
     getPriceFiltersForCurrency(viewerCurrency).forEach((filter) => {
@@ -482,7 +486,7 @@ export function UserDashboardPage({
     () =>
       burgerTypeFilterOptions.map((filter) => ({
         value: filter.value,
-        label: filter.labelKey ? t(filter.labelKey, { defaultValue: filter.label ?? filter.value }) : filter.label ?? filter.value,
+        label: filter.labelKey ? t(filter.labelKey) : filter.label ?? filter.value,
         icon: filter.icon,
       })),
     [t]
@@ -517,7 +521,7 @@ export function UserDashboardPage({
     <AppShell>
         <PageHeader
           title={isOwnProfile ? t('profile.title') : 'Burger Wrapped'}
-          subtitle={isOwnProfile ? `@${titleHandle}` : `Resumen de @${titleHandle}`}
+          subtitle={isOwnProfile ? `@${titleHandle}` : t('dashboard.userSummary', { user: titleHandle })}
           logoSrc={isOwnProfile ? undefined : headerAvatar ?? undefined}
           logoAlt={headerAvatar ? headerAlt : 'Burger Wrapped'}
           logoVariant={!isOwnProfile && headerAvatar ? 'avatar' : 'square'}
@@ -529,8 +533,8 @@ export function UserDashboardPage({
                 type="button"
                 className="bw-icon-button"
                 onClick={onOpenSettings}
-                aria-label={t('profile.openSettings', { defaultValue: 'Abrir ajustes' })}
-                title={t('profile.settingsTitle', { defaultValue: 'Ajustes' })}
+                aria-label={t('profile.openSettings')}
+                title={t('profile.settingsTitle')}
               >
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
@@ -565,7 +569,7 @@ export function UserDashboardPage({
                     </div>
                   </div>
 
-                  <div className="bw-own-profile-follows" aria-label={t('profile.socialStats', { defaultValue: 'Seguidores y seguidos' })}>
+                  <div className="bw-own-profile-follows" aria-label={t('profile.socialStats')}>
                     <button type="button" onClick={() => setFollowListMode('followers')}>
                       <strong>{followCounts.followers}</strong>
                       <span>{t('common.followers')}</span>
@@ -578,23 +582,23 @@ export function UserDashboardPage({
                   </div>
 
                   <div className="bw-own-profile-section">
-                    <h3>{t('profile.aboutTitle', { defaultValue: 'Sobre mí' })}</h3>
+                    <h3>{t('profile.aboutTitle')}</h3>
                     <p className={`bw-user-profile-bio ${profile?.bio ? '' : 'is-empty'}`}>
-                      {profile?.bio || t('profile.noBio', { defaultValue: 'Aún no hay biografía.' })}
+                      {profile?.bio || t('profile.noBio')}
                     </p>
                     <dl className="bw-own-profile-meta">
                       {session?.user.email ? (
                         <div>
-                          <dt>{t('profile.emailLabel', { defaultValue: 'Correo' })}</dt>
+                          <dt>{t('profile.emailLabel')}</dt>
                           <dd>{session.user.email}</dd>
                         </div>
                       ) : null}
                       <div>
-                        <dt>{t('profile.visibilityLabel', { defaultValue: 'Visibilidad' })}</dt>
+                        <dt>{t('profile.visibilityLabel')}</dt>
                         <dd>
                           {profile?.isPrivate
-                            ? t('profile.visibilityPrivate', { defaultValue: 'Perfil privado' })
-                            : t('profile.visibilityPublic', { defaultValue: 'Perfil público' })}
+                            ? t('profile.visibilityPrivate')
+                            : t('profile.visibilityPublic')}
                         </dd>
                       </div>
                     </dl>
@@ -608,7 +612,7 @@ export function UserDashboardPage({
                       </div>
                     ) : (
                       <p className="bw-user-profile-bio is-empty">
-                        {t('profile.noPreferences', { defaultValue: 'Todavía no has añadido tus preferencias.' })}
+                        {t('profile.noPreferences')}
                       </p>
                     )}
                   </div>
@@ -644,7 +648,7 @@ export function UserDashboardPage({
                   {profile?.displayName ? <p className="bw-user-profile-handle">@{titleHandle}</p> : null}
                 </div>
                 <p className={`bw-user-profile-bio ${profile?.bio ? '' : 'is-empty'}`}>
-                  {profile?.bio || t('profile.noBio', { defaultValue: 'Aún no hay biografía.' })}
+                  {profile?.bio || t('profile.noBio')}
                 </p>
                 {preferenceChips.length > 0 ? (
                   <div className="bw-user-profile-preference-list">
@@ -689,19 +693,19 @@ export function UserDashboardPage({
                   <div className="bw-burger-types-row">
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
+                        <img src="/meat.webp" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.beef}</span>
                     </div>
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
+                        <img src="/chicken-leg.webp" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.chicken}</span>
                     </div>
                     <div className="bw-burger-type">
                       <span className="bw-burger-type-emoji">
-                        <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
+                        <img src="/plant.webp" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
                       </span>
                       <span>{stats.burgerTypes.vegan}</span>
                     </div>
@@ -722,24 +726,24 @@ export function UserDashboardPage({
                 </div>
                 <div
                   className={`bw-dashboard-filter-carousel ${openFilterCount > 0 ? 'is-locked' : ''}`}
-                  aria-label={t('dashboard.filters', { defaultValue: 'Filtros' })}
+                  aria-label={t('dashboard.filters')}
                 >
                   <DashboardMultiSelect
-                    label={t('dashboard.dateFilter', { defaultValue: 'Fecha' })}
+                    label={t('dashboard.dateFilter')}
                     options={monthOptions}
                     selected={monthFilter}
                     onChange={setMonthFilter}
                     onOpenChange={handleFilterOpenChange}
                   />
                   <DashboardMultiSelect
-                    label={t('dashboard.priceFilter', { defaultValue: 'Precio' })}
+                    label={t('dashboard.priceFilter')}
                     options={priceFilterOptions}
                     selected={priceFilter}
                     onChange={setPriceFilter}
                     onOpenChange={handleFilterOpenChange}
                   />
                   <DashboardMultiSelect
-                    label={t('dashboard.type', { defaultValue: 'Tipo' })}
+                    label={t('dashboard.type')}
                     options={meatTypeFilterOptions}
                     selected={meatTypeFilter}
                     onChange={setMeatTypeFilter}

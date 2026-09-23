@@ -1,5 +1,6 @@
 {
-  "subtitle": "ปี 2026 ของคุณในเบอร์เกอร์ - {{user}}",
+  "subtitle": "ปี {{year}} ของคุณกับเบอร์เกอร์ - {{user}}",
+  "userSummary": "สรุปของ @{{user}}",
   "installText": "เพิ่มไปยังหน้าจอหลักเพื่อเปิดได้เร็ว",
   "later": "ภายหลัง",
   "addEntry": "เพิ่มรายการ",
@@ -15,5 +16,23 @@
   "vegan": "วีแกน",
   "profileReminderTitle": "กรอกโปรไฟล์ให้ครบ",
   "profileReminderText": "เพิ่มรูปภาพ ประวัติย่อ และความชอบเบอร์เกอร์เพื่อให้ผู้ใช้อื่นรู้จักคุณมากขึ้น",
-  "profileReminderAction": "แก้ไขโปรไฟล์"
+  "profileReminderAction": "แก้ไขโปรไฟล์",
+  "yearNavigation": "เลือกปี",
+  "previousYear": "ปีก่อนหน้า",
+  "nextYear": "ปีถัดไป",
+  "emptyYear": "คุณยังไม่ได้บันทึกเบอร์เกอร์ในปี {{year}}",
+  "openNotifications": "เปิดการแจ้งเตือน",
+  "deleteTitle": "ลบรายการ",
+  "deleteMessage": "ต้องการลบรายการวันที่ {{date}} ที่ {{restaurant}} หรือไม่?",
+  "unknownRestaurant": "ร้านอาหารที่ไม่ทราบชื่อ",
+  "processing": "กำลังดำเนินการ...",
+  "deleteError": "ไม่สามารถลบรายการได้",
+  "invitesError": "ไม่สามารถโหลดคำเชิญได้",
+  "filters": "ตัวกรอง",
+  "dateFilter": "วันที่",
+  "priceFilter": "ราคา",
+  "other": "อื่น ๆ",
+  "free": "ฟรี",
+  "priceRange": "{{min}} ถึง {{max}} {{symbol}}",
+  "priceAbove": "มากกว่า {{amount}} {{symbol}}"
 }

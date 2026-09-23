@@ -22,6 +22,40 @@
   margin-bottom: 16px;
 }
 
+.bw-annual-summary-desktop-title {
+  display: none;
+}
+
+.bw-dashboard-year-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--bw-text);
+}
+
+.bw-dashboard-year-navigation .bw-icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 26px;
+}
+
+.bw-dashboard-year-navigation .bw-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bw-annual-summary-status,
+.bw-dashboard-summary-message {
+  color: var(--bw-text-muted);
+  font-size: 13px;
+}
+
+.bw-dashboard-summary-message {
+  margin: 0 0 12px;
+}
+
 .bw-annual-summary-toggle {
   width: 100%;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -805,6 +839,11 @@
 }
 
 @media (min-width: 900px) {
+  .bw-annual-summary-desktop-title {
+    display: block;
+    margin: 0 0 12px;
+    font-size: 18px;
+  }
   .bw-annual-summary-beam {
     display: none;
   }

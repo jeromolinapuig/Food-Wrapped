@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dashboard } from './Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -63,6 +63,7 @@ function createQuery(result: QueryResult) {
 }
 
 const tableQueues = new Map<string, QueryResult[]>();
+const entryQueries: ReturnType<typeof createQuery>[] = [];
 
 function setTableResponses(table: string, responses: QueryResult[]) {
   tableQueues.set(table, [...responses]);
@@ -207,6 +208,9 @@ vi.mock('../common/ConfirmDialog', () => ({
 
 describe('Dashboard', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-23T12:00:00Z'));
+    entryQueries.length = 0;
     const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
     navigateMock.mockReset();
     routerLocation.pathname = '/dashboard';
@@ -215,7 +219,9 @@ describe('Dashboard', () => {
     fromMock.mockImplementation((table: string) => {
       const queue = tableQueues.get(table) ?? [];
       const next = queue.length ? queue.shift() : { data: [], error: null };
-      return createQuery(next ?? { data: [], error: null });
+      const query = createQuery(next ?? { data: [], error: null });
+      if (table === 'entries') entryQueries.push(query);
+      return query;
     });
     tableQueues.clear();
     sessionStorage.clear();
@@ -312,7 +318,7 @@ describe('Dashboard', () => {
     expect(navigateMock).toHaveBeenCalledWith('/posts/entry-42', { state: { returnTo: '/dashboard' } });
 
     expect(screen.queryByRole('button', { name: /Mi top burgers|myTopBurgers\.title/i })).not.toBeInTheDocument();
-    const summaryTitle = screen.getByText(/Resumen 2026|burgerCalendar\.summaryTitle/i);
+    const summaryTitle = screen.getAllByText(/Resumen 2026|burgerCalendar\.summaryTitle/i)[1];
     expect(summaryTitle.closest('button')?.closest('[data-beam]'))
       .toHaveClass('bw-annual-summary-beam');
     [
@@ -322,6 +328,62 @@ describe('Dashboard', () => {
     ].forEach((filterName) => {
       expect(screen.getByRole('button', { name: filterName }).closest('[data-beam]')).toBeNull();
     });
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('en 2026 consulta el año actual y oculta la navegación anual', async () => {
+    render(<Dashboard session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never} theme="light" />);
+    await waitFor(() => expect(entryQueries).toHaveLength(1));
+    expect(entryQueries[0].gte).toHaveBeenCalledWith('datetime', '2026-01-01');
+    expect(entryQueries[0].lt).toHaveBeenCalledWith('datetime', '2027-01-01');
+    expect(screen.queryByRole('navigation', { name: 'dashboard.yearNavigation' })).not.toBeInTheDocument();
+    expect(screen.getAllByText(/burgerCalendar.summaryTitle/)).toHaveLength(2);
+  });
+
+  it('en 2027 oculta la navegación cuando no hay entradas anteriores', async () => {
+    vi.setSystemTime(new Date('2027-09-23T12:00:00Z'));
+    setTableResponses('entries', [{ data: [], error: null }, { data: [], error: null }]);
+    render(<Dashboard session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never} theme="light" />);
+    await waitFor(() => expect(entryQueries).toHaveLength(2));
+    expect(entryQueries[1].gte).toHaveBeenCalledWith('datetime', '2026-01-01');
+    expect(entryQueries[1].lt).toHaveBeenCalledWith('datetime', '2027-01-01');
+    expect(screen.queryByRole('navigation', { name: 'dashboard.yearNavigation' })).not.toBeInTheDocument();
+  });
+
+  it('en 2027 permite consultar 2026, separa las cachés y bloquea años anteriores a 2026', async () => {
+    vi.setSystemTime(new Date('2027-09-23T12:00:00Z'));
+    const oldEntry = { id: 'old', datetime: '2026-02-10T10:00:00Z', rating: 5, price: 12, is_burger: true, burger_origin: 'restaurant', meat_type: 'beef', restaurant: { name: 'Old' }, burger: null };
+    setTableResponses('entries', [{ data: [], error: null }, { data: [{ datetime: oldEntry.datetime }], error: null }, { data: [oldEntry], error: null }]);
+    render(<Dashboard session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never} theme="light" />);
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'dashboard.yearNavigation' })).toBeInTheDocument());
+    expect(sessionStorage.getItem('bw-dashboard-entries-viewer-1-2027')).toBe('[]');
+    expect(screen.getByRole('button', { name: 'dashboard.nextYear' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'dashboard.previousYear' }));
+    await waitFor(() => expect(screen.getByText('2026')).toBeInTheDocument());
+    await waitFor(() => expect(sessionStorage.getItem('bw-dashboard-entries-viewer-1-2026')).toContain('old'));
+    expect(entryQueries[2].gte).toHaveBeenCalledWith('datetime', '2026-01-01');
+    expect(entryQueries[2].lt).toHaveBeenCalledWith('datetime', '2027-01-01');
+    expect(screen.getByRole('button', { name: 'dashboard.previousYear' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'dashboard.nextYear' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'dashboard.nextYear' }));
+    expect(screen.getByRole('button', { name: 'dashboard.nextYear' })).toBeDisabled();
+    expect(screen.getByTestId('stat-dashboard.burgers')).toHaveTextContent('0');
+    expect(sessionStorage.getItem('bw-dashboard-entries-viewer-1-2026')).toContain('old');
+    expect(sessionStorage.getItem('bw-dashboard-entries-viewer-1-2027')).toBe('[]');
+  });
+
+  it('muestra el error de carga sin conservar estadísticas de otro año', async () => {
+    vi.setSystemTime(new Date('2027-09-23T12:00:00Z'));
+    const currentEntry = { id: 'current', datetime: '2027-02-10T10:00:00Z', rating: 5, price: 12, is_burger: true, burger_origin: 'restaurant', meat_type: 'beef', restaurant: { name: 'Current' }, burger: null };
+    setTableResponses('entries', [{ data: [currentEntry], error: null }, { data: [{ datetime: '2026-02-10T10:00:00Z' }], error: null }, { data: null, error: { message: 'Network error' } }]);
+    render(<Dashboard session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never} theme="light" />);
+    await waitFor(() => expect(screen.getByTestId('stat-dashboard.burgers')).toHaveTextContent('1'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'dashboard.previousYear' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'dashboard.previousYear' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Network error'));
+    expect(screen.getByTestId('stat-dashboard.burgers')).toHaveTextContent('0');
+    expect(sessionStorage.getItem('bw-dashboard-entries-viewer-1-2026')).toBeNull();
   });
 
   it('mantiene el modo edición hasta que termina de cerrar tras guardar', async () => {

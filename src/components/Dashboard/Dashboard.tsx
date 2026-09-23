@@ -57,7 +57,7 @@ type DashboardProfile = {
   display_name: string | null;
 };
 
-const ANNUAL_SUMMARY_YEAR = 2026;
+const FIRST_ENTRY_YEAR = 2026;
 
 type DbEntryRow = {
   id: string;
@@ -197,6 +197,12 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const profileCacheKey = `bw-profile-${session.user.id}`;
   const [headerUsername, setHeaderUsername] = useState<string | null>(null);
   const [entries, setEntries] = useState<DbEntryRow[]>([]);
+  const [activeYear, setActiveYear] = useState(() => new Date().getFullYear());
+  const [entriesYear, setEntriesYear] = useState(() => new Date().getFullYear());
+  const [historicalAvailability, setHistoricalAvailability] = useState<{ userId: string; earliestYear: number | null } | null>(null);
+  const earliestYear = historicalAvailability?.userId === session.user.id ? historicalAvailability.earliestYear : null;
+  const entriesRequestRef = useRef(0);
+  const historicalRequestRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [monthFilter, setMonthFilter] = useState<string[]>(['all']);
@@ -227,7 +233,16 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<unknown>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const cacheKey = `bw-dashboard-entries-${session.user.id}-${ANNUAL_SUMMARY_YEAR}`;
+  const cacheKey = `bw-dashboard-entries-${session.user.id}-${activeYear}`;
+  const changeYear = (year: number) => {
+    if (year > new Date().getFullYear() || earliestYear === null || year < Math.max(FIRST_ENTRY_YEAR, earliestYear) || year === activeYear) return;
+    entriesRequestRef.current += 1;
+    setActiveYear(year);
+    setEntries([]);
+    setLoading(true);
+    setError(null);
+    setMonthFilter(['all']);
+  };
   const openAddModal = () => {
     setEditingEntry(null);
     setIsAddModalOpen(true);
@@ -246,14 +261,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     navigate(location.pathname, { replace: true });
   }, [location.pathname, location.search, navigate]);
 
-  // --- Cargar entradas del año 2026 ---
+  // Cargar las entradas del año seleccionado.
   const loadEntries = useCallback(async (options?: { showLoading?: boolean }) => {
+    const requestId = ++entriesRequestRef.current;
     const showLoading = options?.showLoading ?? true;
     if (showLoading) setLoading(true);
     setError(null);
 
-    const from = `${ANNUAL_SUMMARY_YEAR}-01-01`;
-    const to = `${ANNUAL_SUMMARY_YEAR + 1}-01-01`;
+    const from = `${activeYear}-01-01`;
+    const to = `${activeYear + 1}-01-01`;
 
     const statsQuery = whereNotDeleted(
       supabase
@@ -277,13 +293,16 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       .order('datetime', { ascending: false })
     );
     const { data, error } = await statsQuery;
+    if (requestId !== entriesRequestRef.current) return;
 
     if (error) {
       setError(error.message);
       setEntries([]);
+      setEntriesYear(activeYear);
     } else {
       const nextEntries = (data ?? []) as unknown as DbEntryRow[];
       setEntries(nextEntries);
+      setEntriesYear(activeYear);
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify(nextEntries));
       } catch {
@@ -292,7 +311,32 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     }
 
     setLoading(false);
-  }, [cacheKey, session.user.id]);
+  }, [activeYear, cacheKey, session.user.id]);
+
+  const loadHistoricalYear = useCallback(async () => {
+    const requestId = ++historicalRequestRef.current;
+    const currentYear = new Date().getFullYear();
+    if (currentYear <= FIRST_ENTRY_YEAR) return;
+
+    const query = whereNotDeleted(
+      supabase.from('entries')
+        .select('datetime')
+        .eq('user_id', session.user.id)
+        .gte('datetime', `${FIRST_ENTRY_YEAR}-01-01`)
+        .lt('datetime', `${currentYear}-01-01`)
+        .order('datetime', { ascending: true })
+        .limit(1)
+    );
+    const { data, error } = await query;
+    if (requestId !== historicalRequestRef.current) return;
+    if (error) return;
+    const parsedYear = data?.[0] ? Number((data[0] as { datetime: string }).datetime.slice(0, 4)) : null;
+    const firstYear = parsedYear !== null && Number.isInteger(parsedYear) && parsedYear >= FIRST_ENTRY_YEAR && parsedYear < currentYear
+      ? parsedYear
+      : null;
+    setHistoricalAvailability({ userId: session.user.id, earliestYear: firstYear });
+    if (firstYear === null) setActiveYear(currentYear);
+  }, [session.user.id]);
 
   const loadSavedEntries = useCallback(async () => {
     const { error: savedError } = await supabase
@@ -318,7 +362,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       .eq('invitee_id', session.user.id);
 
     if (inviteError) {
-      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvitesError(t('dashboard.invitesError'));
       setInvites([]);
       setInvitesLoading(false);
       return;
@@ -341,7 +385,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     ]);
 
     if (groupsError || profilesError) {
-      setInvitesError('No se pudieron cargar las invitaciones.');
+      setInvitesError(t('dashboard.invitesError'));
       setInvitesLoading(false);
       return;
     }
@@ -373,7 +417,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
 
     setInvites(mapped);
     setInvitesLoading(false);
-  }, [session.user.id]);
+  }, [session.user.id, t]);
 
   const loadGroupCount = useCallback(async () => {
     const [{ data: ownedGroups }, { data: memberRows }] = await Promise.all([
@@ -469,23 +513,24 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    entriesRequestRef.current += 1;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as DbEntryRow[];
-        if (!cancelled) {
+        if (Array.isArray(parsed)) {
           setEntries(parsed);
+          setEntriesYear(activeYear);
           setLoading(false);
           setError(null);
+        } else {
+          void loadEntries();
         }
       } catch {
-        if (!cancelled) {
-          loadEntries();
-        }
+        void loadEntries();
       }
     } else {
-      loadEntries();
+      void loadEntries();
     }
 
     // Suscripción a cambios en la tabla de entries para refrescar el feed en tiempo real
@@ -500,15 +545,22 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           if (now - lastRealtimeRef.current < 60000) return;
           lastRealtimeRef.current = now;
           loadEntries({ showLoading: false });
+          void loadHistoricalYear();
         }
       )
       .subscribe();
 
     return () => {
-      cancelled = true;
+      entriesRequestRef.current += 1;
       supabase.removeChannel(channel);
     };
-  }, [cacheKey, loadEntries, session.user.id]);
+  }, [activeYear, cacheKey, loadEntries, loadHistoricalYear, session.user.id]);
+
+  useEffect(() => {
+    if (new Date().getFullYear() <= FIRST_ENTRY_YEAR) return;
+    void loadHistoricalYear();
+    return () => { historicalRequestRef.current += 1; };
+  }, [loadHistoricalYear]);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -526,12 +578,13 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   useRevalidateOnFocus(
     () => {
       loadEntries({ showLoading: false });
+      void loadHistoricalYear();
       loadInvites();
       loadGroupCount();
       loadNotificationsMeta();
       loadHeaderUsername();
     },
-    [loadEntries, loadGroupCount, loadInvites, loadNotificationsMeta, loadHeaderUsername],
+    [loadEntries, loadGroupCount, loadInvites, loadNotificationsMeta, loadHeaderUsername, loadHistoricalYear],
     { minIntervalMs: 300000, maxStaleMs: 1200000, debounceMs: 500 }
   );
 
@@ -601,19 +654,21 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   };
 
   // --- Stats calculadas ---
-  const stats = useMemo(() => computeStats(entries), [entries]);
+  const annualEntries = useMemo(() => entriesYear === activeYear ? entries : [], [activeYear, entries, entriesYear]);
+  const annualLoading = loading || entriesYear !== activeYear;
+  const stats = useMemo(() => computeStats(annualEntries), [annualEntries]);
   const monthOptions = useMemo(() => {
     const currentMonthValue = getCurrentMonthValue();
-    const values = new Set<string>([currentMonthValue]);
-    entries.forEach((entry) => {
+    const values = new Set<string>(activeYear === new Date().getFullYear() ? [currentMonthValue] : []);
+    annualEntries.forEach((entry) => {
       const date = new Date(entry.datetime);
       if (Number.isNaN(date.getTime())) return;
       values.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
     });
-    const currentYear = new Date().getFullYear();
+    const currentYear = activeYear;
     const locale = typeof navigator !== 'undefined' ? navigator.language : undefined;
     return [
-      { value: 'all', label: t('feedTabs.all', { defaultValue: 'Todos' }) },
+      { value: 'all', label: t('feedTabs.all') },
       ...Array.from(values)
         .sort((a, b) => a.localeCompare(b))
         .map((value) => {
@@ -627,18 +682,22 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
         }),
     ];
-  }, [entries, t]);
+  }, [activeYear, annualEntries, t]);
   const priceFilterOptions = useMemo<MultiSelectOption<FeedPriceFilter>[]>(
     () => {
       const symbol = getCurrencySymbol(viewerCurrency);
       return getPriceFiltersForCurrency(viewerCurrency).map((filter) => ({
         value: filter.value,
-        label: filter.value === 'all' || filter.value === 'free'
-          ? filter.label
-          : `${filter.label} ${symbol}`,
+        label: filter.value === 'all'
+          ? t('feedTabs.all')
+          : filter.value === 'free'
+            ? t('dashboard.free')
+            : filter.label.startsWith('Más de ')
+              ? t('dashboard.priceAbove', { amount: filter.label.slice(7), symbol })
+              : t('dashboard.priceRange', { min: filter.label.split(' a ')[0], max: filter.label.split(' a ')[1], symbol }),
       }));
     },
-    [viewerCurrency]
+    [t, viewerCurrency]
   );
   const priceFilterRanges = useMemo<Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>>(() => {
     const ranges = {} as Record<Exclude<FeedPriceFilter, 'all'>, FeedPriceFilterRange>;
@@ -652,7 +711,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     () =>
       burgerTypeFilterOptions.map((filter) => ({
         value: filter.value,
-        label: filter.labelKey ? t(filter.labelKey, { defaultValue: filter.label ?? filter.value }) : filter.label ?? filter.value,
+        label: filter.labelKey ? t(filter.labelKey) : filter.label ?? filter.value,
         icon: filter.icon,
       })),
     [t]
@@ -663,7 +722,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   const burgerDaysThisMonth = useMemo(() => {
     const now = new Date();
     const currentMonthKeys = new Set<string>();
-    entries.forEach((entry) => {
+    annualEntries.forEach((entry) => {
       if (!entry.is_burger) return;
       const date = new Date(entry.datetime);
       if (Number.isNaN(date.getTime())) return;
@@ -671,7 +730,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
       currentMonthKeys.add(getDateKey(date));
     });
     return currentMonthKeys.size;
-  }, [entries]);
+  }, [annualEntries]);
   const hasUnreadNotifications = Boolean(
     notificationsLatest && (!notificationsLastSeen || notificationsLatest > notificationsLastSeen)
   );
@@ -692,6 +751,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
 
   const handleEntrySaved = async () => {
     await loadEntries();
+    await loadHistoricalYear();
     setRefreshFeedKey((prev) => prev + 1);
   };
 
@@ -713,11 +773,12 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         .eq('id', deleteEntry.id);
       if (deleteError) throw deleteError;
       await loadEntries();
+      await loadHistoricalYear();
       setRefreshFeedKey((prev) => prev + 1);
       setDeleteEntry(null);
     } catch (err) {
       console.error(err);
-      alert('No se pudo eliminar la entrada.');
+      alert(t('dashboard.deleteError'));
     } finally {
       setMutating(false);
     }
@@ -727,7 +788,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
     <AppShell>
         <PageHeader
           title="Burger Wrapped"
-          subtitle={t('dashboard.subtitle', { user: headerUsername ?? username ?? session.user.email })}
+          subtitle={t('dashboard.subtitle', { year: activeYear, user: headerUsername ?? username ?? session.user.email })}
           logoAlt="Burger Wrapped"
           actions={(
             <>
@@ -735,7 +796,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
                 type="button"
                 className="bw-icon-button bw-notify-button"
                 onClick={() => setNotificationsOpen(true)}
-                aria-label="Abrir notificaciones"
+                aria-label={t('dashboard.openNotifications')}
               >
                 <Notifications />
                 {hasUnreadNotifications && <span className="bw-notify-dot" />}
@@ -765,16 +826,26 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
         )}
 
         <main className="bw-main bw-dashboard-main">
+          {earliestYear !== null && new Date().getFullYear() > FIRST_ENTRY_YEAR && (
+            <nav className="bw-dashboard-year-navigation" aria-label={t('dashboard.yearNavigation')}>
+              <button type="button" className="bw-icon-button" onClick={() => changeYear(activeYear - 1)} disabled={activeYear <= earliestYear} aria-label={t('dashboard.previousYear')}>‹</button>
+              <strong>{activeYear}</strong>
+              <button type="button" className="bw-icon-button" onClick={() => changeYear(activeYear + 1)} disabled={activeYear >= new Date().getFullYear()} aria-label={t('dashboard.nextYear')}>›</button>
+            </nav>
+          )}
           <AnnualSummaryCollapse
-            year={ANNUAL_SUMMARY_YEAR}
+            year={activeYear}
             totalBurgers={stats.totalBurgers}
             averageRating={stats.averageRating}
             totalSpentLabel={totalSpentLabel}
             favoriteRestaurant={stats.favoriteRestaurant}
             theme={theme}
+            status={annualLoading ? t('common.loading') : error ?? (annualEntries.length === 0 ? t('dashboard.emptyYear', { year: activeYear }) : undefined)}
           >
+            {error && <p role="alert" className="bw-dashboard-summary-message">{error}</p>}
+            {!annualLoading && !error && annualEntries.length === 0 && <p className="bw-dashboard-summary-message">{t('dashboard.emptyYear', { year: activeYear })}</p>}
             <section className="bw-stats-grid">
-              {loading ? (
+              {annualLoading ? (
                 [1, 2, 3, 4].map((id) => <DashboardStatSkeleton key={id} />)
               ) : (
                 <>
@@ -800,25 +871,25 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
                 <div className="bw-burger-types-row">
                   <div className="bw-burger-type">
                     <span className="bw-burger-type-emoji">
-                      <img src="/meat.png" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
+                      <img src="/meat.webp" alt={t('dashboard.beef')} className="bw-burger-type-icon" />
                     </span>
                     <span>{stats.burgerTypes.beef}</span>
                   </div>
                   <div className="bw-burger-type">
                     <span className="bw-burger-type-emoji">
-                      <img src="/chicken-leg.png" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
+                      <img src="/chicken-leg.webp" alt={t('dashboard.chicken')} className="bw-burger-type-icon" />
                     </span>
                     <span>{stats.burgerTypes.chicken}</span>
                   </div>
                   <div className="bw-burger-type">
                     <span className="bw-burger-type-emoji">
-                      <img src="/plant.png" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
+                      <img src="/plant.webp" alt={t('dashboard.vegan')} className="bw-burger-type-icon" />
                     </span>
                     <span>{stats.burgerTypes.vegan}</span>
                   </div>
                 </div>
               </div>
-              {loading ? (
+              {annualLoading ? (
                 <DashboardStatSkeleton />
               ) : (
                 <StatCard
@@ -838,24 +909,24 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           <section className="bw-history">
             <div
               className={`bw-dashboard-filter-carousel ${openFilterCount > 0 ? 'is-locked' : ''} ${isOverlayOpen ? 'is-disabled' : ''}`}
-              aria-label={t('dashboard.filters', { defaultValue: 'Filtros' })}
+              aria-label={t('dashboard.filters')}
             >
               <DashboardMultiSelect
-                label={t('dashboard.dateFilter', { defaultValue: 'Fecha' })}
+                label={t('dashboard.dateFilter')}
                 options={monthOptions}
                 selected={monthFilter}
                 onChange={setMonthFilter}
                 onOpenChange={handleFilterOpenChange}
               />
               <DashboardMultiSelect
-                label={t('dashboard.priceFilter', { defaultValue: 'Precio' })}
+                label={t('dashboard.priceFilter')}
                 options={priceFilterOptions}
                 selected={priceFilter}
                 onChange={setPriceFilter}
                 onOpenChange={handleFilterOpenChange}
               />
               <DashboardMultiSelect
-                label={t('dashboard.type', { defaultValue: 'Tipo' })}
+                label={t('dashboard.type')}
                 options={meatTypeFilterOptions}
                 selected={meatTypeFilter}
                 onChange={setMeatTypeFilter}
@@ -945,17 +1016,15 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
           if (mutating) return;
           setDeleteEntry(null);
         }}
-        title="Eliminar entrada"
+        title={t('dashboard.deleteTitle')}
         message={deleteEntry ? (
           <>
-            ¿Seguro que deseas eliminar la entrada del{' '}
-            {new Date(deleteEntry.datetime).toLocaleString('es-ES', {
+            {t('dashboard.deleteMessage', { date: new Date(deleteEntry.datetime).toLocaleString(undefined, {
               day: 'numeric',
               month: 'long',
               hour: '2-digit',
               minute: '2-digit',
-            })}
-            {' '}en {deleteEntry.restaurantName ?? 'restaurante desconocido'}?
+            }), restaurant: deleteEntry.restaurantName ?? t('dashboard.unknownRestaurant') })}
           </>
         ) : null}
         actions={(
@@ -969,7 +1038,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               }}
               disabled={mutating}
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               className="bw-btn bw-btn-danger"
@@ -977,7 +1046,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               onClick={() => void handleDeleteEntry()}
               disabled={mutating}
             >
-              {mutating ? 'Procesando...' : 'Eliminar'}
+              {mutating ? t('dashboard.processing') : t('common.delete')}
             </button>
           </>
         )}

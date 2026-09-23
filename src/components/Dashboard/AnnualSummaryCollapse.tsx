@@ -9,6 +9,7 @@ type AnnualSummaryCollapseProps = {
   totalSpentLabel: string;
   favoriteRestaurant: string;
   theme: 'light' | 'dark';
+  status?: string;
   children: ReactNode;
 };
 
@@ -18,6 +19,7 @@ export function AnnualSummaryCollapse({
   averageRating,
   totalSpentLabel,
   theme,
+  status,
   children,
 }: Readonly<AnnualSummaryCollapseProps>) {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ export function AnnualSummaryCollapse({
 
   return (
     <section className="bw-annual-summary">
+      <h2 className="bw-annual-summary-desktop-title">{t('burgerCalendar.summaryTitle', { year })}</h2>
       {!expanded && (
         <BorderBeam
           size="md"
@@ -45,7 +48,7 @@ export function AnnualSummaryCollapse({
             onClick={() => setExpanded(true)}
           >
             <span className="bw-annual-summary-title">{t('burgerCalendar.summaryTitle', { year })}</span>
-            <span className="bw-annual-summary-metrics">
+            {status ? <span className="bw-annual-summary-status">{status}</span> : <span className="bw-annual-summary-metrics">
               <span className="bw-annual-summary-metric">
                 <span className="bw-annual-summary-metric-value">{totalBurgers}</span>
                 <span className="bw-annual-summary-metric-label">{t('burgerCalendar.summaryBurgersLabel')}</span>
@@ -58,7 +61,7 @@ export function AnnualSummaryCollapse({
                 <span className="bw-annual-summary-metric-value">{totalSpentLabel}</span>
                 <span className="bw-annual-summary-metric-label">{t('burgerCalendar.summaryTotalSpentLabel')}</span>
               </span>
-            </span>
+            </span>}
             <span className="bw-annual-summary-action">
               <span>{t('burgerCalendar.summaryShowFull')}</span>
               <span className="bw-annual-summary-chevron" aria-hidden="true" />
