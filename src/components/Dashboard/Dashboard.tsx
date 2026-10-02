@@ -107,7 +107,6 @@ function computeStats(entries: DbEntryRow[]) {
   }
 
   const init = {
-    totalSpent: 0,
     burgerCount: 0,
     homemadeBurgers: 0,
     ratingSum: 0,
@@ -119,7 +118,6 @@ function computeStats(entries: DbEntryRow[]) {
   };
 
   const acc = entries.reduce((a, e) => {
-    if (e.price != null) a.totalSpent += e.price;
     if (e.is_burger) {
       if (e.burger_origin === 'homemade') a.homemadeBurgers++;
       else a.burgerCount++;
@@ -170,7 +168,6 @@ function computeStats(entries: DbEntryRow[]) {
   const averageRating = acc.ratingCount ? acc.ratingSum / acc.ratingCount : 0;
 
   return {
-    totalSpent: acc.totalSpent,
     totalBurgers: acc.burgerCount,
     averageRating,
     favoriteRestaurant,
@@ -718,7 +715,18 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
   );
 
   const activeHistoryError = error ?? savedError;
-  const totalSpentLabel = formatCurrency(stats.totalSpent, { fromCurrency: 'EUR', toCurrency: viewerCurrency });
+  const totalSpent = useMemo(
+    () =>
+      annualEntries.reduce((total, entry) => {
+        if (entry.price == null) return total;
+        return total + convertAmount(entry.price, entry.currency ?? 'EUR', viewerCurrency);
+      }, 0),
+    [annualEntries, convertAmount, viewerCurrency]
+  );
+  const totalSpentLabel = formatCurrency(totalSpent, {
+    fromCurrency: viewerCurrency,
+    toCurrency: viewerCurrency,
+  });
   const burgerDaysThisMonth = useMemo(() => {
     const now = new Date();
     const currentMonthKeys = new Set<string>();
