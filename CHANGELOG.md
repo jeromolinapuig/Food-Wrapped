@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.12.1
+
+- Fixed the annual Dashboard total so each entry is converted from its stored currency to the viewer's selected currency before all prices are summed.
+- Added regression coverage for annual totals containing prices in both EUR and JPY.
+
 ## 1.12.0
 
 - Made the annual Dashboard summary use the current year, show year navigation only when the user has entries from earlier years (starting in 2026), and keep each year's cache and loading states separate.
