@@ -144,6 +144,7 @@ Responsabilidades:
 
 - Cargar entradas del usuario del ano activo.
 - Calcular estadisticas anuales.
+- Calcular el gasto anual convirtiendo cada precio desde la moneda guardada en la entrada a la moneda seleccionada por el usuario antes de sumar, evitando mezclar importes nominales de monedas distintas.
 - Mostrar filtros por mes, precio y tipo de carne.
 - Mostrar historial mediante `FeedTabs`.
 - Gestionar add/edit/delete de entradas.
