@@ -5,6 +5,12 @@ import { Dashboard } from './Dashboard';
 import { supabase } from '../../lib/supabaseClient';
 
 const navigateMock = vi.fn();
+const convertAmountMock = vi.fn((amount: number, fromCurrency: string, toCurrency: string) => {
+  if (fromCurrency === toCurrency) return amount;
+  if (fromCurrency === 'JPY' && toCurrency === 'EUR') return amount / 200;
+  if (fromCurrency === 'EUR' && toCurrency === 'JPY') return amount * 200;
+  return amount;
+});
 const routerLocation = { pathname: '/dashboard', search: '' };
 const localStorageMock = (() => {
   const values = new Map<string, string>();
@@ -95,7 +101,7 @@ vi.mock('../../context/PreferencesContext', () => ({
   usePreferences: () => ({
     currency: 'EUR',
     formatCurrency: (amount: number) => `EUR ${amount.toFixed(2)}`,
-    convertAmount: (amount: number) => amount,
+    convertAmount: convertAmountMock,
   }),
 }));
 
@@ -213,6 +219,7 @@ describe('Dashboard', () => {
     entryQueries.length = 0;
     const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
     navigateMock.mockReset();
+    convertAmountMock.mockClear();
     routerLocation.pathname = '/dashboard';
     routerLocation.search = '';
     fromMock.mockReset();
@@ -293,6 +300,58 @@ describe('Dashboard', () => {
     expect(screen.getByTestId('stat-dashboard.avgRating')).toHaveTextContent('4.5');
     expect(screen.getByTestId('stat-dashboard.favorite')).toHaveTextContent('Burger Place');
     expect(screen.getByTestId('stat-dashboard.totalSpent')).toHaveTextContent('EUR 18.00');
+  });
+
+  it('convierte cada precio a la moneda seleccionada antes de sumar el gasto anual', async () => {
+    setTableResponses('entries', [
+      {
+        data: [
+          {
+            id: 'eur-entry',
+            datetime: '2026-02-10T10:00:00.000Z',
+            rating: 4,
+            price: 10,
+            currency: 'EUR',
+            is_burger: true,
+            burger_origin: 'restaurant',
+            meat_type: 'beef',
+            restaurant: { name: 'Euro Burger' },
+            burger: { name: 'Euro', meat_type: 'beef' },
+          },
+          {
+            id: 'jpy-entry',
+            datetime: '2026-10-01T10:00:00.000Z',
+            rating: 5,
+            price: 2000,
+            currency: 'JPY',
+            is_burger: true,
+            burger_origin: 'restaurant',
+            meat_type: 'beef',
+            restaurant: { name: 'Yen Burger' },
+            burger: { name: 'Yen', meat_type: 'beef' },
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null },
+    ]);
+    setTableResponses('entry_bookmarks', [{ data: [], error: null }]);
+    setTableResponses('profiles', [{ data: { username: 'canon-user', display_name: 'Canon User' }, error: null }]);
+    setTableResponses('follows', [{ data: [], error: null }]);
+    setTableResponses('group_invitations', [{ data: [], error: null }]);
+
+    render(
+      <Dashboard
+        session={{ user: { id: 'viewer-1', email: 'viewer@example.com', user_metadata: {} } } as never}
+        theme="light"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stat-dashboard.totalSpent')).toHaveTextContent('EUR 20.00');
+    });
+    expect(convertAmountMock).toHaveBeenCalledWith(10, 'EUR', 'EUR');
+    expect(convertAmountMock).toHaveBeenCalledWith(2000, 'JPY', 'EUR');
   });
 
   it('abre el modal de creación y navega al abrir un post', async () => {
