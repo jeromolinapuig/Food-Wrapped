@@ -1,6 +1,6 @@
 import { CheckCircleOutline, Clear, GroupAdd, Search, SyncAlt } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
-import { startTransition, useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
@@ -55,7 +55,8 @@ export function SearchPage({
     locationState?.activeSearchTab === 'restaurants' ? 'restaurants' : 'users'
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [compactSearch, setCompactSearch] = useState(false);
+  const previousScrollY = useRef(0);
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -68,6 +69,20 @@ export function SearchPage({
   const followsCacheKey = currentUserId ? `bw-search-follows-${currentUserId}` : null;
   const isGuest = !session;
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
+
+  useEffect(() => {
+    previousScrollY.current = window.scrollY;
+    const handleScroll = () => {
+      const current = window.scrollY;
+      const delta = current - previousScrollY.current;
+      if (current < 40) setCompactSearch(false);
+      else if (delta > 5) setCompactSearch(true);
+      else if (delta < -5) setCompactSearch(false);
+      previousScrollY.current = current;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!confirmAction) return;
@@ -344,21 +359,20 @@ export function SearchPage({
         title={t('searchPage.title', { defaultValue: 'Search' })}
         subtitle={t('searchPage.subtitle', { defaultValue: 'Find users and restaurants from one place.' })}
       />
-      <main className="bw-main">
-        <section className="bw-search-section">
+      <main className="bw-main bw-search-main">
+        <section className={`bw-search-sticky ${compactSearch ? 'is-compact' : ''}`}>
           <div className="bw-search-input-wrap">
             <span className="bw-search-input-icon"><Search fontSize="small" /></span>
             <input type="search" className="bw-input bw-search-input"
               placeholder={t('searchPage.unifiedPlaceholder', { defaultValue: 'Buscar usuarios, restaurantes o burgers...' })}
               value={searchTerm}
-              onFocus={() => setSearchExpanded(true)}
-              onChange={(event) => { setSearchTerm(event.target.value); setSearchExpanded(true); }}
+              onChange={(event) => setSearchTerm(event.target.value)}
               aria-label={t('searchPage.title', { defaultValue: 'Buscar' })}/>
             {searchTerm && <button type="button" className="bw-search-clear"
               onClick={() => setSearchTerm('')} aria-label={t('common.searchClear')}>
               <Clear fontSize="small" /></button>}
           </div>
-          {searchExpanded && <div className="bw-search-tabs" role="tablist"
+          <div className="bw-search-tabs" role="tablist"
             aria-label={t('searchPage.tabsLabel', { defaultValue: 'Tipo de búsqueda' })}>
             {(['users','restaurants','burgers'] as const).map(tab => (
               <button key={tab} type="button" role="tab" aria-selected={activeTab === tab}
@@ -369,7 +383,7 @@ export function SearchPage({
                   : t('burgerCatalog.burgers', { defaultValue: 'Burgers' })}
               </button>
             ))}
-          </div>}
+          </div>
         </section>
 
         {activeTab === 'burgers' ? (session ? <BurgerExplore searchTerm={searchTerm} hideSearch /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
