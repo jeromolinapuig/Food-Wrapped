@@ -51,7 +51,7 @@ export function SearchPage({
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = location.state as SearchLocationState | null;
-  const [activeTab, setActiveTab] = useState<'users' | 'restaurants'>(
+  const [activeTab, setActiveTab] = useState<'users' | 'restaurants' | 'burgers'>(
     locationState?.activeSearchTab === 'restaurants' ? 'restaurants' : 'users'
   );
   const [searchTerm, setSearchTerm] = useState('');
