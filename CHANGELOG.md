@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added personal and public burger collections, community burger discovery, and burger detail pages with independent post ratings, rating distributions, and most-liked photo.
+
 ## 1.12.1
 
 - Fixed the annual Dashboard total so each entry is converted from its stored currency to the viewer's selected currency before all prices are summed.
