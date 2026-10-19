@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
@@ -119,7 +119,8 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
   const [localTerm, setLocalTerm] = useState('');
   const term = hideSearch ? searchTerm : localTerm;
   const [sort, setSort] = useState<'popular' | 'best' | 'latest'>('popular');
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(BURGER_PAGE_SIZE);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const { entries, loading, error } = useBurgerEntries(undefined, true);
   const groups = useMemo(() => groupEntries(entries), [entries]);
   const matches = useMemo(() => groups
@@ -130,13 +131,18 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
         ? b.last.localeCompare(a.last)
         : b.entries.length - a.entries.length || (b.average ?? -1) - (a.average ?? -1) || a.name.localeCompare(b.name)),
     [groups, sort, term]);
-  useEffect(() => { setPage(1); }, [term, sort]);
-  const totalPages = Math.max(1, Math.ceil(matches.length / BURGER_PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const visibleBurgers = useMemo(
-    () => matches.slice((currentPage - 1) * BURGER_PAGE_SIZE, currentPage * BURGER_PAGE_SIZE),
-    [matches, currentPage]
-  );
+  useEffect(() => { setVisibleCount(BURGER_PAGE_SIZE); }, [term, sort]);
+  const visibleBurgers = useMemo(() => matches.slice(0, visibleCount), [matches, visibleCount]);
+  const hasMore = visibleCount < matches.length;
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || loading || !hasMore) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setVisibleCount(count => Math.min(count + BURGER_PAGE_SIZE, matches.length));
+    }, { rootMargin: '300px 0px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loading, hasMore, matches.length, visibleCount]);
   return <section className="bw-catalog-section">
     <div className="bw-catalog-toolbar">
       {!hideSearch && <input className="bw-input" type="search" value={term} onChange={e => setLocalTerm(e.target.value)}
@@ -154,15 +160,9 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
         <Rating value={g.average}/><small>{g.entries.length} {t('burgerCatalog.reviews', { defaultValue: 'valoraciones' })}</small>
       </button>)}</div>
       {matches.length === 0 && <p>{t('burgerCatalog.noResults', { defaultValue: 'No hay hamburguesas que coincidan con la búsqueda.' })}</p>}
-      {totalPages > 1 && <nav className="bw-catalog-pagination" aria-label={t('burgerCatalog.pagination', { defaultValue: 'Páginas de hamburguesas' })}>
-        <button type="button" disabled={currentPage === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
-          {t('burgerCatalog.previous', { defaultValue: 'Anterior' })}
-        </button>
-        <span aria-live="polite">{t('burgerCatalog.pageOf', { defaultValue: 'Página {{page}} de {{total}}', page: currentPage, total: totalPages })}</span>
-        <button type="button" disabled={currentPage === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
-          {t('burgerCatalog.next', { defaultValue: 'Siguiente' })}
-        </button>
-      </nav>}
+      {hasMore && <div ref={loadMoreRef} className="bw-catalog-load-more" role="status" aria-label={t('burgerCatalog.loadingMore', { defaultValue: 'Cargar más hamburguesas' })}>
+        <span className="bw-catalog-load-spinner" aria-hidden="true" />
+      </div>}
     </>}
   </section>;
 }
