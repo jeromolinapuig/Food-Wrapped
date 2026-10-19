@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Replaced numbered burger catalogue pages with infinite scroll, automatically revealing the next 24 results while preserving search and sorting.
+
 - Paginated the community burger catalogue into 24 burgers per page, with previous/next navigation, search and sort resets, and the popularity rating tie-break retained.
 
 - Positioned the sticky search toolbar below the existing page header at all viewport sizes, measuring header height for desktop scrolling.
