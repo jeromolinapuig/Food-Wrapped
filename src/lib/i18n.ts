@@ -435,6 +435,8 @@ const resources = {
 
 const detectLanguage = () => {
   if (typeof window === 'undefined') return 'en';
+  const pathLang = window.location.pathname.split('/')[1]?.toLowerCase();
+  if (['en','es','fr','de','it','th','ja'].includes(pathLang)) return pathLang;
   const stored = window.localStorage.getItem('bw-lang');
   if (stored) return stored;
   const navLang = window.navigator.language || window.navigator.languages?.[0];
