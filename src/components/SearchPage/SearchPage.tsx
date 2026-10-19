@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { LockedContent } from '../common/LoginOverlay';
 import { PageHeader } from '../common/PageHeader';
 import { UserCard } from '../common/UserCard';
+import { BurgerExplore } from '../BurgerCatalog/BurgerCatalog';
 import { RestaurantSearchContent } from '../RestaurantSearchPage/RestaurantSearchPage';
 import { UserProfileModal } from '../UserProfileModal/UserProfileModal';
 import '../../styles/layout.css';
@@ -38,7 +39,7 @@ type SearchUser = {
 };
 
 type SearchLocationState = {
-  activeSearchTab?: 'users' | 'restaurants';
+  activeSearchTab?: 'users' | 'restaurants' | 'burgers' | 'burgers';
 };
 
 export function SearchPage({
@@ -362,9 +363,10 @@ export function SearchPage({
           >
             {t('common.restaurants', { defaultValue: 'Restaurants' })}
           </button>
+          <button type="button" role="tab" aria-selected={activeTab === 'burgers'} className={`bw-search-tab ${activeTab === 'burgers' ? 'is-active' : ''}`} onClick={() => setActiveTab('burgers')}>Burgers</button>
         </div>
 
-        {activeTab === 'users' ? (
+        {activeTab === 'burgers' ? (session ? <BurgerExplore /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
           <section className="bw-search-section">
             <div className="bw-search-input-wrap">
               <span className="bw-search-input-icon">
