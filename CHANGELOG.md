@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reworked Search into a single field with focus-activated horizontally scrolling user, restaurant and burger filters; unified the category query and tie-broke equally reviewed burgers by highest average rating.
+
 - Added personal and public burger collections, community burger discovery, and burger detail pages with independent post ratings, rating distributions, and most-liked photo.
 
 ## 1.12.1
