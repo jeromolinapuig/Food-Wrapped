@@ -111,32 +111,59 @@ export function BurgerCollection({ userId, own = false }: { userId: string; own?
       </div>}
   </section>;
 }
+const BURGER_PAGE_SIZE = 24;
+
 export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchTerm?: string; hideSearch?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [localTerm,setLocalTerm]=useState('');
+  const [localTerm, setLocalTerm] = useState('');
   const term = hideSearch ? searchTerm : localTerm;
-  const [sort,setSort]=useState<'popular'|'best'|'latest'>('popular');
-  const {entries,loading,error}=useBurgerEntries(undefined,true);
-  const groups=useMemo(()=>groupEntries(entries),[entries]);
-  const matches=useMemo(()=>groups.filter(g=>(g.name+' '+g.restaurant).toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()))
-    .sort((a,b)=>sort==='best'?(b.average??-1)-(a.average??-1):sort==='latest'?b.last.localeCompare(a.last):b.entries.length-a.entries.length || (b.average??-1)-(a.average??-1) || a.name.localeCompare(b.name)),[groups,sort,term]);
+  const [sort, setSort] = useState<'popular' | 'best' | 'latest'>('popular');
+  const [page, setPage] = useState(1);
+  const { entries, loading, error } = useBurgerEntries(undefined, true);
+  const groups = useMemo(() => groupEntries(entries), [entries]);
+  const matches = useMemo(() => groups
+    .filter(g => (g.name + ' ' + g.restaurant).toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()))
+    .sort((a, b) => sort === 'best'
+      ? (b.average ?? -1) - (a.average ?? -1)
+      : sort === 'latest'
+        ? b.last.localeCompare(a.last)
+        : b.entries.length - a.entries.length || (b.average ?? -1) - (a.average ?? -1) || a.name.localeCompare(b.name)),
+    [groups, sort, term]);
+  useEffect(() => { setPage(1); }, [term, sort]);
+  const totalPages = Math.max(1, Math.ceil(matches.length / BURGER_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const visibleBurgers = useMemo(
+    () => matches.slice((currentPage - 1) * BURGER_PAGE_SIZE, currentPage * BURGER_PAGE_SIZE),
+    [matches, currentPage]
+  );
   return <section className="bw-catalog-section">
     <div className="bw-catalog-toolbar">
-      {!hideSearch && <input className="bw-input" type="search" value={term} onChange={e=>setLocalTerm(e.target.value)}
-        placeholder={t('burgerCatalog.search',{defaultValue:'Buscar hamburguesa o restaurante...'})} aria-label="Buscar burgers"/>}
-      <select className="bw-input" value={sort} onChange={e=>setSort(e.target.value as typeof sort)} aria-label="Ordenar burgers">
-        <option value="popular">{t('burgerCatalog.popular',{defaultValue:'Más valoraciones'})}</option>
-        <option value="best">{t('burgerCatalog.best',{defaultValue:'Mejor valoradas'})}</option>
-        <option value="latest">{t('burgerCatalog.recent',{defaultValue:'Recientes'})}</option>
+      {!hideSearch && <input className="bw-input" type="search" value={term} onChange={e => setLocalTerm(e.target.value)}
+        placeholder={t('burgerCatalog.search', { defaultValue: 'Buscar hamburguesa o restaurante...' })} aria-label="Buscar burgers"/>}
+      <select className="bw-input" value={sort} onChange={e => setSort(e.target.value as typeof sort)} aria-label="Ordenar burgers">
+        <option value="popular">{t('burgerCatalog.popular', { defaultValue: 'Más valoraciones' })}</option>
+        <option value="best">{t('burgerCatalog.best', { defaultValue: 'Mejor valoradas' })}</option>
+        <option value="latest">{t('burgerCatalog.recent', { defaultValue: 'Recientes' })}</option>
       </select>
     </div>
-    {loading?<p>{t('common.loading',{defaultValue:'Cargando...'})}</p>:error?<p role="alert">{error}</p>:
-      <div className="bw-catalog-grid">{matches.map(g=><button key={g.key} type="button" className="bw-catalog-tile"
-        onClick={()=>navigate('/burgers/'+g.restaurantId+'/'+g.burgerId)}>
+    {loading ? <p>{t('common.loading', { defaultValue: 'Cargando...' })}</p> : error ? <p role="alert">{error}</p> : <>
+      <div className="bw-catalog-grid">{visibleBurgers.map(g => <button key={g.key} type="button" className="bw-catalog-tile"
+        onClick={() => navigate('/burgers/' + g.restaurantId + '/' + g.burgerId)}>
         <Cover src={g.photo} name={g.name}/><strong>{g.name}</strong><small>{g.restaurant}</small>
-        <Rating value={g.average}/><small>{g.entries.length} {t('burgerCatalog.reviews',{defaultValue:'valoraciones'})}</small>
-      </button>)}</div>}
+        <Rating value={g.average}/><small>{g.entries.length} {t('burgerCatalog.reviews', { defaultValue: 'valoraciones' })}</small>
+      </button>)}</div>
+      {matches.length === 0 && <p>{t('burgerCatalog.noResults', { defaultValue: 'No hay hamburguesas que coincidan con la búsqueda.' })}</p>}
+      {totalPages > 1 && <nav className="bw-catalog-pagination" aria-label={t('burgerCatalog.pagination', { defaultValue: 'Páginas de hamburguesas' })}>
+        <button type="button" disabled={currentPage === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+          {t('burgerCatalog.previous', { defaultValue: 'Anterior' })}
+        </button>
+        <span aria-live="polite">{t('burgerCatalog.pageOf', { defaultValue: 'Página {{page}} de {{total}}', page: currentPage, total: totalPages })}</span>
+        <button type="button" disabled={currentPage === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+          {t('burgerCatalog.next', { defaultValue: 'Siguiente' })}
+        </button>
+      </nav>}
+    </>}
   </section>;
 }
 export function BurgerDetailPage() {
