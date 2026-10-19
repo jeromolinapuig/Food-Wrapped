@@ -39,7 +39,7 @@ type SearchUser = {
 };
 
 type SearchLocationState = {
-  activeSearchTab?: 'users' | 'restaurants' | 'burgers' | 'burgers';
+  activeSearchTab?: 'users' | 'restaurants' | 'burgers';
 };
 
 export function SearchPage({
