@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Kept all three search category chips permanently visible in a sticky search header, compacting chips on downward scroll and expanding them on upward scroll.
+
 - Reworked Search into a single field with focus-activated horizontally scrolling user, restaurant and burger filters; unified the category query and tie-broke equally reviewed burgers by highest average rating.
 
 - Added personal and public burger collections, community burger discovery, and burger detail pages with independent post ratings, rating distributions, and most-liked photo.
