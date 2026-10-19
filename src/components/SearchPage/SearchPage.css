@@ -1,6 +1,8 @@
 .bw-search-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
   gap: 6px;
   padding: 4px;
   margin-bottom: 16px;
@@ -9,6 +11,8 @@
 }
 
 .bw-search-tab {
+  flex: 0 0 auto;
+  min-width: max-content;
   border: none;
   border-radius: 8px;
   padding: 10px 12px;
@@ -78,4 +82,37 @@
 
 .bw-search-locked-preview {
   min-height: 180px;
+}
+
+.bw-search-tabs::-webkit-scrollbar { display: none; }
+
+/* Sticky contextual search: only the category chips shrink when scrolling down. */
+.bw-search-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 19;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0 6px;
+  background: var(--bw-card-bg);
+}
+.bw-search-sticky .bw-search-tabs {
+  margin-bottom: 0;
+  transition: padding 180ms ease, gap 180ms ease;
+}
+.bw-search-sticky .bw-search-tab {
+  transition: padding 180ms ease, font-size 180ms ease, border-radius 180ms ease;
+}
+.bw-search-sticky.is-compact .bw-search-tabs { padding: 2px; gap: 4px; }
+.bw-search-sticky.is-compact .bw-search-tab { padding: 5px 11px; font-size: 12px; border-radius: 7px; }
+@media (prefers-reduced-motion: reduce) {
+  .bw-search-sticky .bw-search-tabs, .bw-search-sticky .bw-search-tab { transition: none; }
+}
+
+/* On desktop the window scrolls, so offset sticky search by the live header height. */
+@media (min-width: 900px) {
+  .bw-search-main .bw-search-sticky {
+    top: var(--bw-search-header-height, 88px);
+  }
 }

@@ -101,7 +101,7 @@ export function CreateGroupModal({
     return () => {
       cancelled = true;
     };
-  }, [currentUserId]);
+  }, [currentUserId, t]);
 
   const term = searchTerm.trim().toLowerCase();
   const filteredFriends = term

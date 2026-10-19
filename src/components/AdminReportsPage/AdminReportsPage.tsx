@@ -52,7 +52,10 @@ export function AdminReportsPage({ session }: Readonly<AdminReportsPageProps>) {
   }, []);
 
   useEffect(() => {
-    void loadReports();
+    const timeoutId = window.setTimeout(() => {
+      void loadReports();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadReports]);
 
   const handleReportStatus = async (reportId: string, status: 'resolved' | 'dismissed') => {

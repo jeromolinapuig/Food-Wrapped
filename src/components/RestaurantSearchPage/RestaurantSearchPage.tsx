@@ -23,6 +23,8 @@ type RestaurantSearchPageProps = {
 
 type RestaurantSearchContentProps = RestaurantSearchPageProps & {
   returnTo?: string;
+  searchTermOverride?: string;
+  hideSearchInput?: boolean;
 };
 
 type RestaurantSearchLocationState = {
@@ -58,12 +60,15 @@ export function RestaurantSearchContent({
   session,
   theme,
   returnTo = '/restaurants',
+  searchTermOverride,
+  hideSearchInput = false,
 }: Readonly<RestaurantSearchContentProps>) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedTerm, setDebouncedTerm] = useState('');
+  const effectiveTerm = searchTermOverride ?? searchTerm;
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,10 +200,10 @@ export function RestaurantSearchContent({
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      setDebouncedTerm(searchTerm.trim());
+      setDebouncedTerm(effectiveTerm.trim());
     }, 300);
     return () => window.clearTimeout(handle);
-  }, [searchTerm]);
+  }, [effectiveTerm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -397,7 +402,7 @@ export function RestaurantSearchContent({
   return (
     <>
       <section className="bw-restaurant-search">
-          <div className="bw-field">
+          {!hideSearchInput && <div className="bw-field">
             <label className="bw-label" htmlFor="bw-restaurant-search">
               {t('restaurantSearch.searchLabel', { defaultValue: 'Buscar restaurante' })}
             </label>
@@ -409,7 +414,7 @@ export function RestaurantSearchContent({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
-          </div>
+          </div>}
 
           {selectedRestaurant ? (
             <>

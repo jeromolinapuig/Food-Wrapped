@@ -24,6 +24,7 @@ import { BurgerWishlistPage } from './components/BurgerWishlistPage/BurgerWishli
 import { BurgerCalendarPage } from './components/BurgerCalendarPage/BurgerCalendarPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { SearchPage } from './components/SearchPage/SearchPage';
+import { BurgerDetailPage } from './components/BurgerCatalog/BurgerCatalog';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
 import { MorePage } from './components/MorePage/MorePage';
 import { FeatureAnnouncementModal } from './components/FeatureAnnouncementModal/FeatureAnnouncementModal';
@@ -486,6 +487,7 @@ function App() {
             />
           }
         />
+        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage /> : <Navigate to="/login" replace />} />
         <Route
           path="/profile"
           element={

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalRankingPage } from './GlobalRankingPage';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -106,6 +106,8 @@ vi.mock('../UserProfileModal/UserProfileModal', () => ({
 
 describe('GlobalRankingPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-02-15T12:00:00.000Z'));
     const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
     navigateMock.mockReset();
     fromMock.mockReset();
@@ -115,6 +117,10 @@ describe('GlobalRankingPage', () => {
       return createQuery(next ?? { data: [], error: null });
     });
     tableQueues.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('carga y muestra ranking global con usuarios públicos', async () => {

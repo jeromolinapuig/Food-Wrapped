@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Replaced numbered burger catalogue pages with infinite scroll, automatically revealing the next 24 results while preserving search and sorting.
+
+- Paginated the community burger catalogue into 24 burgers per page, with previous/next navigation, search and sort resets, and the popularity rating tie-break retained.
+
+- Positioned the sticky search toolbar below the existing page header at all viewport sizes, measuring header height for desktop scrolling.
+
+- Kept all three search category chips permanently visible in a sticky search header, compacting chips on downward scroll and expanding them on upward scroll.
+
+- Reworked Search into a single field with focus-activated horizontally scrolling user, restaurant and burger filters; unified the category query and tie-broke equally reviewed burgers by highest average rating.
+
+- Added personal and public burger collections, community burger discovery, and burger detail pages with independent post ratings, rating distributions, and most-liked photo.
+
 ## 1.12.1
 
 - Fixed the annual Dashboard total so each entry is converted from its stored currency to the viewer's selected currency before all prices are summed.

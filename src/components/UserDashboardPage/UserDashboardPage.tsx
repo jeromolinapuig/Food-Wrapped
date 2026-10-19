@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { EmojiEvents, Euro, House, LunchDining, Star } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
+import { BurgerCollection } from '../BurgerCatalog/BurgerCatalog';
 import { FeedTabs } from '../FeedTabs/FeedTabs';
 import type { FeedPriceFilter, FeedPriceFilterRange } from '../FeedTabs/types';
 import { AppShell } from '../common/AppShell';
@@ -658,6 +659,7 @@ export function UserDashboardPage({
               </section>
               )}
 
+              <BurgerCollection userId={userId} own={isOwnProfile} />
               {!isOwnProfile ? (
                 <>
               <section className="bw-stats-grid">

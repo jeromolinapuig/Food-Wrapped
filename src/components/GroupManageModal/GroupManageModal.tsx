@@ -160,7 +160,7 @@ export function GroupManageModal({
     return () => {
       cancelled = true;
     };
-  }, [currentUserId, groupId, groupName]);
+  }, [currentUserId, groupId, groupName, t]);
 
   const handleRename = async () => {
     const nextName = groupTitle.trim();
