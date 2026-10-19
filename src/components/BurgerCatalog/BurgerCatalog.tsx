@@ -111,19 +111,20 @@ export function BurgerCollection({ userId, own = false }: { userId: string; own?
       </div>}
   </section>;
 }
-export function BurgerExplore() {
+export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchTerm?: string; hideSearch?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [term,setTerm]=useState('');
+  const [localTerm,setLocalTerm]=useState('');
+  const term = hideSearch ? searchTerm : localTerm;
   const [sort,setSort]=useState<'popular'|'best'|'latest'>('popular');
   const {entries,loading,error}=useBurgerEntries(undefined,true);
   const groups=useMemo(()=>groupEntries(entries),[entries]);
   const matches=useMemo(()=>groups.filter(g=>(g.name+' '+g.restaurant).toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()))
-    .sort((a,b)=>sort==='best'?(b.average??-1)-(a.average??-1):sort==='latest'?b.last.localeCompare(a.last):b.entries.length-a.entries.length),[groups,sort,term]);
+    .sort((a,b)=>sort==='best'?(b.average??-1)-(a.average??-1):sort==='latest'?b.last.localeCompare(a.last):b.entries.length-a.entries.length || (b.average??-1)-(a.average??-1) || a.name.localeCompare(b.name)),[groups,sort,term]);
   return <section className="bw-catalog-section">
     <div className="bw-catalog-toolbar">
-      <input className="bw-input" type="search" value={term} onChange={e=>setTerm(e.target.value)}
-        placeholder={t('burgerCatalog.search',{defaultValue:'Buscar hamburguesa o restaurante...'})} aria-label="Buscar burgers"/>
+      {!hideSearch && <input className="bw-input" type="search" value={term} onChange={e=>setLocalTerm(e.target.value)}
+        placeholder={t('burgerCatalog.search',{defaultValue:'Buscar hamburguesa o restaurante...'})} aria-label="Buscar burgers"/>}
       <select className="bw-input" value={sort} onChange={e=>setSort(e.target.value as typeof sort)} aria-label="Ordenar burgers">
         <option value="popular">{t('burgerCatalog.popular',{defaultValue:'Más valoraciones'})}</option>
         <option value="best">{t('burgerCatalog.best',{defaultValue:'Mejor valoradas'})}</option>
