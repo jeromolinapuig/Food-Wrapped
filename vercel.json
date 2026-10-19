@@ -1,5 +1,56 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/en",
+      "destination": "/en/index.html"
+    },
+    {
+      "source": "/en/",
+      "destination": "/en/index.html"
+    },
+    {
+      "source": "/fr",
+      "destination": "/fr/index.html"
+    },
+    {
+      "source": "/fr/",
+      "destination": "/fr/index.html"
+    },
+    {
+      "source": "/de",
+      "destination": "/de/index.html"
+    },
+    {
+      "source": "/de/",
+      "destination": "/de/index.html"
+    },
+    {
+      "source": "/it",
+      "destination": "/it/index.html"
+    },
+    {
+      "source": "/it/",
+      "destination": "/it/index.html"
+    },
+    {
+      "source": "/th",
+      "destination": "/th/index.html"
+    },
+    {
+      "source": "/th/",
+      "destination": "/th/index.html"
+    },
+    {
+      "source": "/ja",
+      "destination": "/ja/index.html"
+    },
+    {
+      "source": "/ja/",
+      "destination": "/ja/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ]
 }
