@@ -1,11 +1,11 @@
 {
   "name": "food-wrapped",
   "private": true,
-  "version": "1.12.1",
+  "version": "1.13.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/generate-localized-landing.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run --maxWorkers 1",
