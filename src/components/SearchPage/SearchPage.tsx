@@ -55,6 +55,7 @@ export function SearchPage({
     locationState?.activeSearchTab === 'restaurants' ? 'restaurants' : 'users'
   );
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -344,56 +345,37 @@ export function SearchPage({
         subtitle={t('searchPage.subtitle', { defaultValue: 'Find users and restaurants from one place.' })}
       />
       <main className="bw-main">
-        <div className="bw-search-tabs" role="tablist" aria-label={t('searchPage.tabsLabel', { defaultValue: 'Search type' })}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'users'}
-            className={`bw-search-tab ${activeTab === 'users' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            {t('searchPage.usersTab', { defaultValue: 'Users' })}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'restaurants'}
-            className={`bw-search-tab ${activeTab === 'restaurants' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('restaurants')}
-          >
-            {t('common.restaurants', { defaultValue: 'Restaurants' })}
-          </button>
-          <button type="button" role="tab" aria-selected={activeTab === 'burgers'} className={`bw-search-tab ${activeTab === 'burgers' ? 'is-active' : ''}`} onClick={() => setActiveTab('burgers')}>Burgers</button>
-        </div>
+        <section className="bw-search-section">
+          <div className="bw-search-input-wrap">
+            <span className="bw-search-input-icon"><Search fontSize="small" /></span>
+            <input type="search" className="bw-input bw-search-input"
+              placeholder={t('searchPage.unifiedPlaceholder', { defaultValue: 'Buscar usuarios, restaurantes o burgers...' })}
+              value={searchTerm}
+              onFocus={() => setSearchExpanded(true)}
+              onChange={(event) => { setSearchTerm(event.target.value); setSearchExpanded(true); }}
+              aria-label={t('searchPage.title', { defaultValue: 'Buscar' })}/>
+            {searchTerm && <button type="button" className="bw-search-clear"
+              onClick={() => setSearchTerm('')} aria-label={t('common.searchClear')}>
+              <Clear fontSize="small" /></button>}
+          </div>
+          {searchExpanded && <div className="bw-search-tabs" role="tablist"
+            aria-label={t('searchPage.tabsLabel', { defaultValue: 'Tipo de búsqueda' })}>
+            {(['users','restaurants','burgers'] as const).map(tab => (
+              <button key={tab} type="button" role="tab" aria-selected={activeTab === tab}
+                className={`bw-search-tab ${activeTab === tab ? 'is-active' : ''}`}
+                onClick={() => setActiveTab(tab)}>
+                {tab === 'users' ? t('searchPage.usersTab', { defaultValue: 'Usuarios' })
+                  : tab === 'restaurants' ? t('common.restaurants', { defaultValue: 'Restaurantes' })
+                  : t('burgerCatalog.burgers', { defaultValue: 'Burgers' })}
+              </button>
+            ))}
+          </div>}
+        </section>
 
-        {activeTab === 'burgers' ? (session ? <BurgerExplore /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
-          <section className="bw-search-section">
-            <div className="bw-search-input-wrap">
-              <span className="bw-search-input-icon">
-                <Search fontSize="small" />
-              </span>
-              <input
-                type="search"
-                className="bw-input bw-search-input"
-                placeholder={t('feedPage.searchPlaceholder', { defaultValue: 'Search users...' })}
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  className="bw-search-clear"
-                  onClick={() => setSearchTerm('')}
-                  aria-label={t('common.searchClear')}
-                >
-                  <Clear fontSize="small" />
-                </button>
-              )}
-            </div>
-            {renderUserResults()}
-          </section>
+        {activeTab === 'burgers' ? (session ? <BurgerExplore searchTerm={searchTerm} hideSearch /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
+          <section className="bw-search-section">{renderUserResults()}</section>
         ) : session ? (
-          <RestaurantSearchContent session={session} theme={theme} returnTo="/search" />
+          <RestaurantSearchContent session={session} theme={theme} returnTo="/search" searchTermOverride={searchTerm} hideSearchInput />
         ) : (
           <LockedContent
             title={t('restaurantSearch.lockedTitle', { defaultValue: 'Restaurants' })}
