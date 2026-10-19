@@ -90,12 +90,12 @@
 .bw-search-sticky {
   position: sticky;
   top: 0;
-  z-index: 35;
+  z-index: 19;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 10px 0 6px;
-  background: var(--bw-bg, var(--bw-background, #101017));
+  background: var(--bw-card-bg);
 }
 .bw-search-sticky .bw-search-tabs {
   margin-bottom: 0;
@@ -108,4 +108,11 @@
 .bw-search-sticky.is-compact .bw-search-tab { padding: 5px 11px; font-size: 12px; border-radius: 7px; }
 @media (prefers-reduced-motion: reduce) {
   .bw-search-sticky .bw-search-tabs, .bw-search-sticky .bw-search-tab { transition: none; }
+}
+
+/* On desktop the window scrolls, so offset sticky search by the live header height. */
+@media (min-width: 900px) {
+  .bw-search-main .bw-search-sticky {
+    top: var(--bw-search-header-height, 88px);
+  }
 }
