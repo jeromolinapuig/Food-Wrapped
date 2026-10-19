@@ -6,7 +6,7 @@ import './lib/i18n';
 
 import App from './App.tsx';
 import { Analytics } from '@vercel/analytics/react';
-import { PreferencesProvider } from './context/PreferencesContext';
+import { PreferencesProvider } from './context/PreferencesProvider';
 
 const heartAvatarEnabled = String(import.meta.env.VITE_HEART_AVATAR ?? '').toLowerCase() === 'true';
 if (heartAvatarEnabled) {

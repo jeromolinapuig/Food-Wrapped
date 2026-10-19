@@ -74,6 +74,10 @@ vi.mock('../common/AppShell', () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock('../BurgerCatalog/BurgerCatalog', () => ({
+  BurgerCollection: () => <div>burger-collection</div>,
+}));
+
 vi.mock('../common/PageHeader', () => ({
   PageHeader: ({ title, subtitle, leading }: { title: string; subtitle: string; leading?: ReactNode }) => (
     <header>

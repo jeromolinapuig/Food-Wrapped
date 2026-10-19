@@ -204,7 +204,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         // Ignore cache write errors (private mode, quota, etc.).
       }
     }
-  }, [groupsCacheKey, session.user.id]);
+  }, [groupsCacheKey, session.user.id, t]);
 
   useEffect(() => {
     if (refreshKey === 0 && hasGroupsCache) return;
@@ -293,7 +293,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
         // Ignore cache write errors (private mode, quota, etc.).
       }
     }
-  }, [invitesCacheKey, session.user.id]);
+  }, [invitesCacheKey, session.user.id, t]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

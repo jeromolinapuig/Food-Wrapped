@@ -120,6 +120,11 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
   const term = hideSearch ? searchTerm : localTerm;
   const [sort, setSort] = useState<'popular' | 'best' | 'latest'>('popular');
   const [visibleCount, setVisibleCount] = useState(BURGER_PAGE_SIZE);
+  const [previousFilters, setPreviousFilters] = useState({ term, sort });
+  if (previousFilters.term !== term || previousFilters.sort !== sort) {
+    setPreviousFilters({ term, sort });
+    setVisibleCount(BURGER_PAGE_SIZE);
+  }
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const { entries, loading, error } = useBurgerEntries(undefined, true);
   const groups = useMemo(() => groupEntries(entries), [entries]);
@@ -131,7 +136,6 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
         ? b.last.localeCompare(a.last)
         : b.entries.length - a.entries.length || (b.average ?? -1) - (a.average ?? -1) || a.name.localeCompare(b.name)),
     [groups, sort, term]);
-  useEffect(() => { setVisibleCount(BURGER_PAGE_SIZE); }, [term, sort]);
   const visibleBurgers = useMemo(() => matches.slice(0, visibleCount), [matches, visibleCount]);
   const hasMore = visibleCount < matches.length;
   useEffect(() => {
@@ -169,7 +173,6 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false }: { searchT
 export function BurgerDetailPage() {
   const {restaurantId,burgerId}=useParams();
   const navigate=useNavigate();
-  const {t}=useTranslation();
   const {entries,loading,error}=useBurgerEntries(undefined,true);
   const selected=useMemo(()=>entries.filter(e=>e.restaurant_id===restaurantId&&e.burger_id===burgerId),[entries,restaurantId,burgerId]);
   const summary=useMemo(()=>groupEntries(selected)[0], [selected]);

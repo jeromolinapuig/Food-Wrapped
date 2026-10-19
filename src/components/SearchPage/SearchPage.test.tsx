@@ -169,7 +169,7 @@ describe('SearchPage functional flows', () => {
     const user = userEvent.setup();
     renderSearchPage();
 
-    await user.click(screen.getByRole('tab', { name: 'Restaurants' }));
+    await user.click(screen.getByRole('tab', { name: 'Restaurantes' }));
     expect(screen.getByText('restaurant-search-content')).toBeInTheDocument();
   });
 });

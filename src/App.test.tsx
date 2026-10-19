@@ -36,11 +36,6 @@ vi.mock('./lib/supabaseClient', () => ({
   supabase: supabaseMock,
 }));
 
-vi.mock('@mui/icons-material', () => ({
-  DynamicFeed: () => null,
-  PlaylistAddCheck: () => null,
-}));
-
 vi.mock('./components/AuthScreen/AuthScreen', () => ({ AuthScreen: () => <div>auth-screen</div> }));
 vi.mock('./components/AuthScreen/ResetPasswordScreen', () => ({ ResetPasswordScreen: () => <div>reset-password-screen</div> }));
 vi.mock('./components/AuthScreen/UsernameSetupScreen', () => ({ UsernameSetupScreen: () => <div>username-setup-screen</div> }));
@@ -61,7 +56,9 @@ vi.mock('./components/BurgerWishlistPage/BurgerWishlistPage', () => ({ BurgerWis
 vi.mock('./components/PostPage/PostPage', () => ({ PostPage: () => <div>post-page</div> }));
 vi.mock('./components/SearchPage/SearchPage', () => ({ SearchPage: () => <div>search-page</div> }));
 vi.mock('./components/MyTopBurgersPage/MyTopBurgersPage', () => ({ MyTopBurgersPage: () => <div>my-top-burgers-page</div> }));
+vi.mock('./components/MorePage/MorePage', () => ({ MorePage: () => <div>more-page</div> }));
 vi.mock('./components/PushNotifications/PushNotificationPrompt', () => ({ PushNotificationPrompt: () => null }));
+vi.mock('./components/FeatureAnnouncementModal/FeatureAnnouncementModal', () => ({ FeatureAnnouncementModal: () => null }));
 vi.mock('./components/common/AppShell', () => ({ AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
 vi.mock('./components/common/PageHeader', () => ({ PageHeader: ({ title }: { title: ReactNode }) => <h1>{title}</h1> }));
 vi.mock('./components/common/LockedPlaceholders', () => ({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ModalBase } from './ModalBase';
 
@@ -24,12 +24,11 @@ export function SlideConfirmDialog({
   onConfirm,
 }: Readonly<SlideConfirmDialogProps>) {
   const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!open) {
-      setValue(0);
-    }
-  }, [open]);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) setValue(0);
+  }
 
   const canConfirm = value >= 100 && !isProcessing;
 

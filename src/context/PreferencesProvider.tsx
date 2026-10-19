@@ -1,17 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { i18n } from '../lib/i18n';
-
-type PreferencesContextValue = {
-  language: string;
-  currency: string;
-  setLanguage: (lang: string) => void;
-  setCurrency: (currency: string) => void;
-  formatCurrency: (amount: number, options?: { fromCurrency?: string; toCurrency?: string }) => string;
-  convertAmount: (amount: number, fromCurrency: string, toCurrency: string) => number;
-};
-
-const PreferencesContext = createContext<PreferencesContextValue | undefined>(undefined);
+import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext';
 
 const DEFAULT_EUR_RATES: Record<string, number> = {
   EUR: 1,
@@ -215,10 +205,3 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
 
-export const usePreferences = () => {
-  const ctx = useContext(PreferencesContext);
-  if (!ctx) {
-    throw new Error('usePreferences must be used within PreferencesProvider');
-  }
-  return ctx;
-};
