@@ -1,6 +1,8 @@
 .bw-search-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
   gap: 6px;
   padding: 4px;
   margin-bottom: 16px;
@@ -9,6 +11,8 @@
 }
 
 .bw-search-tab {
+  flex: 0 0 auto;
+  min-width: max-content;
   border: none;
   border-radius: 8px;
   padding: 10px 12px;
@@ -79,3 +83,5 @@
 .bw-search-locked-preview {
   min-height: 180px;
 }
+
+.bw-search-tabs::-webkit-scrollbar { display: none; }
