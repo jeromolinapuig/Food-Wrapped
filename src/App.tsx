@@ -45,6 +45,8 @@ type PostLocationState = { returnTo?: string };
 type AuthMetadata = { username?: string; username_set?: boolean };
 type AppMetadata = { provider?: string; providers?: string[] };
 
+const LANDING_LOCALES = ['es', 'en', 'fr', 'de', 'it', 'th', 'ja'];
+
 const FEATURE_ANNOUNCEMENT_ID = 'burger-wishlist-v1';
 
 const getFeatureAnnouncementStorageKey = (userId: string) =>
@@ -453,6 +455,9 @@ function App() {
             )
           }
         />
+        <Route path="/:landingLocale" element={LANDING_LOCALES.includes(location.pathname.replace(/\\//g, '')) ? (
+          <LandingPage onLogin={handleLogin} />
+        ) : <Navigate to="/" replace />} />
         <Route
           path="/home"
           element={<Navigate to="/" replace />}
