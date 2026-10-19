@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Positioned the sticky search toolbar below the existing page header at all viewport sizes, measuring header height for desktop scrolling.
+
 - Kept all three search category chips permanently visible in a sticky search header, compacting chips on downward scroll and expanding them on upward scroll.
 
 - Reworked Search into a single field with focus-activated horizontally scrolling user, restaurant and burger filters; unified the category query and tie-broke equally reviewed burgers by highest average rating.
