@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.13.0
+
+- Added prerendered multilingual public landing pages for Spanish, English, French, German, Italian, Thai and Japanese with canonical URLs, hreflang, localized social metadata and sitemap entries.
+- Updated the build to generate locale-specific SEO pages without changing authenticated application routes.
+
 - Replaced numbered burger catalogue pages with infinite scroll, automatically revealing the next 24 results while preserving search and sorting.
 
 - Paginated the community burger catalogue into 24 burgers per page, with previous/next navigation, search and sort resets, and the popularity rating tie-break retained.
