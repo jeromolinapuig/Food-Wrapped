@@ -57,6 +57,7 @@ export function SearchPage({
   const [searchTerm, setSearchTerm] = useState('');
   const [compactSearch, setCompactSearch] = useState(false);
   const previousScrollY = useRef(0);
+  const searchMainRef = useRef<HTMLElement | null>(null);
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -69,6 +70,19 @@ export function SearchPage({
   const followsCacheKey = currentUserId ? `bw-search-follows-${currentUserId}` : null;
   const isGuest = !session;
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>('.bw-header');
+    const main = searchMainRef.current;
+    if (!header || !main) return;
+    const updateHeaderOffset = () => {
+      main.style.setProperty('--bw-search-header-height', header.getBoundingClientRect().height + 'px');
+    };
+    updateHeaderOffset();
+    const observer = new ResizeObserver(updateHeaderOffset);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     previousScrollY.current = window.scrollY;
@@ -359,7 +373,7 @@ export function SearchPage({
         title={t('searchPage.title', { defaultValue: 'Search' })}
         subtitle={t('searchPage.subtitle', { defaultValue: 'Find users and restaurants from one place.' })}
       />
-      <main className="bw-main bw-search-main">
+      <main ref={searchMainRef} className="bw-main bw-search-main">
         <section className={`bw-search-sticky ${compactSearch ? 'is-compact' : ''}`}>
           <div className="bw-search-input-wrap">
             <span className="bw-search-input-icon"><Search fontSize="small" /></span>
