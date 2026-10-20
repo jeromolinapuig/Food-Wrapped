@@ -400,7 +400,7 @@ export function SearchPage({
           </div>
         </section>
 
-        {activeTab === 'burgers' ? (session ? <BurgerExplore searchTerm={searchTerm} hideSearch /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
+        {activeTab === 'burgers' ? (session ? <BurgerExplore viewerId={session.user.id} searchTerm={searchTerm} hideSearch /> : <LockedContent title="Burgers" actionLabel={t('locked.action')} onLogin={onRequireLogin} preview={<div className="bw-search-locked-preview" />} />) : activeTab === 'users' ? (
           <section className="bw-search-section">{renderUserResults()}</section>
         ) : session ? (
           <RestaurantSearchContent session={session} theme={theme} returnTo="/search" searchTermOverride={searchTerm} hideSearchInput />

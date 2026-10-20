@@ -33,6 +33,7 @@ import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
 import { FeedPlaceholder, GroupsPlaceholder, ProfilePlaceholder } from './components/common/LockedPlaceholders';
+import { getLandingLanguage } from './lib/language';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -453,6 +454,9 @@ function App() {
             )
           }
         />
+        <Route path="/:landingLocale" element={getLandingLanguage(location.pathname) ? (
+          <LandingPage onLogin={handleLogin} />
+        ) : <Navigate to="/" replace />} />
         <Route
           path="/home"
           element={<Navigate to="/" replace />}
@@ -487,7 +491,7 @@ function App() {
             />
           }
         />
-        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage /> : <Navigate to="/login" replace />} />
+        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage viewerId={session.user.id} /> : <Navigate to="/login" replace />} />
         <Route
           path="/profile"
           element={

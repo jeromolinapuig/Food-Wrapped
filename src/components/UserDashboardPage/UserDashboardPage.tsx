@@ -659,7 +659,7 @@ export function UserDashboardPage({
               </section>
               )}
 
-              <BurgerCollection userId={userId} own={isOwnProfile} />
+              <BurgerCollection userId={userId} viewerId={viewerId} own={isOwnProfile} />
               {!isOwnProfile ? (
                 <>
               <section className="bw-stats-grid">
