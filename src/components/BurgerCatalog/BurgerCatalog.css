@@ -2,3 +2,48 @@
 
 
 .bw-catalog-load-more{min-height:72px;display:flex;align-items:center;justify-content:center}.bw-catalog-load-spinner{width:24px;height:24px;border:3px solid var(--bw-text-muted);border-top-color:var(--bw-accent);border-radius:50%;animation:bw-catalog-spin .8s linear infinite}@keyframes bw-catalog-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.bw-catalog-load-spinner{animation:none}}
+
+.bw-catalog-private-post {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  color: var(--bw-text-muted);
+}
+
+.bw-catalog-private-post .bw-catalog-cover {
+  color: var(--bw-text-muted);
+  background: var(--bw-surface);
+  border: 1px solid var(--bw-text-muted);
+  box-sizing: border-box;
+}
+
+.bw-catalog-private-post .bw-catalog-cover svg {
+  font-size: 2rem;
+}
+
+.bw-catalog-private-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--bw-text-muted);
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.bw-catalog-private-post small,
+.bw-catalog-privacy-note {
+  color: var(--bw-text-muted);
+  font-size: .8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.bw-catalog-tile:focus-visible,
+.bw-catalog-posts button:focus-visible {
+  outline: 2px solid var(--bw-accent);
+  outline-offset: 4px;
+  border-radius: 10px;
+}

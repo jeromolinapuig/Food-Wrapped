@@ -220,6 +220,15 @@ import itMore from '../locales/it/more.json';
 import deMore from '../locales/de/more.json';
 import jaMore from '../locales/ja/more.json';
 
+import jaBurgerCatalog from '../locales/ja/burgerCatalog.json';
+import thBurgerCatalog from '../locales/th/burgerCatalog.json';
+import itBurgerCatalog from '../locales/it/burgerCatalog.json';
+import deBurgerCatalog from '../locales/de/burgerCatalog.json';
+import frBurgerCatalog from '../locales/fr/burgerCatalog.json';
+import enBurgerCatalog from '../locales/en/burgerCatalog.json';
+import esBurgerCatalog from '../locales/es/burgerCatalog.json';
+import { detectLanguage } from './language';
+
 const resources = {
   en: {
     common: enCommon,
@@ -249,6 +258,7 @@ const resources = {
     burgerWishlist: enBurgerWishlist,
     burgerCalendar: enBurgerCalendar,
     featureAnnouncement: enFeatureAnnouncement,
+    burgerCatalog: enBurgerCatalog,
     more: enMore
   },
   es: {
@@ -279,6 +289,7 @@ const resources = {
     burgerWishlist: esBurgerWishlist,
     burgerCalendar: esBurgerCalendar,
     featureAnnouncement: esFeatureAnnouncement,
+    burgerCatalog: esBurgerCatalog,
     more: esMore
   },
   th: {
@@ -309,6 +320,7 @@ const resources = {
     burgerWishlist: thBurgerWishlist,
     burgerCalendar: thBurgerCalendar,
     featureAnnouncement: thFeatureAnnouncement,
+    burgerCatalog: thBurgerCatalog,
     more: thMore
   },
   fr: {
@@ -339,6 +351,7 @@ const resources = {
     burgerWishlist: frBurgerWishlist,
     burgerCalendar: frBurgerCalendar,
     featureAnnouncement: frFeatureAnnouncement,
+    burgerCatalog: frBurgerCatalog,
     more: frMore
   },
   it: {
@@ -369,6 +382,7 @@ const resources = {
     burgerWishlist: itBurgerWishlist,
     burgerCalendar: itBurgerCalendar,
     featureAnnouncement: itFeatureAnnouncement,
+    burgerCatalog: itBurgerCatalog,
     more: itMore
   },
   de: {
@@ -399,6 +413,7 @@ const resources = {
     burgerWishlist: deBurgerWishlist,
     burgerCalendar: deBurgerCalendar,
     featureAnnouncement: deFeatureAnnouncement,
+    burgerCatalog: deBurgerCatalog,
     more: deMore
   },
   ja: {
@@ -429,21 +444,9 @@ const resources = {
     burgerWishlist: jaBurgerWishlist,
     burgerCalendar: jaBurgerCalendar,
     featureAnnouncement: jaFeatureAnnouncement,
+    burgerCatalog: jaBurgerCatalog,
     more: jaMore
   }
-};
-
-const detectLanguage = () => {
-  if (typeof window === 'undefined') return 'en';
-  const pathLang = window.location.pathname.split('/')[1]?.toLowerCase();
-  if (['en','es','fr','de','it','th','ja'].includes(pathLang)) return pathLang;
-  const stored = window.localStorage.getItem('bw-lang');
-  if (stored) return stored;
-  const navLang = window.navigator.language || window.navigator.languages?.[0];
-  if (!navLang) return 'en';
-  const code = navLang.slice(0, 2).toLowerCase();
-  if (['en', 'es', 'th', 'fr', 'it', 'de', 'ja'].includes(code)) return code;
-  return 'en';
 };
 
 i18n
@@ -481,6 +484,7 @@ i18n
       'burgerWishlist',
       'burgerCalendar',
       'featureAnnouncement',
+      'burgerCatalog',
       'more'
     ],
     interpolation: { escapeValue: false },

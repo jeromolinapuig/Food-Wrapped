@@ -119,6 +119,11 @@ beforeEach(() => {
 });
 
 describe('App functional flows', () => {
+  it.each(['/en', '/en/', '/ja/', '/es/'])('renders the localized landing at %s', async path => {
+    renderAppAt(path);
+    expect(await screen.findByText('landing-page')).toBeInTheDocument();
+  });
+
   it('shows landing when user is logged out', async () => {
     renderAppAt('/');
 

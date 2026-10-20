@@ -229,6 +229,24 @@ Tablas:
 - `entry_bookmarks`
 - `entries` mediante `FeedTabs`
 
+### Catalogo Y Detalle De Burgers
+
+Archivos:
+
+- `src/components/BurgerCatalog/BurgerCatalog.tsx`
+- `src/components/BurgerCatalog/useBurgerEntries.ts`
+
+Responsabilidades:
+
+- Mostrar colecciones personales, descubrimiento de burgers y el detalle por restaurante y burger.
+- Respetar el idioma seleccionado y traducir etiquetas y estados en los siete idiomas.
+- Marcar con candado tanto los posts privados como los posts de perfiles privados.
+- Mostrar a otros usuarios una tarjeta privada sin foto, autor, fecha, puntuacion ni enlace al post. El propietario puede consultar sus propios posts con el indicador de privacidad.
+- Excluir las publicaciones bloqueadas de las puntuaciones y evitar que sus fotos aparezcan como portada o destacadas.
+- Consultar solo `id` e `is_private` de los perfiles y solicitar fotos unicamente de las publicaciones visibles.
+
+Las consultas usan `entries`, `profiles` y `entry_likes` con los permisos RLS existentes. Las tarjetas privadas representan unicamente registros que Supabase permite consultar; no se amplian policies ni se infiere contenido que RLS oculta. Si no puede comprobarse la privacidad, el contenido permanece bloqueado.
+
 ### Entradas
 
 Archivo principal:

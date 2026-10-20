@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { i18n } from '../lib/i18n';
+import { detectLanguage, getLandingLanguage, SUPPORTED_LANGUAGES } from '../lib/language';
 import { PreferencesContext, type PreferencesContextValue } from './PreferencesContext';
 
 const DEFAULT_EUR_RATES: Record<string, number> = {
@@ -23,7 +24,6 @@ const buildRatesFromEurRates = (eurRates: Record<string, number>) => {
 };
 
 const DEFAULT_RATES: Record<string, number> = buildRatesFromEurRates(DEFAULT_EUR_RATES);
-const SUPPORTED_LANGUAGES = ['en', 'es', 'th', 'fr', 'it', 'de', 'ja'];
 const SUPPORTED_CURRENCIES = ['EUR', 'THB', 'USD', 'GBP', 'AED', 'JPY'];
 
 const localeToCurrency: Record<string, string> = {
@@ -40,17 +40,6 @@ const localeToCurrency: Record<string, string> = {
   th: 'THB',
   ja: 'JPY',
   ja_JP: 'JPY',
-};
-
-const loadLanguage = () => {
-  if (typeof window === 'undefined') return 'en';
-  const stored = window.localStorage.getItem('bw-lang');
-  if (stored) return stored;
-  const navLang = window.navigator.language || window.navigator.languages?.[0];
-  if (!navLang) return 'en';
-  const short = navLang.slice(0, 2).toLowerCase();
-  if (SUPPORTED_LANGUAGES.includes(short)) return short;
-  return 'en';
 };
 
 const loadHasStoredLanguage = () => {
@@ -70,7 +59,7 @@ const loadCurrency = () => {
 type PreferencesProviderProps = { children: ReactNode };
 
 export function PreferencesProvider({ children }: Readonly<PreferencesProviderProps>) {
-  const [language, setLanguageState] = useState<string>(loadLanguage);
+  const [language, setLanguageState] = useState<string>(detectLanguage);
   const [languagePersist, setLanguagePersist] = useState<boolean>(loadHasStoredLanguage);
   const [currency, setCurrencyState] = useState<string>(loadCurrency);
   const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);
@@ -114,7 +103,7 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
       const nextLanguage = profile.preferred_language ?? null;
       const nextCurrency = profile.preferred_currency ?? null;
 
-      if (nextLanguage && SUPPORTED_LANGUAGES.includes(nextLanguage)) {
+      if (nextLanguage && SUPPORTED_LANGUAGES.includes(nextLanguage) && !getLandingLanguage(window.location.pathname)) {
         setLanguagePersist(true);
         setLanguageState(nextLanguage);
       }

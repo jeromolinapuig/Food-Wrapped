@@ -33,6 +33,7 @@ import { AppShell } from './components/common/AppShell';
 import { PageHeader } from './components/common/PageHeader';
 import { LockedContent } from './components/common/LoginOverlay';
 import { FeedPlaceholder, GroupsPlaceholder, ProfilePlaceholder } from './components/common/LockedPlaceholders';
+import { getLandingLanguage } from './lib/language';
 import './styles/shared.css';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -44,8 +45,6 @@ type UserDashboardLocationState = { returnTo?: string; returnProfileUserId?: str
 type PostLocationState = { returnTo?: string };
 type AuthMetadata = { username?: string; username_set?: boolean };
 type AppMetadata = { provider?: string; providers?: string[] };
-
-const LANDING_LOCALES = ['es', 'en', 'fr', 'de', 'it', 'th', 'ja'];
 
 const FEATURE_ANNOUNCEMENT_ID = 'burger-wishlist-v1';
 
@@ -455,7 +454,7 @@ function App() {
             )
           }
         />
-        <Route path="/:landingLocale" element={LANDING_LOCALES.includes(location.pathname.replace(/\\//g, '')) ? (
+        <Route path="/:landingLocale" element={getLandingLanguage(location.pathname) ? (
           <LandingPage onLogin={handleLogin} />
         ) : <Navigate to="/" replace />} />
         <Route
@@ -492,7 +491,7 @@ function App() {
             />
           }
         />
-        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage /> : <Navigate to="/login" replace />} />
+        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage viewerId={session.user.id} /> : <Navigate to="/login" replace />} />
         <Route
           path="/profile"
           element={

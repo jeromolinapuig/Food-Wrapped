@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.13.1
+
+- Fixed the application startup failure and preserved the language selected by localized landing URLs, including when loading saved profile preferences.
+- Translated the burger catalogue and details in all seven languages, restored access to owners' private burger posts, and marked private posts and private-profile posts with a lock. Other viewers see anonymous placeholders without photos, ratings or post links; hidden content is excluded from covers and featured photos.
+
 ## 1.13.0
 
 - Added prerendered multilingual public landing pages for Spanish, English, French, German, Italian, Thai and Japanese with canonical URLs, hreflang, localized social metadata and sitemap entries.
