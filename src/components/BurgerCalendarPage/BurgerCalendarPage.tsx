@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
@@ -88,7 +89,7 @@ export function BurgerCalendarPage({ session, onBack }: Readonly<BurgerCalendarP
           </button>
         </section>
 
-        {isLoading && <p className="bw-helper">{t('burgerCalendar.loading')}</p>}
+        {isLoading && <LoadingSpinner label={t('burgerCalendar.loading')} />}
         {error && <p className="bw-burger-calendar-error">{t('burgerCalendar.error')}</p>}
 
         <BurgerCalendarStats stats={stats} />

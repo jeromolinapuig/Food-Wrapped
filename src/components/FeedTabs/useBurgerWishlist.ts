@@ -2,13 +2,8 @@ import { useCallback, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import type { FeedEntry } from './types';
 
-export type BurgerWishlistStatus = {
-  wanted: boolean;
-  tried: boolean;
-  rating: number | null;
-  canDeleteTried?: boolean;
-  hasOwnPost?: boolean;
-};
+import { loadBurgerWishlistStatuses, setBurgerWanted, type BurgerWishlistStatus } from '../../lib/burgerWishlist';
+export type { BurgerWishlistStatus } from '../../lib/burgerWishlist';
 
 export type TriedBurgerInput = {
   entry: FeedEntry;
@@ -67,86 +62,11 @@ export function useBurgerWishlist({
       return;
     }
 
-    const restaurantIds = Array.from(new Set(pairs.map((pair) => pair.restaurantId)));
-    const burgerIds = Array.from(new Set(pairs.map((pair) => pair.burgerId)));
-
-    const [wishlistResponse, entriesResponse] = await Promise.all([
-      supabase
-        .from('burger_wishlist')
-        .select('restaurant_id, burger_id, status, rating')
-        .eq('user_id', viewerId)
-        .in('restaurant_id', restaurantIds)
-        .in('burger_id', burgerIds),
-      supabase
-        .from('entries')
-        .select('restaurant_id, burger_id, rating')
-        .eq('user_id', viewerId)
-        .eq('is_burger', true)
-        .eq('burger_origin', 'restaurant')
-        .in('restaurant_id', restaurantIds)
-        .in('burger_id', burgerIds)
-        .is('deleted_at', null),
-    ]);
-
-    if (wishlistResponse.error || entriesResponse.error) {
-      console.error('Error loading burger wishlist status', wishlistResponse.error ?? entriesResponse.error);
-      return;
+    try {
+      setBurgerStatuses(await loadBurgerWishlistStatuses(viewerId, pairs));
+    } catch (error) {
+      console.error('Error loading burger wishlist status', error);
     }
-
-    const next: Record<string, BurgerWishlistStatus> = {};
-    pairs.forEach((pair) => {
-      next[pair.key] = { wanted: false, tried: false, rating: null, canDeleteTried: false, hasOwnPost: false };
-    });
-
-    (entriesResponse.data ?? []).forEach((row) => {
-      const typed = row as {
-        restaurant_id: string | null;
-        burger_id: string | null;
-        rating: number | null;
-      };
-      if (!typed.restaurant_id || !typed.burger_id) return;
-      const key = `${typed.restaurant_id}:${typed.burger_id}`;
-      const current = next[key] ?? {
-        wanted: false,
-        tried: false,
-        rating: null,
-        canDeleteTried: false,
-        hasOwnPost: false,
-      };
-      next[key] = {
-        ...current,
-        tried: true,
-        rating: current.rating ?? typed.rating ?? null,
-        hasOwnPost: true,
-      };
-    });
-
-    (wishlistResponse.data ?? []).forEach((row) => {
-      const typed = row as {
-        restaurant_id: string | null;
-        burger_id: string | null;
-        status: 'want_to_try' | 'tried' | null;
-        rating: number | null;
-      };
-      if (!typed.restaurant_id || !typed.burger_id) return;
-      const key = `${typed.restaurant_id}:${typed.burger_id}`;
-      const current = next[key] ?? {
-        wanted: false,
-        tried: false,
-        rating: null,
-        canDeleteTried: false,
-        hasOwnPost: false,
-      };
-      next[key] = {
-        wanted: typed.status === 'want_to_try',
-        tried: current.tried || typed.status === 'tried',
-        rating: typed.rating ?? current.rating,
-        canDeleteTried: typed.status === 'tried',
-        hasOwnPost: current.hasOwnPost,
-      };
-    });
-
-    setBurgerStatuses(next);
   }, [viewerId]);
 
   const toggleWantToTry = useCallback(async (entry: FeedEntry) => {
@@ -173,38 +93,14 @@ export function useBurgerWishlist({
     }));
     setPendingBurgerKeys((prev) => ({ ...prev, [key]: true }));
 
-    const response = nextWanted
-      ? await supabase
-          .from('burger_wishlist')
-          .upsert(
-            {
-              user_id: viewerId,
-              restaurant_id: entry.restaurantId,
-              burger_id: entry.burgerId,
-              source_entry_id: entry.id,
-              status: 'want_to_try',
-              rating: null,
-              currency: entry.currency ?? 'EUR',
-              photo_url: entry.photoUrl,
-              tried_at: null,
-            },
-            { onConflict: 'user_id,restaurant_id,burger_id' }
-          )
-      : await supabase
-          .from('burger_wishlist')
-          .delete()
-          .match({
-            user_id: viewerId,
-            restaurant_id: entry.restaurantId,
-            burger_id: entry.burgerId,
-            status: 'want_to_try',
-          });
-
-    if (response.error) {
-      console.error('Error toggling burger wishlist', response.error);
+    try {
+      await setBurgerWanted(viewerId, {
+        id: entry.id, restaurantId: entry.restaurantId, burgerId: entry.burgerId,
+        photoUrl: entry.photoUrl, currency: entry.currency,
+      }, nextWanted);
+    } catch (error) {
+      console.error('Error toggling burger wishlist', error);
       setBurgerStatuses((prev) => ({ ...prev, [key]: current }));
-    } else {
-      window.dispatchEvent(new CustomEvent('bw-burger-wishlist-updated'));
     }
 
     setPendingBurgerKeys((prev) => {

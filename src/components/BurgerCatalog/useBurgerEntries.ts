@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { whereNotDeleted } from '../../lib/whereNotDeleted';
 
@@ -10,6 +10,7 @@ export type Entry = {
   restaurant_id: string | null;
   rating: number | null;
   photo_url: string | null;
+  currency?: string | null;
   datetime: string;
   visibility: string | null;
   restaurant: Relation;
@@ -26,10 +27,18 @@ type Options = {
   burgerId?: string;
 };
 const EMPTY_ENTRIES: Entry[] = [];
+const EMPTY_LIKES: Record<string, number> = {};
 
 export function useBurgerEntries({ userId, viewerId, publicOnly = false, restaurantId, burgerId }: Options) {
-  const key = JSON.stringify([userId, viewerId, publicOnly, restaurantId, burgerId]);
-  const [result, setResult] = useState({ key, entries: [] as Entry[], loading: true, error: false });
+  const [attempt, setAttempt] = useState(0);
+  const retryPending = useRef(false);
+  const key = JSON.stringify([userId, viewerId, publicOnly, restaurantId, burgerId, attempt]);
+  const retry = useCallback(() => {
+    if (retryPending.current) return;
+    retryPending.current = true;
+    setAttempt(value => value + 1);
+  }, []);
+  const [result, setResult] = useState({ key, entries: EMPTY_ENTRIES, likes: EMPTY_LIKES, loading: true, error: false });
   useEffect(() => {
     let active = true;
     async function load() {
@@ -38,7 +47,7 @@ export function useBurgerEntries({ userId, viewerId, publicOnly = false, restaur
         // Keep RLS in force, and fetch photos only after resolving visibility.
         for (let offset = 0; ; offset += 500) {
           let query = supabase.from('entries')
-            .select('id,user_id,burger_id,restaurant_id,rating,visibility,datetime,restaurant:restaurants(name),burger:burgers(name)')
+            .select('id,user_id,burger_id,restaurant_id,rating,currency,visibility,datetime,restaurant:restaurants(name),burger:burgers(name)')
             .eq('is_burger', true).eq('burger_origin', 'restaurant')
             .not('burger_id', 'is', null).not('restaurant_id', 'is', null)
             .order('datetime', { ascending: false }).order('id', { ascending: false })
@@ -84,14 +93,27 @@ export function useBurgerEntries({ userId, viewerId, publicOnly = false, restaur
           const photos = new Map((data ?? []).map(row => [row.id, row.photo_url]));
           for (const entry of batch) entry.photo_url = photos.get(entry.id) ?? null;
         }
-        if (active) setResult({ key, entries, loading: false, error: false });
+        const likes: Record<string, number> = {};
+        for (let i = 0; i < visible.length; i += 100) {
+          const ids = visible.slice(i, i + 100).map(entry => entry.id);
+          for (let offset = 0; ; offset += 500) {
+            const { data, error } = await supabase.from('entry_likes').select('entry_id,user_id')
+              .in('entry_id', ids).order('entry_id', { ascending: true }).order('user_id', { ascending: true }).range(offset, offset + 499);
+            if (!active) return;
+            if (error) throw error;
+            for (const row of data ?? []) likes[row.entry_id] = (likes[row.entry_id] ?? 0) + 1;
+            if ((data ?? []).length < 500) break;
+          }
+        }
+        // Publish posts and their likes together so covers never use provisional counts.
+        if (active) setResult({ key, entries, likes, loading: false, error: false });
       } catch {
-        if (active) setResult({ key, entries: [], loading: false, error: true });
+        if (active) setResult({ key, entries: EMPTY_ENTRIES, likes: EMPTY_LIKES, loading: false, error: true });
       }
     }
-    void load();
+    void load().finally(() => { if (active) retryPending.current = false; });
     return () => { active = false; };
   }, [userId, viewerId, publicOnly, restaurantId, burgerId, key]);
   // Never show data from the previous viewer/route while a new request is pending.
-  return result.key === key ? result : { entries: EMPTY_ENTRIES, loading: true, error: false };
+  return { ...(result.key === key ? result : { entries: EMPTY_ENTRIES, likes: EMPTY_LIKES, loading: true, error: false }), retry };
 }

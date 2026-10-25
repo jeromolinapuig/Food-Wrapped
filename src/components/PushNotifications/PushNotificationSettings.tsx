@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { NotificationsActive, NotificationsOff } from '@mui/icons-material';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -165,7 +166,7 @@ export function PushNotificationSettings({ userId }: Readonly<PushNotificationSe
         disabled={loading || working || !canToggleSubscription}
       >
         {working
-          ? t('notifications.push.updating')
+          ? <LoadingSpinner inline label={t('notifications.push.updating')} />
           : t(subscribed ? 'notifications.push.deactivateDevice' : 'notifications.push.activateDevice')}
       </button>
 

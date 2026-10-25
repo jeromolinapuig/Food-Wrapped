@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useState } from 'react';
 import { Close } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -108,7 +109,7 @@ export function GroupInvitesModal({
         </div>
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">{t('groupInvites.loading')}</p>}
+          {loading && <LoadingSpinner label={t('groupInvites.loading')} />}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {actionError && <p className="bw-helper" style={{ color: 'red' }}>{actionError}</p>}
           {!loading && !error && invites.length === 0 && (
@@ -174,7 +175,7 @@ export function GroupInvitesModal({
               onClick={handleConfirm}
               disabled={mutating}
             >
-              {mutating ? t('groupInvites.processing') : t('groupInvites.confirm')}
+              {mutating ? <LoadingSpinner inline label={t('groupInvites.processing')} /> : t('groupInvites.confirm')}
             </button>
           </>
         )}

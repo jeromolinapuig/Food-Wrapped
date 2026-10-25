@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useCallback, useEffect, useState, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
@@ -76,7 +77,7 @@ export function SavedPostsPage({ session, onBack }: Readonly<SavedPostsPageProps
         />
 
         <main className="bw-main">
-          {loading && <p className="bw-helper">{t('saved.loading')}</p>}
+          {loading && <LoadingSpinner label={t('saved.loading')} />}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {session && currentUserId ? (
             <FeedTabs

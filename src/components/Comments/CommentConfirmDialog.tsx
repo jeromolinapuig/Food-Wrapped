@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import type { EntryComment } from './types';
 import { useTranslation } from 'react-i18next';
@@ -43,7 +44,7 @@ export function CommentConfirmDialog({
             onClick={onConfirm}
             disabled={isProcessing}
           >
-            {isProcessing ? t('comments.deleting') : t('comments.delete')}
+            {isProcessing ? <LoadingSpinner inline label={t('comments.deleting')} /> : t('comments.delete')}
           </button>
         </>
       )}

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { startTransition, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Close } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -420,7 +421,7 @@ export function FeedTabs({
               />
             );
           })}
-        {loadingMore && <div className="bw-feed-loading-more">{t('common.loading')}</div>}
+        {loadingMore && <LoadingSpinner label={t('common.loading')} />}
         {!loading && !loadingMore && hasMore && <div ref={loadMoreRef} className="bw-feed-load-more" />}
       </div>
         );

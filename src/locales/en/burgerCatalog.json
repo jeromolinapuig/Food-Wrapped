@@ -32,5 +32,8 @@
   "popularPhoto": "Most popular photo · ♥ {{count}}",
   "viewPost": "View post ↗",
   "posts": "Posts ({{count}})",
-  "hasPrivatePosts": "Includes private posts"
+  "hasPrivatePosts": "Includes private posts",
+  "retry": "Retry",
+  "averageRating": "Average rating: {{value}}",
+  "ownPost": "Your post"
 }

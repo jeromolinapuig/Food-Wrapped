@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Edit, NotificationsActive, Schedule, Send } from '@mui/icons-material';
@@ -436,7 +437,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
                 onClick={() => void handlePreview()}
               >
                 <Send fontSize="small" />
-                {previewing ? 'Enviando prueba…' : 'Probar en este dispositivo'}
+                {previewing ? <LoadingSpinner inline /> : 'Probar en este dispositivo'}
               </button>
             ) : (
               <button
@@ -446,7 +447,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
                 onClick={() => void handlePrepareDevice()}
               >
                 <NotificationsActive fontSize="small" />
-                {preparingDevice ? 'Activando…' : 'Activar este dispositivo'}
+                {preparingDevice ? <LoadingSpinner inline /> : 'Activar este dispositivo'}
               </button>
             )}
             <button
@@ -457,7 +458,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
             >
               {deliveryMode === 'immediate' ? <Send fontSize="small" /> : <Schedule fontSize="small" />}
               {saving
-                ? deliveryMode === 'immediate' ? 'Enviando…' : 'Guardando…'
+                ? <LoadingSpinner inline />
                 : deliveryMode === 'immediate' ? 'Enviar ahora'
                   : editingId ? 'Guardar cambios' : 'Programar notificación'}
             </button>
@@ -471,7 +472,7 @@ export function AdminNotificationsPage({ session }: Readonly<AdminNotificationsP
 
         <section className="bw-admin-notification-list" aria-labelledby="campaign-list-title">
           <h2 id="campaign-list-title">Historial de notificaciones</h2>
-          {loading ? <p className="bw-helper">Cargando notificaciones…</p> : null}
+          {loading ? <LoadingSpinner /> : null}
           {!loading && campaigns.length === 0 ? (
             <div className="bw-card"><p className="bw-helper">Todavía no hay notificaciones.</p></div>
           ) : null}

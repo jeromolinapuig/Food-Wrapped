@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useState } from 'react';
 import { CheckCircle, Close, RadioButtonUnchecked } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -236,7 +237,7 @@ export function CreateGroupModal({
         )}
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">{t('createGroup.loading')}</p>}
+          {loading && <LoadingSpinner label={t('createGroup.loading')} />}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {!loading && !error && !filteredFriends.length && (
             <p className="bw-helper">
@@ -286,7 +287,7 @@ export function CreateGroupModal({
             disabled={isAtLimit || selectedIds.size === 0 || !groupName.trim() || saving}
             onClick={handleCreate}
           >
-            {saving ? t('createGroup.creating') : t('createGroup.createButton')}
+            {saving ? <LoadingSpinner inline label={t('createGroup.creating')} /> : t('createGroup.createButton')}
           </button>
         </div>
       </div>

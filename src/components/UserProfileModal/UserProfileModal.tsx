@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CheckCircleOutline, Close, GroupAdd } from '@mui/icons-material';
@@ -281,7 +282,7 @@ export function UserProfileModal({
           </button>
         </div>
 
-        {loading && <p style={{ fontSize: 13 }}>{t('userProfileModal.loadingProfile')}</p>}
+        {loading && <LoadingSpinner label={t('userProfileModal.loadingProfile')} />}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
 
         {!loading && profile && (

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useCallback, useEffect, useMemo, useState, startTransition } from 'react';
 import { ChatBubbleOutline, Favorite, GroupAdd, Notifications, PersonAdd } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -280,7 +281,7 @@ export function NotificationsDrawer({
         </div>
 
         <div className="bw-notify-body">
-          {loading && <p className="bw-helper">{t('notifications.loading')}</p>}
+          {loading && <LoadingSpinner label={t('notifications.loading')} />}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
           {!loading && !error && notifications.length === 0 && (
             <p className="bw-helper">{t('notifications.noNotifications')}</p>

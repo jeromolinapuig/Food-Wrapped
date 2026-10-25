@@ -1,5 +1,7 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { startTransition, useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { Link } from 'react-router-dom';
 import { Close } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabaseClient';
@@ -189,7 +191,8 @@ export function BurgerWishlistPage({ session, onBack }: Readonly<BurgerWishlistP
       />
 
       <main className="bw-main">
-        {loading && <p className="bw-helper">{t('burgerWishlist.loading')}</p>}
+        <p className="bw-helper">{t('burgerWishlist.privateList')}</p>
+        {loading && <LoadingSpinner label={t('burgerWishlist.loading')} />}
         {error && <p className="bw-helper bw-error-text">{error}</p>}
         {!loading && !error && items.length === 0 && (
           <section className="bw-card">
@@ -228,6 +231,9 @@ export function BurgerWishlistPage({ session, onBack }: Readonly<BurgerWishlistP
                     {t('myTopBurgers.noPhoto', { defaultValue: 'No photo' })}
                   </div>
                 )}
+                <Link className="bw-btn bw-btn-ghost bw-wishlist-detail-link"
+                  to={'/burgers/' + item.entry.restaurantId + '/' + item.entry.burgerId}
+                  state={{ returnTo: '/burger-wishlist' }}>{t('burgerWishlist.viewBurger')}</Link>
                 <div className="bw-wishlist-actions">
                   <button type="button" className="bw-btn bw-btn-ghost" onClick={() => void handleRemove(item)}>
                     {t('burgerWishlist.remove')}

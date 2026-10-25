@@ -121,6 +121,8 @@ Definidas en `src/App.tsx`.
 | `/admin/notifications` | Campanas push administrativas      | Admin                            |
 | `*`                | Redireccion a `/`                      | Publico                          |
 
+Buscar recuerda la ultima categoria seleccionada (usuarios, restaurantes o burgers) durante la sesion del navegador, tambien al volver con Back desde un detalle. Se guarda unicamente la categoria en `sessionStorage`, sin consultas ni resultados, y se actualiza la entrada actual del historial sin anadir pasos al boton Back. Los accesos que indican `activeSearchTab` tienen prioridad; si no hay una seleccion valida, se abre Usuarios. Los fallos al leer o guardar esta preferencia no bloquean el cambio de categoria.
+
 ## Modulos Principales
 
 ### `App.tsx`
@@ -239,11 +241,22 @@ Archivos:
 Responsabilidades:
 
 - Mostrar colecciones personales, descubrimiento de burgers y el detalle por restaurante y burger.
+- Buscar burgers por su nombre o por el restaurante al que pertenecen, tanto desde el buscador unificado como desde el catalogo. Se admiten coincidencias parciales y se ignoran mayusculas, tildes latinas, signos y espacios sin perder caracteres japoneses ni tailandeses; se conservan la ordenacion y la navegacion a cada ficha.
 - Respetar el idioma seleccionado y traducir etiquetas y estados en los siete idiomas.
 - Marcar con candado tanto los posts privados como los posts de perfiles privados.
+- Distinguir los posts propios en la lista bajo una ficha de burger con borde rosa, fondo suave y la etiqueta traducida "Tu publicacion", junto al aviso de privacidad cuando corresponda. La marca depende del usuario actual y desaparece al cambiar de sesion o entrar como visitante.
 - Mostrar a otros usuarios una tarjeta privada sin foto, autor, fecha, puntuacion ni enlace al post. El propietario puede consultar sus propios posts con el indicador de privacidad.
 - Excluir las publicaciones bloqueadas de las puntuaciones y evitar que sus fotos aparezcan como portada o destacadas.
+- Elegir las portadas del catalogo, colecciones y detalle por likes entre las fotos publicas disponibles en cada vista, desempatando por fecha mas reciente y luego por ID de post. Si no hay fotos publicas, solo se permite una foto privada accesible para su propietario. Se completan todos los lotes y paginas de likes antes de mostrar resultados; sus errores admiten reintento.
+- Mostrar la distribucion de notas exactas, incluidas medias estrellas desde 0,5 hasta 5 y otros decimales existentes, con las notas distribuidas horizontalmente en una escala numerica y columnas verticales. Una linea vertical discontinua marca la media sin redondearla a una categoria; la leyenda traducida muestra hasta dos decimales. Las barras y la media comparten la misma escala, incluso con notas intermedias, y las etiquetas conservan espacio mediante desplazamiento horizontal cuando sea necesario en movil. La media conserva las notas originales y excluye las mismas publicaciones bloqueadas y notas ausentes que el grafico; no redondear cada valoracion antes de agruparla.
+- Mostrar solo el loader en el contenido hasta completar posts y likes, sin adelantar botones de wishlist ni una portada provisional. La foto principal aparece directamente con la seleccion definitiva por likes; los fallos de likes permiten reintentar y las respuestas de otra ficha o usuario se descartan.
 - Consultar solo `id` e `is_private` de los perfiles y solicitar fotos unicamente de las publicaciones visibles.
+- Guardar para probar desde una ficha con al menos un post accesible. Hasta completar las consultas de wishlist y posts propios, la accion permanece deshabilitada; una burger probada o con post propio no puede guardarse otra vez desde la ficha.
+- Elegir `source_entry_id`, foto y moneda exclusivamente de un post accesible: al guardar desde la ficha se prioriza la foto publica con mas likes que se muestra en la portada y, si no existe, el primer post visible. Las fotos destacadas nunca incluyen contenido privado.
+- Mostrar el estado pendiente tras guardar y confirmar su retirada. Los errores de consulta o escritura permiten reintentar y conservan el ultimo estado confirmado. Las peticiones de otro usuario o ficha no pueden restaurar datos anteriores.
+- Agrupar bajo el resumen los botones de wishlist: guardar con fondo rosa y "Ver mi lista" con borde y fondo de superficie, adaptados al ancho movil y a ambos temas. En estados sin contenido accesible se conserva el acceso a la lista.
+- Permitir que visitantes sin sesion consulten contenido accesible y abran login para guardar, sin consultar su wishlist ni escribir datos.
+- Reintentar errores de carga del catalogo, colecciones y detalle sin recargar la app, conservando busqueda, orden y pestana, y volviendo a comprobar privacidad antes de pedir fotos.
 
 Las consultas usan `entries`, `profiles` y `entry_likes` con los permisos RLS existentes. Las tarjetas privadas representan unicamente registros que Supabase permite consultar; no se amplian policies ni se infiere contenido que RLS oculta. Si no puede comprobarse la privacidad, el contenido permanece bloqueado.
 
@@ -376,6 +389,8 @@ Query base:
 Archivo:
 
 - `src/components/BurgerWishlistPage/BurgerWishlistPage.tsx`
+- `src/components/BurgerCatalog/BurgerWishlistAction.tsx`
+- `src/lib/burgerWishlist.ts` (consultas de estado y escritura de pendientes compartidas con el feed)
 
 Responsabilidades:
 
@@ -385,6 +400,8 @@ Responsabilidades:
 - Guardar la foto del post elegido cuando se marca una burger como probada.
 - Mostrar burgers probadas desde este flujo en la pagina de restaurantes como cards privadas diferenciadas.
 - Mostrar en posts de otros usuarios si la burger esta pendiente o ya fue probada por el usuario.
+- Abrir la ficha mediante `/burgers/:restaurantId/:burgerId` sin interferir con el visor de fotos ni con quitar/marcar como probada. La navegacion desde la lista guarda un retorno explicito a `/burger-wishlist`; la ficha tambien ofrece un enlace a la lista para accesos directos y errores de carga.
+- Recordar en la interfaz que la lista es privada. La ruta `/burger-wishlist` sigue requiriendo sesion.
 
 Tablas:
 
@@ -397,6 +414,17 @@ Tablas:
 Regla de negocio visible:
 
 - Marcar una burger como probada desde este flujo no inserta en `entries`, por lo que no cuenta como post ni afecta estadisticas basadas en posts.
+- Guardar o quitar una pendiente desde la ficha escribe exclusivamente en `burger_wishlist`, usa la clave `user_id,restaurant_id,burger_id` y emite `bw-burger-wishlist-updated` para mantener las vistas sincronizadas. El guardado bloquea dobles envios y la retirada se limita a filas `want_to_try`.
+
+La integracion reutiliza las policies RLS y la unicidad existentes. No requiere tablas, RPC ni permisos nuevos. Las pruebas locales con mocks no verifican las policies desplegadas, los constraints reales ni la privacidad del bucket de fotos.
+
+Validacion manual pendiente, exclusivamente en un entorno de pruebas autorizado con datos ficticios:
+
+1. En movil y en ingles, buscar una burger, abrir su ficha y guardarla para probar; comprobar una sola pendiente en la wishlist y ninguna entrada ni cambio en estadisticas.
+2. Abrir la ficha desde la wishlist y volver; repetir con una URL directa y el enlace a la lista. Comprobar tambien el visor de fotos y la accion de marcar como probada que ya existe en la wishlist.
+3. Quitar la pendiente con confirmacion y comprobar el estado de ficha y wishlist tras recargar.
+4. Simular un fallo de red al cargar y al guardar; recuperar con Reintentar y comprobar que se mantienen busqueda y ordenacion.
+5. Revisar teclado, foco, movil, light/dark mode y un caso con publicaciones bloqueadas; comprobar que estas no aportan referencias, fotos ni metadatos al guardado.
 
 ### Restaurantes
 
@@ -757,6 +785,7 @@ Convenciones:
 - Prefijo `bw-` para clases.
 - No usar Bootstrap.
 - Reutilizar componentes comunes (`AppShell`, `PageHeader`, `ModalBase`, `ConfirmDialog`, `UserAvatar`, etc.).
+- Usar `LoadingSpinner` de `components/common` para cargas y acciones en curso, reutilizando el anillo `bw-loader-spinner`: centrado en contenido, `inline` en botones y `large` en overlays. Las etiquetas traducidas permanecen disponibles para lectores de pantalla, sin texto de carga visible. Los colores siguen el tema y la animacion respeta `prefers-reduced-motion`. Los skeletons existentes siguen reservando espacio para posts y estadisticas.
 - Los modales usan `.bw-modal-backdrop` con `z-index: 100`.
 - El visor de foto usa `.bw-photo-viewer-backdrop` con `z-index: 120` para aparecer sobre modales.
 

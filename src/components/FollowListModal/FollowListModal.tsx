@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useRef, useState } from 'react';
 import { Close, GroupAdd, CheckCircleOutline, Clear } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
@@ -246,7 +247,7 @@ export function FollowListModal({
           </div>
         </div>
 
-        {modalLoading && <p style={{ fontSize: 13 }}>{t('followList.loading')}</p>}
+        {modalLoading && <LoadingSpinner label={t('followList.loading')} />}
         {error && <p style={{ color: 'red', fontSize: 12 }}>{error}</p>}
         {!modalLoading && !filteredItems.length && (
           <p style={{ fontSize: 13, opacity: 0.8 }}>

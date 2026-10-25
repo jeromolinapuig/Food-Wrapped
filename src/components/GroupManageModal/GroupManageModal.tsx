@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useState } from 'react';
 import { CheckCircle, Close, Delete, RadioButtonUnchecked } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -294,7 +295,7 @@ export function GroupManageModal({
         </div>
 
         <div className="bw-group-modal-body">
-          {loading && <p className="bw-helper">{t('groupManage.loading')}</p>}
+          {loading && <LoadingSpinner label={t('groupManage.loading')} />}
           {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
 
           {!loading && (
@@ -409,7 +410,7 @@ export function GroupManageModal({
                     disabled={selectedIds.size === 0 || saving}
                     onClick={handleInvite}
                   >
-                    {saving ? t('groupManage.sending') : t('groupManage.invite')}
+                    {saving ? <LoadingSpinner inline label={t('groupManage.sending')} /> : t('groupManage.invite')}
                   </button>
                 </div>
               </div>
@@ -438,7 +439,7 @@ export function GroupManageModal({
                 onClick={handleDeleteGroup}
                 disabled={saving}
               >
-                {saving ? t('groupManage.deleting') : t('groupManage.delete')}
+                {saving ? <LoadingSpinner inline label={t('groupManage.deleting')} /> : t('groupManage.delete')}
               </button>
             </div>
           </div>

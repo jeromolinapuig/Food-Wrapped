@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { type FormEvent, useEffect, useState } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -136,7 +137,7 @@ export function ResetPasswordScreen() {
           {notice && <p className="auth-notice">{notice}</p>}
 
           <button className="auth-submit" type="submit" disabled={loading || hasSession === false}>
-            {loading ? t('common.loading') : t('resetPassword.save')}
+            {loading ? <LoadingSpinner inline label={t('common.loading')} /> : t('resetPassword.save')}
           </button>
         </form>
 

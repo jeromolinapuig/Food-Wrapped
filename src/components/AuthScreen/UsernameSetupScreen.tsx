@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
@@ -102,7 +103,7 @@ export function UsernameSetupScreen() {
         <div className="auth-blob auth-blob-1" />
         <div className="auth-blob auth-blob-2" />
         <div className="auth-card">
-          <p className="auth-subtitle">{t('common.loading')}</p>
+          <LoadingSpinner label={t('common.loading')} />
         </div>
       </div>
     );
@@ -140,7 +141,7 @@ export function UsernameSetupScreen() {
           {notice && <p className="auth-notice">{notice}</p>}
 
           <button className="auth-submit" type="submit" disabled={saving}>
-            {saving ? t('common.saving') : t('common.save')}
+            {saving ? <LoadingSpinner inline label={t('common.saving')} /> : t('common.save')}
           </button>
         </form>
       </div>

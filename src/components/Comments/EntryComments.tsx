@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { DeleteOutline } from '@mui/icons-material';
 import { UserAvatar } from '../common/UserAvatar';
 import { useTranslation } from 'react-i18next';
@@ -117,7 +118,7 @@ export function EntryComments({
       <div className="bw-comment-block">
         {error && <p className="bw-helper" style={{ color: 'red' }}>{error}</p>}
         {isLoading && (
-          <p className="bw-helper">{t('comments.loading')}</p>
+          <LoadingSpinner label={t('comments.loading')} />
         )}
         {!!visibleComments.length && (
           <div className="bw-comment-list">
@@ -196,7 +197,7 @@ export function EntryComments({
                 type="submit"
                 disabled={isSubmitting || !draft.trim()}
               >
-                {isSubmitting ? t('comments.commenting') : t('comments.comment')}
+                {isSubmitting ? <LoadingSpinner inline label={t('comments.commenting')} /> : t('comments.comment')}
               </button>
             </div>
           </form>

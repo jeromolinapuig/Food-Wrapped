@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Add, ChevronRight, DeleteOutline, PeopleOutline, Settings } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
@@ -407,7 +408,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
             </button>
           )}
           <section className="bw-group-list">
-            {loadingGroups && <p className="bw-helper">{t('groups.loading')}</p>}
+            {loadingGroups && <LoadingSpinner label={t('groups.loading')} />}
             {groupsError && <p className="bw-helper" style={{ color: 'red' }}>{groupsError}</p>}
             {!loadingGroups && !groupsError && groups.length === 0 && (
               <p className="bw-helper">{t('groups.empty')}</p>
@@ -548,7 +549,7 @@ export function GroupsPage({ session }: Readonly<GroupsPageProps>) {
                 onClick={handleConfirmLeave}
                 disabled={Boolean(leavingGroupId)}
               >
-                {leavingGroupId ? t('groups.leaving') : t('groups.leave')}
+                {leavingGroupId ? <LoadingSpinner inline label={t('groups.leaving')} /> : t('groups.leave')}
               </button>
             </div>
           </div>

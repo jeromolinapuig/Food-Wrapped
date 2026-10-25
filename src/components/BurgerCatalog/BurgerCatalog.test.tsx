@@ -10,6 +10,8 @@ const { fromMock, navigateMock } = vi.hoisted(() => ({
 vi.mock('../../lib/supabaseClient', () => ({ supabase: { from: fromMock } }));
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
+  useLocation: () => ({ key: 'default', state: null }),
+  Link: ({ children }: { children: import('react').ReactNode }) => children,
   useParams: () => ({ restaurantId: 'restaurant', burgerId: 'burger' }),
 }));
 
@@ -82,6 +84,7 @@ describe('BurgerExplore', () => {
     await waitFor(() => expect(screen.getAllByRole('button')).toHaveLength(24));
     expect(screen.getAllByRole('button')[0]).toHaveTextContent('Burger 29');
 
+    await waitFor(() => expect(onIntersection).toBeTypeOf('function'));
     revealMore();
     expect(screen.getAllByRole('button')).toHaveLength(30);
     rerender(<BurgerExplore hideSearch searchTerm="Burger 0" />);
@@ -94,6 +97,7 @@ describe('BurgerExplore', () => {
   it('resets the visible count when sorting and opens the selected burger', async () => {
     render(<BurgerExplore />);
     await waitFor(() => expect(screen.getAllByRole('button')).toHaveLength(24));
+    await waitFor(() => expect(onIntersection).toBeTypeOf('function'));
     revealMore();
     expect(screen.getAllByRole('button')).toHaveLength(30);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'best' } });
@@ -101,10 +105,76 @@ describe('BurgerExplore', () => {
     fireEvent.click(screen.getAllByRole('button')[0]);
     expect(navigateMock).toHaveBeenCalledWith('/burgers/restaurant/b29');
   });
+
+  it('finds all burgers belonging to a restaurant from the unified query, as well as matching burger names', async () => {
+    mockData([
+      entry({ id: 'emmy', burger_id: 'emmy', restaurant_id: 'jenkins', restaurant: { name: 'Jénkin’s' }, burger: { name: 'Emmy B' } }),
+      entry({ id: 'bbq', burger_id: 'bbq', restaurant_id: 'jenkins', restaurant: { name: 'Jénkin’s' }, burger: { name: 'BBQ' } }),
+      entry({ id: 'special', burger_id: 'special', restaurant_id: 'other', restaurant: { name: 'Other Place' }, burger: { name: 'Jenkins Special' } }),
+      entry({ id: 'classic', burger_id: 'classic', restaurant_id: 'cafe', restaurant: { name: 'Café Norte' }, burger: { name: 'Classic' } }),
+    ]);
+    const { rerender } = render(<BurgerExplore hideSearch searchTerm="  JENKINS  " />);
+    await waitFor(() => expect(screen.getAllByRole('button')).toHaveLength(3));
+    expect(screen.getByText('Emmy B')).toBeInTheDocument();
+    expect(screen.getByText('BBQ')).toBeInTheDocument();
+    expect(screen.getByText('Jenkins Special')).toBeInTheDocument();
+    expect(screen.queryByText('Classic')).toBeNull();
+    rerender(<BurgerExplore hideSearch searchTerm="cafenorte" />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByText('Classic')).toBeInTheDocument();
+    rerender(<BurgerExplore hideSearch searchTerm="not found" />);
+    expect(screen.queryByRole('button')).toBeNull();
+    rerender(<BurgerExplore hideSearch searchTerm="" />);
+    expect(screen.getAllByRole('button')).toHaveLength(4);
+  });
+
+  it('filters by a partial restaurant name in the catalogue input while preserving sorting and burger navigation', async () => {
+    mockData([
+      entry({ id: 'first', burger_id: 'first', rating: 4 }),
+      entry({ id: 'best', burger_id: 'best', rating: 5, burger: { name: 'Best Burger' } }),
+      entry({ id: 'unrelated', burger_id: 'unrelated', restaurant: { name: 'Other Place' }, burger: { name: 'Unrelated' } }),
+    ]);
+    render(<BurgerExplore />);
+    await screen.findByText('Best Burger');
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'best' } });
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: '  BURGER BA  ' } });
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.getAllByRole('button')[0]).toHaveTextContent('Best Burger');
+    expect(screen.queryByText('Unrelated')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button')[0]);
+    expect(navigateMock).toHaveBeenCalledWith('/burgers/restaurant/best');
+    expect(screen.getByRole('combobox')).toHaveValue('best');
+  });
+
+  it.each(['東京', 'กรุงเทพ'])('preserves restaurant name searches in %s', async name => {
+    mockData([entry({ restaurant: { name } }),
+      entry({ id: 'other', burger_id: 'other', restaurant: { name: 'Other Place' }, burger: { name: 'Unrelated' } })]);
+    render(<BurgerExplore hideSearch searchTerm={name} />);
+    await screen.findByText('Classic');
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByText('Unrelated')).toBeNull();
+  });
 });
 
 describe('Burger privacy', () => {
   beforeEach(() => navigateMock.mockReset());
+
+  it('identifies only the viewer\'s posts, preserves opening them, and clears ownership for guests', async () => {
+    mockData([entry(), entry({ id: 'my-post', user_id: 'viewer', photo_url: '/mine.jpg' })]);
+    const { container, rerender } = render(<BurgerDetailPage viewerId="viewer" />);
+    const badge = await screen.findByText('burgerCatalog.ownPost');
+    const ownPost = badge.closest('button')!;
+    expect(ownPost).toHaveClass('is-own-post');
+    expect(container.querySelectorAll('.bw-catalog-posts .is-own-post')).toHaveLength(1);
+    expect(ownPost.querySelector('img')).toHaveAttribute('src', '/mine.jpg');
+    fireEvent.click(ownPost);
+    expect(navigateMock).toHaveBeenCalledWith('/posts/my-post', expect.anything());
+    rerender(<BurgerDetailPage viewerId={null} />);
+    expect(screen.queryByText('burgerCatalog.ownPost')).toBeNull();
+    await waitFor(() => expect(container.querySelectorAll('.bw-catalog-posts button')).toHaveLength(2));
+    expect(container.querySelector('.is-own-post')).toBeNull();
+    expect(screen.queryByText('burgerCatalog.ownPost')).toBeNull();
+  });
 
   it('locks private posts and private-profile posts without requesting their photos or exposing links', async () => {
     const photos = mockData([
@@ -132,11 +202,13 @@ describe('Burger privacy', () => {
     mockData([entry({ user_id: 'owner', visibility: 'private', photo_url: '/owner-private.jpg' })]);
     const { rerender, container } = render(<BurgerDetailPage viewerId="owner" />);
     await screen.findByText('burgerCatalog.privatePost');
+    expect(screen.getByText('burgerCatalog.ownPost').closest('button')).toHaveClass('is-own-post');
     expect(container.querySelector('.bw-catalog-posts img')).toHaveAttribute('src', '/owner-private.jpg');
     fireEvent.click(container.querySelector<HTMLButtonElement>('.bw-catalog-posts button')!);
     expect(navigateMock).toHaveBeenCalledWith('/posts/public-post', expect.anything());
     rerender(<BurgerDetailPage viewerId="stranger" />);
     expect(container.innerHTML).not.toContain('/owner-private.jpg');
+    expect(screen.queryByText('burgerCatalog.ownPost')).toBeNull();
     await waitFor(() => expect(container.querySelector('.bw-catalog-private-post')).toBeInTheDocument());
   });
 

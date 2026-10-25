@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cropper, { type Area } from 'react-easy-crop';
 import { Block, BookmarksOutlined, Check, Close, PlaylistAdd } from '@mui/icons-material';
@@ -904,7 +905,7 @@ export function ProfilePage({
                 </div>
               </div>
             </div>
-            {loading && <p style={{ fontSize: 13 }}>{t('profile.loading')}</p>}
+            {loading && <LoadingSpinner label={t('profile.loading')} />}
             {error && <p style={{ fontSize: 12, color: 'red' }}>{error}</p>}
 
             {!profileCompletion.isComplete ? (
@@ -1163,13 +1164,13 @@ export function ProfilePage({
             onClick={handleSave}
             disabled={saving || !hasChanges}
           >
-            {saving ? t('profile.saving') : t('profile.saveChanges')}
+            {saving ? <LoadingSpinner inline label={t('profile.saving')} /> : t('profile.saveChanges')}
           </button>
         </div>
 
       {saving && (
         <div className="bw-loader-overlay">
-          <div className="bw-loader-spinner" aria-label={t('profile.saving')}></div>
+          <LoadingSpinner large label={t('profile.saving')} />
         </div>
       )}
 

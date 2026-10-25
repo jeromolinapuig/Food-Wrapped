@@ -32,5 +32,8 @@
   "popularPhoto": "รูปภาพยอดนิยม · ♥ {{count}}",
   "viewPost": "ดูโพสต์ ↗",
   "posts": "โพสต์ ({{count}})",
-  "hasPrivatePosts": "มีโพสต์ส่วนตัว"
+  "hasPrivatePosts": "มีโพสต์ส่วนตัว",
+  "retry": "ลองอีกครั้ง",
+  "averageRating": "คะแนนเฉลี่ย: {{value}}",
+  "ownPost": "โพสต์ของคุณ"
 }

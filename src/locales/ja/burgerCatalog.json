@@ -32,5 +32,8 @@
   "popularPhoto": "人気の写真 · ♥ {{count}}",
   "viewPost": "投稿を見る ↗",
   "posts": "投稿（{{count}}件）",
-  "hasPrivatePosts": "非公開の投稿を含む"
+  "hasPrivatePosts": "非公開の投稿を含む",
+  "retry": "再試行",
+  "averageRating": "平均評価：{{value}}",
+  "ownPost": "あなたの投稿"
 }

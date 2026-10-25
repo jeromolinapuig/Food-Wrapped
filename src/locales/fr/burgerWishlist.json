@@ -24,5 +24,14 @@
   "priceInvalid": "Saisis un prix valide.",
   "dateRequired": "Choisis quand tu l'as essayee.",
   "unknownRestaurant": "Restaurant inconnu",
-  "unknownBurger": "Burger inconnu"
+  "unknownBurger": "Burger inconnu",
+  "loginToSave": "Connecte-toi pour enregistrer ce burger",
+  "privateList": "Ta liste de burgers à goûter est privée.",
+  "ownPost": "Déjà enregistré dans une de tes publications",
+  "statusError": "Impossible de vérifier ta liste. Vérifie ta connexion et réessaie.",
+  "saveError": "Impossible de mettre à jour ta liste. Vérifie ta connexion et réessaie.",
+  "removeTitle": "Retirer des burgers à goûter ?",
+  "removeMessage": "Ce burger sera retiré de ta liste de burgers à goûter.",
+  "viewBurger": "Voir la fiche du burger",
+  "viewList": "Voir ma liste"
 }

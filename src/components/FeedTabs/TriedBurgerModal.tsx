@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { startTransition, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, CssBaseline, ThemeProvider } from '@mui/material';
@@ -169,7 +170,7 @@ export function TriedBurgerModal({
                 </Button>
               )}
               <Button type="submit" variant="contained" disabled={saving}>
-                {saving ? t('burgerWishlist.saving') : t('burgerWishlist.saveTried')}
+                {saving ? <LoadingSpinner inline label={t('burgerWishlist.saving')} /> : t('burgerWishlist.saveTried')}
               </Button>
             </div>
           </form>

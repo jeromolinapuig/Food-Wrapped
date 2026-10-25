@@ -1,8 +1,9 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { CheckCircleOutline, Clear, GroupAdd, Search, SyncAlt } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { lockBodyScroll } from '../../utils/scrollLock';
 import { AppShell } from '../common/AppShell';
@@ -38,9 +39,12 @@ type SearchUser = {
   bio: string | null;
 };
 
-type SearchLocationState = {
-  activeSearchTab?: 'users' | 'restaurants' | 'burgers';
-};
+const SEARCH_TABS = ['users', 'restaurants', 'burgers'] as const;
+type SearchTab = typeof SEARCH_TABS[number];
+const SEARCH_TAB_STORAGE_KEY = 'bw-search-active-tab';
+const isSearchTab = (value: unknown): value is SearchTab => SEARCH_TABS.some(tab => tab === value);
+
+type SearchLocationState = { activeSearchTab?: SearchTab };
 
 export function SearchPage({
   session,
@@ -50,10 +54,18 @@ export function SearchPage({
 }: Readonly<SearchPageProps>) {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const locationState = location.state as SearchLocationState | null;
-  const [activeTab, setActiveTab] = useState<'users' | 'restaurants' | 'burgers'>(
-    locationState?.activeSearchTab === 'restaurants' ? 'restaurants' : 'users'
-  );
+  const [activeTab, setActiveTab] = useState<SearchTab>(() => {
+    if (isSearchTab(locationState?.activeSearchTab)) return locationState.activeSearchTab;
+    try {
+      const savedTab = sessionStorage.getItem(SEARCH_TAB_STORAGE_KEY);
+      if (isSearchTab(savedTab)) return savedTab;
+    } catch {
+      // Search remains usable when browser storage is unavailable.
+    }
+    return 'users';
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [compactSearch, setCompactSearch] = useState(false);
   const previousScrollY = useRef(0);
@@ -70,6 +82,14 @@ export function SearchPage({
   const followsCacheKey = currentUserId ? `bw-search-follows-${currentUserId}` : null;
   const isGuest = !session;
   const trimmedTerm = useMemo(() => searchTerm.trim(), [searchTerm]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SEARCH_TAB_STORAGE_KEY, activeTab);
+    } catch {
+      // Remembering a navigation preference must not block search.
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>('.bw-header');
@@ -295,7 +315,7 @@ export function SearchPage({
       );
     }
     if (searchLoading) {
-      return <p className="bw-helper">{t('feedPage.searching', { defaultValue: 'Searching...' })}</p>;
+      return <LoadingSpinner label={t('feedPage.searching', { defaultValue: 'Searching...' })} />;
     }
     if (searchError) {
       return <p className="bw-search-error">{searchError}</p>;
@@ -388,10 +408,15 @@ export function SearchPage({
           </div>
           <div className="bw-search-tabs" role="tablist"
             aria-label={t('searchPage.tabsLabel', { defaultValue: 'Tipo de búsqueda' })}>
-            {(['users','restaurants','burgers'] as const).map(tab => (
+            {SEARCH_TABS.map(tab => (
               <button key={tab} type="button" role="tab" aria-selected={activeTab === tab}
                 className={`bw-search-tab ${activeTab === tab ? 'is-active' : ''}`}
-                onClick={() => setActiveTab(tab)}>
+                onClick={() => {
+                  setActiveTab(tab);
+                  navigate({ pathname: location.pathname, search: location.search, hash: location.hash }, {
+                    replace: true, state: { ...locationState, activeSearchTab: tab },
+                  });
+                }}>
                 {tab === 'users' ? t('searchPage.usersTab', { defaultValue: 'Usuarios' })
                   : tab === 'restaurants' ? t('common.restaurants', { defaultValue: 'Restaurantes' })
                   : t('burgerCatalog.burgers', { defaultValue: 'Burgers' })}

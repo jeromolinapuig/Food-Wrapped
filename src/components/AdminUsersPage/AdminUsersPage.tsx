@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -77,7 +78,7 @@ export function AdminUsersPage({ session }: Readonly<AdminUsersPageProps>) {
             />
           </div>
 
-          {loading && <p className="bw-helper">Cargando usuarios...</p>}
+          {loading && <LoadingSpinner />}
           {!loading && filteredUsers.length === 0 && <p className="bw-helper">No hay usuarios para mostrar.</p>}
           {!loading && filteredUsers.length > 0 && (
             <div style={{ display: 'grid', gap: 10 }}>

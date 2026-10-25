@@ -9,7 +9,7 @@ type AnnualSummaryCollapseProps = {
   totalSpentLabel: string;
   favoriteRestaurant: string;
   theme: 'light' | 'dark';
-  status?: string;
+  status?: ReactNode;
   children: ReactNode;
 };
 

@@ -1,33 +1,48 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '../../lib/supabaseClient';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import { useBurgerEntries, type Entry } from './useBurgerEntries';
 import { BackButton } from '../common/BackButton';
 import { AppShell } from '../common/AppShell';
 import { PageHeader } from '../common/PageHeader';
+import { BurgerWishlistAction } from './BurgerWishlistAction';
+import { BurgerRatingChart } from './BurgerRatingChart';
 import './BurgerCatalog.css';
 
 type Group = { key: string; burgerId: string; restaurantId: string; name: string; restaurant: string;
   entries: Entry[]; average: number | null; photo: string | null; last: string };
 const rel = (r: Entry['burger']) => Array.isArray(r) ? r[0]?.name ?? null : r?.name ?? null;
-const groupEntries = (entries: Entry[], unknownBurger: string, unknownRestaurant: string): Group[] => {
+const mostLikedPhoto = (entries: Entry[], likes: Record<string, number>) => entries
+  .filter(entry => !entry.isLocked && entry.photo_url)
+  .sort((a, b) => (likes[b.id] ?? 0) - (likes[a.id] ?? 0)
+    || b.datetime.localeCompare(a.datetime) || b.id.localeCompare(a.id))[0];
+const groupEntries = (entries: Entry[], likes: Record<string, number>, unknownBurger: string, unknownRestaurant: string): Group[] => {
   const groups = new Map<string, Group>();
   [...entries].sort((a,b) => b.datetime.localeCompare(a.datetime)).forEach(entry => {
     if (!entry.burger_id || !entry.restaurant_id) return;
     const key = entry.restaurant_id + ':' + entry.burger_id;
     const old = groups.get(key);
-    if (old) { old.entries.push(entry); if (!old.photo && entry.photo_url) old.photo = entry.photo_url; }
+    if (old) old.entries.push(entry);
     else groups.set(key, { key, burgerId: entry.burger_id, restaurantId: entry.restaurant_id,
       name: rel(entry.burger) || unknownBurger, restaurant: rel(entry.restaurant) || unknownRestaurant,
-      entries: [entry], average: null, photo: entry.photo_url, last: entry.datetime });
+      entries: [entry], average: null, photo: null, last: entry.datetime });
   });
   return [...groups.values()].map(g => {
     const notes = g.entries.map(e => e.rating).filter((n): n is number => n !== null && Number.isFinite(n));
-    return { ...g, average: notes.length ? notes.reduce((a,b)=>a+b,0)/notes.length : null };
+    const photo = mostLikedPhoto(g.entries.filter(entry => !entry.isPrivate), likes)
+      ?? mostLikedPhoto(g.entries, likes);
+    return { ...g, photo: photo?.photo_url ?? null, average: notes.length ? notes.reduce((a,b)=>a+b,0)/notes.length : null };
   });
 };
+function CatalogError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return <div role="alert"><p>{t('burgerCatalog.loadError')}</p>
+    <button type="button" className="bw-btn bw-btn-ghost" onClick={onRetry}>{t('burgerCatalog.retry')}</button>
+  </div>;
+}
 function Rating({ value }: { value: number | null }) {
   const { t } = useTranslation();
   return <span className="bw-catalog-rating" aria-label={value == null ? t('burgerCatalog.notRated') : t('burgerCatalog.ratingLabel', { value: value.toFixed(1) })}>
@@ -56,8 +71,8 @@ export function BurgerCollection({ userId, viewerId, own = false }: { userId: st
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [mode, setMode] = useState<'collection'|'diary'|'top'>('collection');
-  const { entries, loading, error } = useBurgerEntries({ userId, viewerId });
-  const groups = useMemo(() => groupEntries(entries, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant')), [entries, t]);
+  const { entries, likes, loading, error, retry } = useBurgerEntries({ userId, viewerId });
+  const groups = useMemo(() => groupEntries(entries, likes, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant')), [entries, likes, t]);
   const sorted = useMemo(() => mode === 'top'
     ? [...groups].sort((a,b)=>(b.average ?? -1)-(a.average ?? -1)) : groups, [groups,mode]);
   const displayed = mode === 'diary'
@@ -72,7 +87,7 @@ export function BurgerCollection({ userId, viewerId, own = false }: { userId: st
         {item==='collection'?t('burgerCatalog.burgers',{defaultValue:'Burgers'}):item==='diary'?t('burgerCatalog.diary',{defaultValue:'Diario'}):t('burgerCatalog.top',{defaultValue:'Top'})}
       </button>)}
     </div>
-    {loading ? <p>{t('common.loading',{defaultValue:'Cargando...'})}</p> : error ? <p role="alert">{t('burgerCatalog.loadError')}</p> :
+    {loading ? <LoadingSpinner label={t('common.loading',{defaultValue:'Cargando...'})} /> : error ? <CatalogError onRetry={retry} /> :
       entries.length===0 ? <p>{t('burgerCatalog.empty',{defaultValue:'Todavía no hay hamburguesas registradas.'})}</p> :
       <div className="bw-catalog-grid">
         {mode==='diary'?displayed.map(({entry,group})=>entry.isLocked ? <PrivatePost key={entry.id} /> : <button type="button" className="bw-catalog-tile" key={entry.id}
@@ -90,12 +105,16 @@ export function BurgerCollection({ userId, viewerId, own = false }: { userId: st
   </section>;
 }
 const BURGER_PAGE_SIZE = 24;
+// Match display names like the restaurant search, preserving Japanese and Thai text.
+const normalizeCatalogSearch = (value: string) => value.normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}\p{M}]+/gu, '');
 
 export function BurgerExplore({ searchTerm = '', hideSearch = false, viewerId }: { searchTerm?: string; hideSearch?: boolean; viewerId?: string | null }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [localTerm, setLocalTerm] = useState('');
   const term = hideSearch ? searchTerm : localTerm;
+  const normalizedTerm = normalizeCatalogSearch(term);
   const [sort, setSort] = useState<'popular' | 'best' | 'latest'>('popular');
   const [visibleCount, setVisibleCount] = useState(BURGER_PAGE_SIZE);
   const [previousFilters, setPreviousFilters] = useState({ term, sort });
@@ -104,16 +123,16 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false, viewerId }:
     setVisibleCount(BURGER_PAGE_SIZE);
   }
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const { entries, loading, error } = useBurgerEntries({ viewerId, publicOnly: true });
-  const groups = useMemo(() => groupEntries(entries, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant')), [entries, t]);
+  const { entries, likes, loading, error, retry } = useBurgerEntries({ viewerId, publicOnly: true });
+  const groups = useMemo(() => groupEntries(entries, likes, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant')), [entries, likes, t]);
   const matches = useMemo(() => groups
-    .filter(g => (g.name + ' ' + g.restaurant).toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()))
+    .filter(g => normalizeCatalogSearch(g.name + ' ' + g.restaurant).includes(normalizedTerm))
     .sort((a, b) => sort === 'best'
       ? (b.average ?? -1) - (a.average ?? -1)
       : sort === 'latest'
         ? b.last.localeCompare(a.last)
         : b.entries.length - a.entries.length || (b.average ?? -1) - (a.average ?? -1) || a.name.localeCompare(b.name)),
-    [groups, sort, term]);
+    [groups, sort, normalizedTerm]);
   const visibleBurgers = useMemo(() => matches.slice(0, visibleCount), [matches, visibleCount]);
   const hasMore = visibleCount < matches.length;
   useEffect(() => {
@@ -135,7 +154,7 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false, viewerId }:
         <option value="latest">{t('burgerCatalog.recent', { defaultValue: 'Recientes' })}</option>
       </select>
     </div>
-    {loading ? <p>{t('common.loading', { defaultValue: 'Cargando...' })}</p> : error ? <p role="alert">{t('burgerCatalog.loadError')}</p> : <>
+    {loading ? <LoadingSpinner label={t('common.loading', { defaultValue: 'Cargando...' })} /> : error ? <CatalogError onRetry={retry} /> : <>
       <div className="bw-catalog-grid">{visibleBurgers.map(g => <button key={g.key} type="button" className="bw-catalog-tile"
         onClick={() => navigate('/burgers/' + g.restaurantId + '/' + g.burgerId)}>
         <Cover src={g.photo} name={g.name}/><strong>{g.name}</strong><small>{g.restaurant}</small>
@@ -143,8 +162,8 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false, viewerId }:
         <Rating value={g.average}/><small>{g.entries.length} {t('burgerCatalog.reviews', { defaultValue: 'valoraciones' })}</small>
       </button>)}</div>
       {matches.length === 0 && <p>{t('burgerCatalog.noResults', { defaultValue: 'No hay hamburguesas que coincidan con la búsqueda.' })}</p>}
-      {hasMore && <div ref={loadMoreRef} className="bw-catalog-load-more" role="status" aria-label={t('burgerCatalog.loadingMore', { defaultValue: 'Cargar más hamburguesas' })}>
-        <span className="bw-catalog-load-spinner" aria-hidden="true" />
+      {hasMore && <div ref={loadMoreRef} className="bw-catalog-load-more">
+        <LoadingSpinner label={t('burgerCatalog.loadingMore', { defaultValue: 'Cargar más hamburguesas' })} />
       </div>}
     </>}
   </section>;
@@ -152,59 +171,43 @@ export function BurgerExplore({ searchTerm = '', hideSearch = false, viewerId }:
 
 export function BurgerDetailPage({ viewerId }: { viewerId?: string | null }) {
   const { restaurantId, burgerId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { entries, loading, error } = useBurgerEntries({ viewerId, restaurantId, burgerId });
-  const summary = useMemo(() => groupEntries(entries, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant'))[0], [entries, t]);
+  const { entries, likes, loading, error, retry } = useBurgerEntries({ viewerId, restaurantId, burgerId });
+  const summary = useMemo(() => groupEntries(entries, likes, t('burgerCatalog.unknownBurger'), t('burgerCatalog.unknownRestaurant'))[0], [entries, likes, t]);
   const visible = useMemo(() => entries.filter(entry => !entry.isLocked), [entries]);
-  const [likeResult, setLikeResult] = useState({ entries: visible, counts: {} as Record<string, number> });
-  const likes = likeResult.entries === visible ? likeResult.counts : {};
-
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      const counts: Record<string, number> = {};
-      for (let i = 0; i < visible.length; i += 100) {
-        const ids = visible.slice(i, i + 100).map(entry => entry.id);
-        for (let offset = 0; ; offset += 500) {
-          const { data, error } = await supabase.from('entry_likes').select('entry_id,user_id')
-            .in('entry_id', ids).order('entry_id', { ascending: true }).order('user_id', { ascending: true }).range(offset, offset + 499);
-          if (!active) return;
-          if (error) return;
-          for (const row of data ?? []) counts[row.entry_id] = (counts[row.entry_id] ?? 0) + 1;
-          if ((data ?? []).length < 500) break;
-        }
-      }
-      if (active) setLikeResult({ entries: visible, counts });
-    }
-    void load();
-    return () => { active = false; };
-  }, [visible]);
-
-  const featured = visible.filter(entry => entry.photo_url && !entry.isPrivate)
-    .sort((a, b) => (likes[b.id] ?? 0) - (likes[a.id] ?? 0) || b.datetime.localeCompare(a.datetime))[0];
-  const rated = visible.filter(entry => entry.rating !== null);
-  const bins = [1, 2, 3, 4, 5].map(star => ({ star, count: rated.filter(entry => Math.min(5, Math.max(1, Math.round(entry.rating ?? 0))) === star).length }));
-  const max = Math.max(1, ...bins.map(bin => bin.count));
+  const featured = mostLikedPhoto(visible.filter(entry => !entry.isPrivate), likes);
+  // Only accessible posts can supply a wishlist reference, photo or currency.
+  const source = featured ?? visible[0];
+  const rated = visible.filter((entry): entry is Entry & { rating: number } => entry.rating !== null && Number.isFinite(entry.rating));
   const openPost = (id: string) => navigate(`/posts/${id}`, { state: { returnTo: `/burgers/${restaurantId}/${burgerId}` } });
+  const wishlistLink = viewerId ? <Link className="bw-btn bw-btn-ghost bw-catalog-wishlist-link" to="/burger-wishlist">
+    <ListAltOutlinedIcon aria-hidden="true" fontSize="small" />{t('burgerWishlist.viewList')}
+  </Link> : null;
 
   return <AppShell>
     <PageHeader title={summary?.name || t('burgerCatalog.unknownBurger')} subtitle={summary?.restaurant || ''}
-      leading={<BackButton onClick={() => navigate(-1)} ariaLabel={t('burgerCatalog.back')} />} />
+      leading={<BackButton onClick={() => {
+        const state = location.state as { returnTo?: string } | null;
+        if (state?.returnTo === '/burger-wishlist') navigate('/burger-wishlist');
+        else if (location.key === 'default') navigate('/search');
+        else navigate(-1);
+      }} ariaLabel={t('burgerCatalog.back')} />} />
     <main className="bw-main bw-catalog-detail">
-      {loading ? <p>{t('common.loading')}</p> : error ? <p role="alert">{t('burgerCatalog.loadError')}</p> : !summary ? <p>{t('burgerCatalog.noReviews')}</p> : <>
+      {!loading && (error || !source) && wishlistLink}
+      {loading ? <LoadingSpinner label={t('common.loading')} /> : error ? <CatalogError onRetry={retry} /> : !summary ? <p>{t('burgerCatalog.noReviews')}</p> : <>
         <div className="bw-catalog-summary">
           <Cover src={featured?.photo_url ?? summary.photo} name={summary.name} />
           <div><h2>{summary.name}</h2><p>{summary.restaurant}</p><Rating value={summary.average} />
             <p>{t('burgerCatalog.reviewSummary', { count: rated.length, users: new Set(visible.map(entry => entry.user_id)).size })}</p>
           </div>
         </div>
+        {source && restaurantId && burgerId && <BurgerWishlistAction
+          key={JSON.stringify([viewerId, restaurantId, burgerId, source.id])}
+          viewerId={viewerId} listAction={wishlistLink} source={{ id: source.id, restaurantId, burgerId, photoUrl: source.photo_url, currency: source.currency }} />}
         {entries.some(entry => entry.isLocked) && <p className="bw-catalog-privacy-note">{t('burgerCatalog.privateRatingsExcluded')}</p>}
-        <section className="bw-card bw-catalog-chart"><h3>{t('burgerCatalog.distribution')}</h3>
-          <div className="bw-catalog-bars">{bins.map(bin => <div key={bin.star} className="bw-catalog-bar-col">
-            <span>{bin.count}</span><div className="bw-catalog-bar-track"><div style={{ height: `${bin.count / max * 100}%` }} /></div><small>{bin.star}★</small>
-          </div>)}</div>
-        </section>
+        <BurgerRatingChart ratings={rated.map(entry => entry.rating)} average={summary.average} />
         {featured && <section className="bw-catalog-featured"><h3>{t('burgerCatalog.popularPhoto', { count: likes[featured.id] ?? 0 })}</h3>
           <button type="button" onClick={() => openPost(featured.id)}>
             <img src={featured.photo_url ?? ''} alt={summary.name} /><span>{t('burgerCatalog.viewPost')}</span>
@@ -212,8 +215,10 @@ export function BurgerDetailPage({ viewerId }: { viewerId?: string | null }) {
         </section>}
         <section><h3>{t('burgerCatalog.posts', { count: entries.length })}</h3><div className="bw-catalog-posts">
           {entries.map(entry => entry.isLocked ? <PrivatePost key={entry.id} /> :
-            <button type="button" key={entry.id} onClick={() => openPost(entry.id)}>
+            <button type="button" key={entry.id} onClick={() => openPost(entry.id)}
+              className={viewerId && entry.user_id === viewerId ? 'is-own-post' : undefined}>
               <Cover src={entry.photo_url} name={summary.name} />
+              {viewerId && entry.user_id === viewerId && <span className="bw-catalog-own-badge">{t('burgerCatalog.ownPost')}</span>}
               {entry.isPrivate && <PrivateBadge />}
               <span>{new Date(entry.datetime).toLocaleDateString(i18n.language)}</span><Rating value={entry.rating} />
               <small>♥ {likes[entry.id] ?? 0}</small>

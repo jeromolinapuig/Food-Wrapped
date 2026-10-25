@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { type FormEvent, useState } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -185,7 +186,7 @@ export function AuthScreen() {
             disabled={isBusy}
           >
             <img src="/google.png" alt="" className="auth-oauth-icon" aria-hidden="true" />
-            {oauthLoading ? t('auth.connecting') : t('auth.continueWithGoogle')}
+            {oauthLoading ? <LoadingSpinner inline label={t('auth.connecting')} /> : t('auth.continueWithGoogle')}
           </button>
         </div>
         <div className="auth-divider">
@@ -253,7 +254,7 @@ export function AuthScreen() {
           {resetNotice && <p className="auth-notice">{resetNotice}</p>}
 
           <button className="auth-submit" type="submit" disabled={isBusy}>
-            {loading ? t('common.loading') : mode === 'login' ? t('auth.titleLogin') : t('auth.signupCta')}
+            {loading ? <LoadingSpinner inline label={t('common.loading')} /> : mode === 'login' ? t('auth.titleLogin') : t('auth.signupCta')}
           </button>
         </form>
 

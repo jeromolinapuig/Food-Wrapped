@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.13.2
+
+- Burger search finds burgers by their own name or their restaurant's name, tolerating accents, apostrophes and spacing while preserving Japanese and Thai text, sorting and detail navigation.
+- Burger detail post lists highlight the viewer's own publications with a pink outline, soft background and translated Your post label, including accessible private posts while preserving their privacy badge.
+- Replaced loading, searching and busy-action text throughout the app with the existing rotating loader, shared across pages, modals, buttons and overlays with translated screen-reader labels, theme-aware colours and reduced-motion support.
+- Search remembers the selected Users, Restaurants or Burgers category during the browser session, restoring it when returning from a detail page while respecting explicit category links.
+- Connected burger details to the private Burgers to try list: save from an accessible post, show pending/tried/own-post states, confirm removal, recover from errors, and prevent duplicate saves or stale state after changing viewer or burger. Guests can view accessible details and sign in to save; saving never creates a post.
+- Added wishlist links to burger details and a return path to the private list, preserving photos and existing wishlist actions. Save and View my list now sit together below the burger summary with distinct filled and outlined buttons in both themes. Catalogue, collection and detail load errors now offer an in-place retry that preserves search and sorting and reapplies privacy checks.
+- Burger catalogue, collection and detail covers now select the most-liked available public photo, breaking ties by newest post and then post ID. Results wait for all posts and likes, with retryable failures and protection against stale viewer or burger responses; detail wishlist buttons stay hidden during loading and new saves use the featured photo.
+- Rating distributions show exact scores, including half stars, on a horizontal numeric axis with vertical columns. A labelled dashed vertical line marks the unrounded average at its precise position between scores; bars and marker share the same scale, with scrolling for crowded mobile labels and the existing privacy exclusions. Compact title and legend spacing removes excess blank space above the chart while keeping bar counts visible.
+
 ## 1.13.1
 
 - Fixed the application startup failure and preserved the language selected by localized landing URLs, including when loading saved profile preferences.

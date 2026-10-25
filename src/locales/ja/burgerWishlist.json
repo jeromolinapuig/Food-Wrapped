@@ -24,5 +24,14 @@
   "priceInvalid": "有効な価格を入力してください。",
   "dateRequired": "食べた日時を選んでください。",
   "unknownRestaurant": "不明なレストラン",
-  "unknownBurger": "不明なバーガー"
+  "unknownBurger": "不明なバーガー",
+  "loginToSave": "このバーガーを保存するにはログインしてください",
+  "privateList": "食べてみたいバーガーのリストは非公開です。",
+  "ownPost": "自分の投稿に記録済み",
+  "statusError": "リストを確認できませんでした。接続を確認して再試行してください。",
+  "saveError": "リストを更新できませんでした。接続を確認して再試行してください。",
+  "removeTitle": "食べてみたいリストから削除しますか？",
+  "removeMessage": "このバーガーを食べてみたいリストから削除します。",
+  "viewBurger": "バーガーの詳細を見る",
+  "viewList": "マイリストを見る"
 }

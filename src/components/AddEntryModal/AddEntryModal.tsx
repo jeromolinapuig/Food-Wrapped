@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import {
   type ChangeEvent,
   type FormEvent,
@@ -2214,7 +2215,7 @@ export function AddEntryModal({
                   <PhotoLibraryRounded aria-hidden="true" />
                   <span aria-live="polite">
                     {photoCompressing
-                      ? t('addEntry.processingPhoto')
+                      ? <LoadingSpinner inline label={t('addEntry.processingPhoto')} />
                       : t('addEntry.photoEmpty')}
                   </span>
                 </div>
@@ -2747,7 +2748,7 @@ export function AddEntryModal({
                   disabled={formLoading}
                 >
                   {formLoading
-                    ? t('addEntry.saving')
+                    ? <LoadingSpinner inline label={t('addEntry.saving')} />
                     : t('addEntry.reviewRestaurantCreate')}
                 </Button>
               </div>
@@ -2774,7 +2775,7 @@ export function AddEntryModal({
                   disabled={isEditSubmitDisabled}
                 >
                   {formLoading
-                    ? t('addEntry.saving')
+                    ? <LoadingSpinner inline label={t('addEntry.saving')} />
                     : t('addEntry.save')}
                 </Button>
               </div>
@@ -2830,7 +2831,7 @@ export function AddEntryModal({
                     disabled={isBusy}
                   >
                     {formLoading
-                      ? t('addEntry.saving')
+                      ? <LoadingSpinner inline label={t('addEntry.saving')} />
                       : t('addEntry.publish')}
                   </Button>
                 )}
@@ -2908,7 +2909,7 @@ export function AddEntryModal({
                 disabled={draftSaving}
               >
                 {draftSaving
-                  ? t('addEntry.draft.saving')
+                  ? <LoadingSpinner inline label={t('addEntry.draft.saving')} />
                   : t('addEntry.draft.save')}
               </button>
             </>
@@ -3032,7 +3033,7 @@ export function AddEntryModal({
                 disabled={photoCompressing || !isCropSelectionReady}
               >
                 {photoCompressing
-                  ? t('addEntry.processingPhoto')
+                  ? <LoadingSpinner inline label={t('addEntry.processingPhoto')} />
                   : t('addEntry.crop')}
               </Button>
             </div>

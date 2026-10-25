@@ -24,6 +24,7 @@ import { BurgerWishlistPage } from './components/BurgerWishlistPage/BurgerWishli
 import { BurgerCalendarPage } from './components/BurgerCalendarPage/BurgerCalendarPage';
 import { PostPage } from './components/PostPage/PostPage';
 import { SearchPage } from './components/SearchPage/SearchPage';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { BurgerDetailPage } from './components/BurgerCatalog/BurgerCatalog';
 import { MyTopBurgersPage } from './components/MyTopBurgersPage/MyTopBurgersPage';
 import { MorePage } from './components/MorePage/MorePage';
@@ -323,7 +324,7 @@ function App() {
   if (session === undefined) {
     return (
       <div className="bw-loader-overlay">
-        <div className="bw-loader-spinner" aria-label="Cargando..." />
+        <LoadingSpinner large />
       </div>
     );
   }
@@ -491,7 +492,7 @@ function App() {
             />
           }
         />
-        <Route path="/burgers/:restaurantId/:burgerId" element={session ? <BurgerDetailPage viewerId={session.user.id} /> : <Navigate to="/login" replace />} />
+        <Route path="/burgers/:restaurantId/:burgerId" element={<BurgerDetailPage viewerId={session?.user.id} />} />
         <Route
           path="/profile"
           element={

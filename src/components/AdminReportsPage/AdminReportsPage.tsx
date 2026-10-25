@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +82,7 @@ export function AdminReportsPage({ session }: Readonly<AdminReportsPageProps>) {
       <main className="bw-main">
         <section className="bw-card" style={{ marginBottom: 12 }}>
           <h3 style={{ margin: '0 0 8px' }}>Reportes pendientes</h3>
-          {reportsLoading && <p className="bw-helper">Cargando reportes...</p>}
+          {reportsLoading && <LoadingSpinner />}
           {!reportsLoading && reports.length === 0 && <p className="bw-helper">No hay reportes pendientes.</p>}
           {!reportsLoading && reports.length > 0 && (
             <div style={{ display: 'grid', gap: 8 }}>

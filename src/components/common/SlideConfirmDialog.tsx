@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ModalBase } from './ModalBase';
+import { LoadingSpinner } from './LoadingSpinner';
 
 type SlideConfirmDialogProps = {
   open: boolean;
@@ -79,7 +80,7 @@ export function SlideConfirmDialog({
           }}
           disabled={!canConfirm}
         >
-          {isProcessing ? 'Procesando...' : confirmLabel}
+          {isProcessing ? <LoadingSpinner inline /> : confirmLabel}
         </button>
       </div>
     </ModalBase>

@@ -24,5 +24,14 @@
   "priceInvalid": "Inserisci un prezzo valido.",
   "dateRequired": "Scegli quando l'hai provato.",
   "unknownRestaurant": "Ristorante sconosciuto",
-  "unknownBurger": "Burger sconosciuto"
+  "unknownBurger": "Burger sconosciuto",
+  "loginToSave": "Accedi per salvare questo burger",
+  "privateList": "La tua lista di burger da provare è privata.",
+  "ownPost": "Già registrato in un tuo post",
+  "statusError": "Non siamo riusciti a verificare la tua lista. Controlla la connessione e riprova.",
+  "saveError": "Non siamo riusciti ad aggiornare la tua lista. Controlla la connessione e riprova.",
+  "removeTitle": "Rimuovere dai burger da provare?",
+  "removeMessage": "Questo burger verrà rimosso dalla tua lista di burger da provare.",
+  "viewBurger": "Vedi la scheda del burger",
+  "viewList": "Vedi la mia lista"
 }

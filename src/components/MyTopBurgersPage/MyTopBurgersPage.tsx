@@ -1,4 +1,5 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Close, Euro, Star } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -380,7 +381,7 @@ export function MyTopBurgersPage({ session, onBack }: Readonly<MyTopBurgersPageP
           </button>
         </section>
 
-        {loading && <p className="bw-helper">{t('myTopBurgers.loading')}</p>}
+        {loading && <LoadingSpinner label={t('myTopBurgers.loading')} />}
         {error && <p className="bw-top-burgers-error">{error}</p>}
 
         {!loading && !error && grouped.length === 0 && (

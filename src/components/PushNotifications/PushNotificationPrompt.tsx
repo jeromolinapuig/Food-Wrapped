@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { IosShare, NotificationsActive } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -118,7 +119,7 @@ export function PushNotificationPrompt({ userId, enabled }: Readonly<PushNotific
         {!requiresInstall ? (
           <button type="button" className="bw-btn bw-btn-primary" onClick={() => void activate()} disabled={working}>
             <NotificationsActive fontSize="small" />
-            {working ? t('notifications.push.activating') : t('notifications.push.activate')}
+            {working ? <LoadingSpinner inline label={t('notifications.push.activating')} /> : t('notifications.push.activate')}
           </button>
         ) : null}
       </div>

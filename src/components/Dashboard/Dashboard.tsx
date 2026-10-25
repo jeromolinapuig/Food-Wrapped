@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ADD_ENTRY_NOTIFICATION_TARGET } from '../../constants/notificationTargets';
 import type { Session } from '@supabase/supabase-js';
@@ -848,7 +849,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
             totalSpentLabel={totalSpentLabel}
             favoriteRestaurant={stats.favoriteRestaurant}
             theme={theme}
-            status={annualLoading ? t('common.loading') : error ?? (annualEntries.length === 0 ? t('dashboard.emptyYear', { year: activeYear }) : undefined)}
+            status={annualLoading ? <LoadingSpinner inline /> : error ?? (annualEntries.length === 0 ? t('dashboard.emptyYear', { year: activeYear }) : undefined)}
           >
             {error && <p role="alert" className="bw-dashboard-summary-message">{error}</p>}
             {!annualLoading && !error && annualEntries.length === 0 && <p className="bw-dashboard-summary-message">{t('dashboard.emptyYear', { year: activeYear })}</p>}
@@ -1054,7 +1055,7 @@ export function Dashboard({ session, theme }: Readonly<DashboardProps>) {
               onClick={() => void handleDeleteEntry()}
               disabled={mutating}
             >
-              {mutating ? t('dashboard.processing') : t('common.delete')}
+              {mutating ? <LoadingSpinner inline label={t('dashboard.processing')} /> : t('common.delete')}
             </button>
           </>
         )}

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { startTransition, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -367,7 +368,7 @@ export function RestaurantSearchContent({
 
   const renderResults = () => {
     if (loading) {
-      return <p className="bw-helper">{t('restaurantSearch.searching', { defaultValue: 'Buscando restaurantes...' })}</p>;
+      return <LoadingSpinner label={t('restaurantSearch.searching', { defaultValue: 'Buscando restaurantes...' })} />;
     }
     if (error) {
       return <p className="bw-restaurant-error">{error}</p>;

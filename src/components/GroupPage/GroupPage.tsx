@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '../common/LoadingSpinner';
 import { Euro, LunchDining } from '@mui/icons-material';
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -459,7 +460,7 @@ export function GroupPage({ session, groupId, onBack }: Readonly<GroupPageProps>
 
             {activeTab === 'posts' ? (
               !membersLoaded ? (
-                <p className="bw-helper">{t('groups.loadingPosts')}</p>
+                <LoadingSpinner label={t('groups.loadingPosts')} />
               ) : memberIds.length === 0 ? (
                 <p className="bw-helper">{t('groups.noMembers')}</p>
               ) : (

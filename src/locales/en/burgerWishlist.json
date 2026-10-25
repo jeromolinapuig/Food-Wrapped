@@ -24,5 +24,14 @@
   "priceInvalid": "Enter a valid price.",
   "dateRequired": "Choose when you tried it.",
   "unknownRestaurant": "Unknown restaurant",
-  "unknownBurger": "Unknown burger"
+  "unknownBurger": "Unknown burger",
+  "loginToSave": "Log in to save this burger",
+  "privateList": "Your burgers to try list is private.",
+  "ownPost": "Already recorded in your own post",
+  "statusError": "We couldn’t check your list. Check your connection and retry.",
+  "saveError": "We couldn’t update your list. Check your connection and retry.",
+  "removeTitle": "Remove from Burgers to try?",
+  "removeMessage": "This burger will be removed from your pending list.",
+  "viewBurger": "View burger details",
+  "viewList": "View my list"
 }
