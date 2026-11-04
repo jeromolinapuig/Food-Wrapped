@@ -8,13 +8,13 @@ const { changeLanguage, single, authStateChange, getSession } = vi.hoisted(() =>
   changeLanguage: vi.fn().mockResolvedValue(undefined),
   single: vi.fn(),
   authStateChange: vi.fn(),
-  getSession,
+  getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'owner' } } } }),
 }));
 vi.mock('../lib/i18n', () => ({ i18n: { changeLanguage } }));
 vi.mock('../lib/supabaseClient', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'owner' } } } }),
+      getSession,
       onAuthStateChange: vi.fn((callback) => {
         authStateChange.mockImplementation(callback);
         return { data: { subscription: { unsubscribe: vi.fn() } } };
@@ -69,7 +69,7 @@ describe('Localized language preferences', () => {
   it('defers profile queries after SIGNED_IN and never requests the session again in the auth callback', async () => {
     window.history.replaceState({}, '', '/profile');
     render(<PreferencesProvider><CurrentPreferences /></PreferencesProvider>);
-     await waitFor(() => expect(getSession).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(1));
     single.mockClear();
     authStateChange('SIGNED_IN', { user: { id: 'owner' } });
     expect(getSession).toHaveBeenCalledTimes(1);
