@@ -83,18 +83,18 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
   useEffect(() => {
     let cancelled = false;
 
-    const loadProfilePreferences = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id;
-      if (!userId) return;
+    let requestId = 0;
+    const pendingTimers = new Set<ReturnType<typeof setTimeout>>();
 
-      const { data, error } = await supabase
+    const loadProfilePreferences = async (userId: string, currentRequest: number) => {
+      try {
+        const { data, error } = await supabase
         .from('profiles')
         .select('preferred_language, preferred_currency')
         .eq('id', userId)
         .single();
 
-      if (cancelled || error || !data) return;
+        if (cancelled || currentRequest !== requestId || error || !data) return;
 
       const profile = data as {
         preferred_language?: string | null;
@@ -110,19 +110,41 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
       if (nextCurrency && SUPPORTED_CURRENCIES.includes(nextCurrency)) {
         setCurrencyState(nextCurrency);
       }
+      } catch (error) {
+        // Profile preferences are optional; an unavailable profile must not block authentication.
+        console.error('Error loading profile preferences', error);
+      }
     };
 
-    void loadProfilePreferences();
+    const schedulePreferencesLoad = (userId: string) => {
+      const currentRequest = ++requestId;
+      // Avoid Supabase requests inside the synchronous auth callback (auth lock).
+      const timer = setTimeout(() => {
+        pendingTimers.delete(timer);
+        if (!cancelled) void loadProfilePreferences(userId, currentRequest);
+      }, 0);
+      pendingTimers.add(timer);
+    };
+
+    // Initial load is independent from auth state notifications.
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled && data.session) schedulePreferencesLoad(data.session.user.id);
+    }).catch((error: unknown) => {
+      console.error('Error reading session for profile preferences', error);
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) return;
-      void loadProfilePreferences();
+      // Never call getSession() (or query Supabase) within this callback.
+      if (session) schedulePreferencesLoad(session.user.id);
+      else requestId += 1;
     });
 
     return () => {
       cancelled = true;
+      requestId += 1;
+      pendingTimers.forEach(clearTimeout);
       subscription.unsubscribe();
     };
   }, []);
