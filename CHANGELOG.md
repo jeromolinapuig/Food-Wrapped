@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed a possible authentication hang by deferring profile preference reads outside Supabase auth state callbacks and reusing the event session rather than requesting it again.
+
 ## 1.13.2
 
 - Burger search finds burgers by their own name or their restaurant's name, tolerating accents, apostrophes and spacing while preserving Japanese and Thai text, sorting and detail navigation.

@@ -4,16 +4,21 @@ import { PreferencesProvider } from './PreferencesProvider';
 import { usePreferences } from './PreferencesContext';
 import { detectLanguage, getLandingLanguage } from '../lib/language';
 
-const { changeLanguage, single } = vi.hoisted(() => ({
+const { changeLanguage, single, authStateChange, getSession } = vi.hoisted(() => ({
   changeLanguage: vi.fn().mockResolvedValue(undefined),
   single: vi.fn(),
+  authStateChange: vi.fn(),
+  getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'owner' } } } }),
 }));
 vi.mock('../lib/i18n', () => ({ i18n: { changeLanguage } }));
 vi.mock('../lib/supabaseClient', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'owner' } } } }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      getSession,
+      onAuthStateChange: vi.fn((callback) => {
+        authStateChange.mockImplementation(callback);
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      }),
     },
     from: (table: string) => table === 'profiles'
       ? { select: () => ({ eq: () => ({ single }) }) }
@@ -29,6 +34,8 @@ function CurrentPreferences() {
 describe('Localized language preferences', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    getSession.mockClear();
+    authStateChange.mockReset();
     single.mockResolvedValue({ data: { preferred_language: 'es', preferred_currency: 'JPY' }, error: null });
     vi.spyOn(window.navigator, 'language', 'get').mockReturnValue('en-US');
   });
@@ -57,6 +64,18 @@ describe('Localized language preferences', () => {
     expect(document.documentElement.lang).toBe('ja');
     expect(changeLanguage).toHaveBeenCalledWith('ja');
     expect(changeLanguage).not.toHaveBeenCalledWith('es');
+  });
+
+  it('defers profile queries after SIGNED_IN and never requests the session again in the auth callback', async () => {
+    window.history.replaceState({}, '', '/profile');
+    render(<PreferencesProvider><CurrentPreferences /></PreferencesProvider>);
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(1));
+    single.mockClear();
+    authStateChange('SIGNED_IN', { user: { id: 'owner' } });
+    expect(getSession).toHaveBeenCalledTimes(1);
+    expect(single).not.toHaveBeenCalled();
+    await waitFor(() => expect(single).toHaveBeenCalled());
+    expect(getSession).toHaveBeenCalledTimes(1);
   });
 
   it('still loads the saved profile language on app routes', async () => {
